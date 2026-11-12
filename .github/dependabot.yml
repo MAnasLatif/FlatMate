@@ -1,0 +1,14 @@
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  # Add an npm entry for /app and /web once each project has a package.json:
+  #
+  # - package-ecosystem: npm
+  #   directory: /app
+  #   schedule:
+  #     interval: weekly

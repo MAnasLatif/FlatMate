@@ -1,0 +1,52 @@
+name: Bug report
+description: Something in FlatMate is not working as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Please do not report security vulnerabilities here. Follow SECURITY.md instead.
+        Remove any personal or financial details from screenshots and logs before attaching them.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Mobile app
+        - Backend (Supabase)
+        - Website
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Tap ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: The app version, or the commit hash if you built it yourself.
+  - type: input
+    id: device
+    attributes:
+      label: Device and OS
+      placeholder: For example, Pixel 8 on Android 15, or Chrome 130 on macOS
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or logs
+      description: Anything else that helps explain the problem.

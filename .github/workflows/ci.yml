@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Lint, type-check and test each JavaScript project.
+  # A project is skipped until it has a package.json.
+  project:
+    name: ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [app, web]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check whether the project is initialized
+        id: check
+        run: |
+          if [ -f "${{ matrix.project }}/package.json" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "${{ matrix.project }}/ has no package.json yet. Skipping."
+          fi
+
+      - name: Set up Node.js
+        if: steps.check.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: ${{ matrix.project }}/package-lock.json
+
+      - name: Install dependencies
+        if: steps.check.outputs.ready == 'true'
+        working-directory: ${{ matrix.project }}
+        run: npm ci
+
+      - name: Lint
+        if: steps.check.outputs.ready == 'true'
+        working-directory: ${{ matrix.project }}
+        run: npm run lint
+
+      - name: Type check
+        if: steps.check.outputs.ready == 'true'
+        working-directory: ${{ matrix.project }}
+        run: npm run typecheck
+
+      - name: Test
+        if: steps.check.outputs.ready == 'true'
+        working-directory: ${{ matrix.project }}
+        run: npm test
+
+  # Apply all migrations to a fresh database and run the database tests.
+  # Skipped until `supabase init` has been run.
+  database:
+    name: supabase
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check whether the backend is initialized
+        id: check
+        run: |
+          if [ -f supabase/config.toml ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "supabase/ has no config.toml yet. Skipping."
+          fi
+
+      - name: Set up the Supabase CLI
+        if: steps.check.outputs.ready == 'true'
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start the database and apply migrations
+        if: steps.check.outputs.ready == 'true'
+        run: supabase db start
+
+      - name: Run database tests
+        if: steps.check.outputs.ready == 'true'
+        run: supabase test db
