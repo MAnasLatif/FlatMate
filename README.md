@@ -2,7 +2,7 @@
 
 An open-source app for sharing flat expenses. Roommates record shared costs, split them fairly, see who owes whom, resolve disagreements, and settle up each month.
 
-> **Status: early development.** The repository structure and requirements are in place. The mobile app, backend and website are not initialized yet, so there is nothing to run. See the [roadmap](#roadmap).
+> **Status: early development.** The mobile app has its foundation in place and runs, showing a single home screen. No feature is built yet, and the backend and website are not initialized. See the [roadmap](#roadmap).
 
 ## What it will do
 
@@ -36,7 +36,16 @@ FlatMate does not move money, connect to bank accounts or verify transfers. It k
 
 You will need Node.js (current LTS), npm, Docker and the [Supabase CLI](https://supabase.com/docs/guides/cli) for the local backend, and Android Studio or Xcode to run the app on a device or emulator.
 
-Setup commands will be added here as each project is initialized. Until then, the best starting points are the [requirements](docs/SRS.md) and the [architecture overview](docs/ARCHITECTURE.md).
+To run the mobile app:
+
+```sh
+cd app
+npm install
+cp .env.example .env
+npm start
+```
+
+More detail is in the [app README](app/README.md). Setup commands for the backend and the website will be added here as each is initialized. To understand the project first, start with the [requirements](docs/SRS.md) and the [architecture overview](docs/ARCHITECTURE.md).
 
 ## Documentation
 

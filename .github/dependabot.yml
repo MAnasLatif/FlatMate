@@ -6,9 +6,23 @@ updates:
     schedule:
       interval: weekly
 
-  # Add an npm entry for /app and /web once each project has a package.json:
-  #
-  # - package-ecosystem: npm
-  #   directory: /app
-  #   schedule:
-  #     interval: weekly
+  # Expo, React and React Native versions are tied to the Expo SDK and are
+  # upgraded together with `npx expo install --fix`, not one at a time.
+  - package-ecosystem: npm
+    directory: /app
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: 'expo'
+      - dependency-name: 'expo-*'
+      - dependency-name: 'react'
+      - dependency-name: 'react-dom'
+      - dependency-name: 'react-native'
+      - dependency-name: 'react-native-*'
+      - dependency-name: '@react-native-async-storage/async-storage'
+      - dependency-name: '@types/react'
+      - dependency-name: 'typescript'
+      - dependency-name: 'jest-expo'
+      - dependency-name: 'eslint-config-expo'
+
+  # Add an npm entry for /web once it has a package.json.

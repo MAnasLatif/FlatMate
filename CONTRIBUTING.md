@@ -22,6 +22,17 @@ Read these so your change fits the project:
 3. [AGENTS.md](AGENTS.md) for the engineering standards. It is written for AI coding agents, and the same standards apply to everyone.
 4. The README in the folder you will work in: [app/](app/README.md), [supabase/](supabase/README.md) or [web/](web/README.md).
 
+### Working with an AI coding agent
+
+The project pins a set of agent skills in `skills-lock.json`. The skill files are not committed, so restore them after cloning:
+
+```sh
+npx skills experimental_install                  # Codex, Gemini CLI, GitHub Copilot and others
+npx skills experimental_install -a claude-code   # Claude Code
+```
+
+[AGENTS.md](AGENTS.md#skills) lists each skill and when to use it.
+
 ## Workflow
 
 1. Fork the repository and create a branch from `main`, named `feat/short-description`, `fix/short-description` or `docs/short-description`.
