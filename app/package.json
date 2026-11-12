@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:types": "npx --yes supabase@3.1.0 gen types --lang typescript --schema public > src/types/database.ts.tmp && mv src/types/database.ts.tmp src/types/database.ts && prettier --write src/types/database.ts"
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.2.14",

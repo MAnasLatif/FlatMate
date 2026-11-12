@@ -6,6 +6,8 @@ import * as aesjs from 'aes-js';
 import * as SecureStore from 'expo-secure-store';
 import { AppState } from 'react-native';
 
+import type { Database } from '@/types/database';
+
 import { getEnv } from './env';
 
 /**
@@ -71,7 +73,7 @@ const env = getEnv();
 
 // The publishable key is public by design. Access is controlled by row-level
 // security in the database, never by keeping this key secret.
-export const supabase = createClient(
+export const supabase = createClient<Database>(
   env.EXPO_PUBLIC_SUPABASE_URL,
   env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   {
