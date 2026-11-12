@@ -53,15 +53,15 @@ These come from section 12 of the SRS. Each one blocks the tasks listed next to 
 - [ ] **0.3 App identifiers and development build.** Set the Android package name and iOS bundle identifier, create the EAS project and `eas.json`, and produce a development build. Push notifications need this, since they do not work in Expo Go on Android. *(Needs D11. Owner: Expo account.)*
 - [x] **0.4 Initialize the backend.** Run `supabase init`, commit `config.toml`, confirm the local stack starts, add an empty `seed.sql`, and confirm the CI database job now runs.
 - [x] **0.5 Database tests and generated types.** Set up pgTAP with a first passing test. Add a script that generates TypeScript types from the schema into `app/src/types/`, and document both.
-- [ ] **0.6 Hosted development project.** Create a Supabase project for development, link it, and document how migrations reach it. *(Owner: Supabase account.)*
+- [x] **0.6 Hosted development project.** Create a Supabase project for development, link it, and document how migrations reach it. *(Owner: Supabase account.)* The project exists and the app's local `.env` points at it. Linking the CLI needs the owner's access token and moves to task 1.1.
 - [ ] **0.7 Settle the Phase 1 decisions.** Decide D1 to D9 in one sitting and update section 12 of the SRS, so Phase 1 is not interrupted task by task. *(Owner.)*
 
 ## Phase 1: Financial MVP
 
 ### Accounts
 
-- [ ] **1.1 Profiles.** `profiles` table created automatically at sign-up, with RLS and tests. *(FR-01.2)*
-- [ ] **1.2 Email sign-up and sign-in.** Sign-up, sign-in, sign-out, session persistence, and a session check at launch that routes signed-out users to the auth screens. *(FR-01.1)*
+- [ ] **1.1 Profiles.** `profiles` table created automatically at sign-up, with RLS and tests. Link the CLI to the hosted development project and push this first migration to it, as described in `supabase/README.md`. *(FR-01.2. Owner: access token for the link.)*
+- [ ] **1.2 Email sign-up and sign-in.** Sign-up, sign-in, sign-out, session persistence, and a session check at launch that routes signed-out users to the auth screens. *(FR-01.1)* Test it in the development build: Expo Go lacks the native module behind the encrypted session storage (`react-native-get-random-values`).
 - [ ] **1.3 Account recovery and email verification.** Password reset and email confirmation through deep links back into the app. *(FR-01.1)*
 - [ ] **1.4 Google sign-in.** *(FR-01.1. Owner: Google OAuth credentials.)*
 - [ ] **1.5 Profile screen.** Edit display name and photo, with photos in a private bucket. *(FR-01.2)*

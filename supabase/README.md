@@ -63,6 +63,29 @@ npx supabase@3.1.0 test db                 # run the pgTAP tests
 npx supabase@3.1.0 stop                    # stop the local stack
 ```
 
-`supabase status` prints the local API URL and the publishable key. Put them in `app/.env` to point the app at the local stack.
+`supabase status` prints the local API URL and the publishable key. Put them in `app/.env` to point the app at the local stack. A phone cannot reach `127.0.0.1` on your computer, so for testing on a device use the hosted development project below.
+
+## Hosted development project
+
+Each developer or self-hoster uses their own Supabase project for development, separate from staging and production. Create one at [supabase.com](https://supabase.com/dashboard), then:
+
+1. **Point the app at it.** Copy the project URL and the publishable key (`sb_publishable_...`) from the project's API settings into `app/.env`.
+2. **Link the CLI**, once per machine. Prefer a [scoped personal access token](https://supabase.com/docs/guides/platform/personal-access-tokens) limited to this project over `supabase login`, which creates a token with access to your whole account.
+
+   ```sh
+   export SUPABASE_ACCESS_TOKEN=<scoped token>
+   npx supabase@3.1.0 link --project-ref <project-ref>
+   ```
+
+3. **Push migrations** after they pass locally. Check the list first, then apply. The CLI asks for confirmation before changing a hosted project.
+
+   ```sh
+   npx supabase@3.1.0 db push --remote --dry-run
+   npx supabase@3.1.0 db push --remote
+   ```
+
+Migrations reach a hosted project only through `db push` from the committed files in `migrations/`. Never change a hosted schema in the dashboard's SQL editor or through an MCP server, because the change would exist in no migration and the environments would drift apart. AI agents connected through the Supabase MCP server use it to inspect the project (tables, migrations, advisors, logs), not to change it.
+
+New projects can be created with an option that turns row-level security on for every new table. It installs a `public.rls_auto_enable()` function and an event trigger, and the security advisor then warns that `anon` and `authenticated` can execute that function. Calling it directly fails, because it is an event trigger function, so the warning is harmless.
 
 The general engineering rules are in [AGENTS.md](../AGENTS.md).
