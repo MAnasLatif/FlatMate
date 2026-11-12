@@ -10,7 +10,7 @@ Last reviewed: 2026-11-12.
 - One task is one branch and one pull request. If a task turns out too large, split it and add the new tasks here.
 - Tick the box in the same pull request that completes the task.
 - A task marked **Owner** needs something only the project owner can provide, such as an account, a device or a decision.
-- A task marked **Needs D-number** depends on an [open decision](#open-decisions). Settle the decision first and record it in the SRS.
+- A task marked **Needs** a decision depends on one that is still [open](#decisions). Settle it first and record it in the SRS.
 - Backend tasks are done when the migration, the RLS policies and their database tests are all in. App tasks are done when the screen has its loading, empty and error states and its tests.
 
 ## Where the project stands
@@ -27,34 +27,34 @@ Done:
 
 Not started: the database schema, every app feature, and the website (`web/`).
 
-## Open decisions
+## Decisions
 
-These come from section 12 of the SRS. Each one blocks the tasks listed next to it. Where the SRS already recommends an answer, it is shown.
+These come from section 12 of the SRS, where each decision is written out in full. Most were decided on 2026-11-13. The ones still open block the tasks listed next to them.
 
-| No. | Decision | SRS recommendation | Needed before |
+| No. | Decision | Status | Affects |
 |---|---|---|---|
-| D1 | Which apartments can require explicit approval of expenses, and how that interacts with the 7-day objection window | None | 1.24 |
-| D2 | Whether a dispute freezes only the objector's share or every share it affects | None. Totals must stay consistent. | 1.12 |
-| D3 | Whether the payment objection window starts when the payment is recorded or when the recipient is notified | Record time, with reliable notification retries | 1.27 |
-| D4 | How objections raised after the deadline are resolved: admin mediation or mutual approval | Use an adjustment case, never change closed history | 1.23 |
-| D5 | Who can be owed money for an unpaid bill (flatmate, landlord, utility) and whether third-party bills can be settled outside the apartment | None | 1.12 |
-| D6 | Encryption and visibility of receiving-account details, and whether wallets need different fields from bank accounts | None | 1.26 |
-| D7 | One currency per apartment (likely PKR), or multi-currency | Start with one apartment currency | 1.6 |
-| D8 | What a member can see of apartment-wide expenses and of other members' payment history, including after they leave | None | 1.10 |
-| D9 | Month boundaries, changing the settlement day mid-cycle, and days 29 to 31 | Day 31 becomes the last day of a short month | 1.6 |
-| D10 | Open-source licence | MIT or Apache-2.0. The repository currently uses MIT. | 4.8 |
-| D11 | Final product name, after checking trademarks, store names and domains | "FlatMate" is provisional | 0.3 |
-| D12 | HeroUI Native version and compatibility with the Expo SDK | Verify on a device | 0.2 |
+| D1 | Explicit approval mode | Decided: not in the MVP, every expense is accepted automatically | 1.24 |
+| D2 | What a dispute holds | Decided: every share of the disputed expense | 1.12, 1.23 |
+| D3 | Start of the payment objection window | Decided: when the payment is recorded | 1.27 |
+| D4 | Objections after the deadline | Decided: adjustment case; the two members agree, an admin decides if they cannot | 1.23 |
+| D5 | Who can be owed | Decided: members only; a third-party bill becomes a debt to the member who pays it | 1.12 |
+| D6 | Receiving accounts | Decided in part: one table for bank and wallet accounts, private by default, masked until shared. **Open:** encryption beyond the platform's encryption at rest | 1.26 |
+| D7 | Currency | Decided: one per apartment, PKR by default, no conversion | 1.6 |
+| D8 | Member visibility | Decided: members see all expenses; a payment is visible to its payer, recipient and admins; former members see only their own records | 1.10 |
+| D9 | Settlement period | Decided: settlement day to the day before the next; days 29 to 31 fall on the last day of short months; a change applies from the next period | 1.6, 1.32 |
+| D10 | Open-source licence | **Open:** MIT or Apache-2.0; the repository currently uses MIT | 4.8 |
+| D11 | Product name | Decided in part: identifiers are `com.manaslatif.flatmate`. **Open:** trademark, store-name and domain checks | 4.6, 4.7 |
+| D12 | HeroUI Native and the Expo SDK | Decided: HeroUI Native 1.x runs on Expo SDK 58 (decision 0002) | 0.2 |
 
 ## Phase 0: Foundation
 
 - [x] **0.1 Repair `main`.** `npm ci` fails on `main` since `tailwind-variants` was bumped to version 4, because HeroUI Native requires version 3. Restore version 3, confirm lint still passes on ESLint 10 (which was bumped at the same time and has never run), and stop Dependabot from proposing the `tailwind-variants` major again. Done when CI on `main` is green.
-- [x] **0.2 Run the app on an Android device.** Confirm the home screen renders, light and dark themes follow the device, and the HeroUI Native components the app will rely on work: button, text field, dialog, bottom sheet and toast. Record the result in a decision record. *(D12. Owner: a device or emulator.)*
-- [ ] **0.3 App identifiers and development build.** Set the Android package name and iOS bundle identifier, create the EAS project and `eas.json`, and produce a development build. Push notifications need this, since they do not work in Expo Go on Android. *(Needs D11. Owner: Expo account.)*
+- [x] **0.2 Run the app on an Android device.** Confirm the home screen renders, light and dark themes follow the device, and the HeroUI Native components the app will rely on work: button, text field, dialog, bottom sheet and toast. Record the result in a decision record. *(Owner: a device or emulator.)*
+- [ ] **0.3 App identifiers and development build.** Set the Android package name and iOS bundle identifier, create the EAS project and `eas.json`, and produce a development build. Push notifications need this, since they do not work in Expo Go on Android. *(Owner: Expo account.)* Done: the identifiers (`com.manaslatif.flatmate`), `eas.json` and `expo-dev-client`. Remaining: `eas init`, the project ID in `app.config.ts`, and the first development build.
 - [x] **0.4 Initialize the backend.** Run `supabase init`, commit `config.toml`, confirm the local stack starts, add an empty `seed.sql`, and confirm the CI database job now runs.
 - [x] **0.5 Database tests and generated types.** Set up pgTAP with a first passing test. Add a script that generates TypeScript types from the schema into `app/src/types/`, and document both.
 - [x] **0.6 Hosted development project.** Create a Supabase project for development, link it, and document how migrations reach it. *(Owner: Supabase account.)* The project exists and the app's local `.env` points at it. Linking the CLI needs the owner's access token and moves to task 1.1.
-- [ ] **0.7 Settle the Phase 1 decisions.** Decide D1 to D9 in one sitting and update section 12 of the SRS, so Phase 1 is not interrupted task by task. *(Owner.)*
+- [x] **0.7 Settle the Phase 1 decisions.** Decide D1 to D9 in one sitting and update section 12 of the SRS, so Phase 1 is not interrupted task by task. *(Owner.)*
 
 ## Phase 1: Financial MVP
 
@@ -68,16 +68,16 @@ These come from section 12 of the SRS. Each one blocks the tasks listed next to 
 
 ### Apartments and members
 
-- [ ] **1.6 Apartments and membership.** `apartments` and `apartment_members` tables, membership and role helper functions for RLS, and a function that creates an apartment and makes the creator its admin. Tests prove one apartment's data is invisible from another. *(FR-02.1, FR-02.3, AC-01. Needs D7, D9.)*
+- [ ] **1.6 Apartments and membership.** `apartments` and `apartment_members` tables, membership and role helper functions for RLS, and a function that creates an apartment and makes the creator its admin. Tests prove one apartment's data is invisible from another. *(FR-02.1, FR-02.3, AC-01)*
 - [ ] **1.7 Join codes.** Hashed codes with expiry, rotation and revocation, and a rate-limited join function that fails safely on a bad code. *(FR-02.2)*
 - [ ] **1.8 My Apartments and New Apartment screens.** List of joined apartments, join by code, and the create form (name, optional location, settlement day, approval window, currency, timezone). *(SRS 3.1)*
 - [ ] **1.9 Apartment shell.** Top bar with the apartment switcher, members and notification entries, the bottom navigation in the order Profile, Add, Expenses, and an empty dashboard. *(SRS 3.2, AC-13)*
-- [ ] **1.10 Members and roles.** Member directory, promote and demote admins, the expense-creation permission, remove a member, leave an apartment, the rule that one admin must remain, and join and leave dates. *(FR-02.4, FR-02.5, FR-02.6, AC-11. Needs D8.)*
+- [ ] **1.10 Members and roles.** Member directory, promote and demote admins, the expense-creation permission, remove a member, leave an apartment, the rule that one admin must remain, and join and leave dates. *(FR-02.4, FR-02.5, FR-02.6, AC-11)*
 - [ ] **1.11 Apartment settings.** Admin screen for name, location visibility, settlement day, approval window, expense categories and invite codes. *(FR-08.1)*
 
 ### Ledger core
 
-- [ ] **1.12 Ledger model decision record.** Write down the entities, the ledger entry model, the exact rounding rule for leftover minor units, the status transitions, and how unpaid vendor bills are represented. No code. *(SRS 5.2, 5.3. Needs D2, D5.)*
+- [ ] **1.12 Ledger model decision record.** Write down the entities, the ledger entry model, the exact rounding rule for leftover minor units, the status transitions, and how unpaid vendor bills are represented. No code. *(SRS 5.2, 5.3)*
 - [ ] **1.13 Split arithmetic.** Equal, percentage and fixed splits with excluded members, as a TypeScript function for previews and as a database function that is the authority. Both run the same test cases, starting with the worked examples in SRS 5.1. *(FR-03.4, FR-06.6, AC-03)*
 - [ ] **1.14 Expense and ledger schema.** `expenses`, `expense_payers`, `expense_splits`, `ledger_entries` and `audit_events`, with constraints and RLS. *(SRS 6)*
 - [ ] **1.15 Posting an expense.** One transactional function that checks permission, validates that payers and splits add up, writes the expense, its ledger entries and an audit event, and marks it accepted by default. Supports several payers and unpaid portions. Tests include a restricted member calling the function directly. *(FR-03.1, FR-03.2, FR-03.3, FR-05.1, AC-02, AC-04)*
@@ -94,14 +94,14 @@ These come from section 12 of the SRS. Each one blocks the tasks listed next to 
 
 ### Disputes
 
-- [ ] **1.23 Dispute schema and functions.** Decline with a reason, request an adjustment with a proposed share, creator accepts or rejects, and the affected shares are held while uncontested amounts stay payable. Every step is recorded. *(FR-05.2, FR-05.3, FR-05.4, FR-05.7, AC-06. Needs D4.)*
-- [ ] **1.24 Objection window.** A scheduled, idempotent job that finalizes expenses when the window closes, in the apartment's timezone. Late objections open a new adjustment case. Includes the optional approval mode. *(FR-05.5, FR-05.6, FR-03.8, AC-06. Needs D1.)*
+- [ ] **1.23 Dispute schema and functions.** Decline with a reason, request an adjustment with a proposed share, creator accepts or rejects, and the affected shares are held while uncontested amounts stay payable. Every step is recorded. *(FR-05.2, FR-05.3, FR-05.4, FR-05.7, AC-06)*
+- [ ] **1.24 Objection window.** A scheduled, idempotent job that finalizes expenses when the window closes, in the apartment's timezone. Late objections open a new adjustment case. *(FR-05.5, FR-05.6, AC-06)*
 - [ ] **1.25 Dispute screens.** Decline and adjustment forms, dispute detail with its history, the creator's response, and dispute status on expense screens. *(FR-05.2, FR-05.3)*
 
 ### Payments
 
-- [ ] **1.26 Receiving accounts.** Accounts a user can be paid into, private by default and visible to flatmates only when shared, with copy to clipboard. *(FR-01.3, FR-01.4, AC-12. Needs D6.)*
-- [ ] **1.27 Recording a payment.** A function that records a payment with an idempotency key, supports partial amounts, allocates it to specific obligations, and applies a provisional credit. *(FR-07.1, FR-07.3, FR-07.4, FR-07.7, AC-07, AC-09. Needs D3.)*
+- [ ] **1.26 Receiving accounts.** Accounts a user can be paid into, private by default and visible to flatmates only when shared, with copy to clipboard. *(FR-01.3, FR-01.4, AC-12. Needs the open part of D6.)*
+- [ ] **1.27 Recording a payment.** A function that records a payment with an idempotency key, supports partial amounts, allocates it to specific obligations, and applies a provisional credit. *(FR-07.1, FR-07.3, FR-07.4, FR-07.7, AC-07, AC-09)*
 - [ ] **1.28 Payment objections and finalization.** The recipient can decline within the window, which marks the payment disputed and reverses the provisional credit while keeping the evidence. With no objection, a scheduled job finalizes it as confirmed by app policy. *(FR-07.5, FR-07.6, FR-07.8, AC-07, AC-08)*
 - [ ] **1.29 Net-off.** Offset reciprocal dues between two members, showing exactly which obligations are offset and never counting anything twice. *(FR-06.4, AC-09)*
 - [ ] **1.30 Pay flow screens.** Start from an expense or a member's ledger, choose gross or net and the amount, see the recipient's shared accounts, mark as paid with an optional reference and proof, and view the payment with its status. *(FR-07.1, FR-07.2, FR-07.3, FR-07.8)*
@@ -145,6 +145,10 @@ These come from section 12 of the SRS. Each one blocks the tasks listed next to 
 - [ ] **4.3 Production environment.** Production Supabase project, secrets, backups with a tested restore, and written deployment and rollback steps for migrations.
 - [ ] **4.4 Error reporting and monitoring.** Crashes and failures in scheduled jobs, financial functions and notification delivery are visible to maintainers.
 - [ ] **4.5 Quality pass.** Screen reader labels, font scaling and contrast, plus performance of the dashboard and add-expense flows on a mid-range Android phone.
-- [ ] **4.6 Android release.** Device testing, store listing, data safety form and submission to Google Play. *(Owner: Google Play developer account.)*
-- [ ] **4.7 iOS release.** Device testing, TestFlight and submission to the App Store. *(Owner: Apple developer account.)*
+- [ ] **4.6 Android release.** Device testing, store listing, data safety form and submission to Google Play. *(Needs the open part of D11. Owner: Google Play developer account.)*
+- [ ] **4.7 iOS release.** Device testing, TestFlight and submission to the App Store. *(Needs the open part of D11. Owner: Apple developer account.)*
 - [ ] **4.8 Open-source launch.** Confirm the licence, add the Code of Conduct contact, enable private vulnerability reporting, write the self-hosting guide, and tag the first release. *(Needs D10. Owner.)*
+
+## Deferred
+
+- **Optional approval mode** (FR-03.8). Not part of the MVP (decision D1). Reconsider after release.
