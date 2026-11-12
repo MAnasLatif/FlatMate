@@ -60,7 +60,7 @@ These come from section 12 of the SRS, where each decision is written out in ful
 
 ### Accounts
 
-- [ ] **1.1 Profiles.** `profiles` table created automatically at sign-up, with RLS and tests. Link the CLI to the hosted development project and push this first migration to it, as described in `supabase/README.md`. *(FR-01.2. Owner: access token for the link.)*
+- [ ] **1.1 Profiles.** `profiles` table created automatically at sign-up, with RLS and tests. Link the CLI to the hosted development project and push this first migration to it, as described in `supabase/README.md`. *(FR-01.2. Owner: access token for the link.)* Done locally: the migration, its tests and the generated types. Remaining: the push to the hosted project.
 - [ ] **1.2 Email sign-up and sign-in.** Sign-up, sign-in, sign-out, session persistence, and a session check at launch that routes signed-out users to the auth screens. *(FR-01.1)* Test it in the development build: Expo Go lacks the native module behind the encrypted session storage (`react-native-get-random-values`).
 - [ ] **1.3 Account recovery and email verification.** Password reset and email confirmation through deep links back into the app. *(FR-01.1)*
 - [ ] **1.4 Google sign-in.** *(FR-01.1. Owner: Google OAuth credentials.)*

@@ -2,7 +2,7 @@
 
 Everything that runs on Supabase: the database schema, security policies, database functions, Edge Functions, scheduled jobs, seed data and database tests.
 
-> **Status: initialized, no schema yet.** The local stack starts and the database tests run, but there are no migrations. The first tables arrive with the accounts tasks in [docs/TASKS.md](../docs/TASKS.md).
+> **Status: first schema in place.** The only table is `profiles`, created for each user at sign-up. The rest of the schema arrives with the tasks in [docs/TASKS.md](../docs/TASKS.md).
 
 ## Layout
 
@@ -37,6 +37,9 @@ The proposed data model is in [section 6 of the SRS](../docs/SRS.md#6-supabase-d
 - The service-role key is used only in server-side code and never appears in the repository, the app or the website.
 - Receipts and payment proofs go in private storage buckets and are served through signed URLs.
 - Regenerate the app's database types after every schema change.
+- Grant client roles only what they need: revoke the default table privileges from `anon` and `authenticated`, then grant specific operations and columns. Row-level policies decide which rows; grants decide which operations and columns.
+- Functions that run with elevated rights (`security definer`), trigger functions and other internal helpers go in the `private` schema. It is not exposed through the Data API and grants nothing to client roles. Set `search_path = ''` on every function and write fully qualified names.
+- Check a new migration with `npx supabase@3.1.0 db advisors` before committing it.
 
 ## Supabase CLI
 
