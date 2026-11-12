@@ -46,7 +46,7 @@ These come from section 12 of the SRS. Each one blocks the tasks listed next to 
 
 ## Phase 0: Foundation
 
-- [ ] **0.1 Repair `main`.** `npm ci` fails on `main` since `tailwind-variants` was bumped to version 4, because HeroUI Native requires version 3. Restore version 3, confirm lint still passes on ESLint 10 (which was bumped at the same time and has never run), and stop Dependabot from proposing the `tailwind-variants` major again. Done when CI on `main` is green.
+- [x] **0.1 Repair `main`.** `npm ci` fails on `main` since `tailwind-variants` was bumped to version 4, because HeroUI Native requires version 3. Restore version 3, confirm lint still passes on ESLint 10 (which was bumped at the same time and has never run), and stop Dependabot from proposing the `tailwind-variants` major again. Done when CI on `main` is green.
 - [ ] **0.2 Run the app on an Android device.** Confirm the home screen renders, light and dark themes follow the device, and the HeroUI Native components the app will rely on work: button, text field, dialog, bottom sheet and toast. Record the result in a decision record. *(D12. Owner: a device or emulator.)*
 - [ ] **0.3 App identifiers and development build.** Set the Android package name and iOS bundle identifier, create the EAS project and `eas.json`, and produce a development build. Push notifications need this, since they do not work in Expo Go on Android. *(Needs D11. Owner: Expo account.)*
 - [ ] **0.4 Initialize the backend.** Run `supabase init`, commit `config.toml`, confirm the local stack starts, add an empty `seed.sql`, and confirm the CI database job now runs.
