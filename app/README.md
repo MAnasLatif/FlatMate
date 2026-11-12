@@ -6,30 +6,53 @@ The FlatMate application for Android and iOS, built with Expo, React Native and 
 
 ## Run it
 
-You need Node.js (current LTS) and either the Expo Go app on a phone or an Android emulator / iOS simulator.
+You need Node.js (current LTS) and an Android phone or emulator (or an iOS device or simulator).
 
 ```sh
 cd app
 npm install
 cp .env.example .env    # then fill in the two values
-npm start
 ```
+
+There are two ways to open the app:
+
+- **Development build (the normal way).** A FlatMate build installed on the device that loads your code from the dev server. Build it once, as described below, then run `npm start` and open the app on the device. It runs every native module the app uses, including push notifications.
+- **Expo Go (quick checks only).** Run `npm run start:go` and scan the QR code with the Expo Go app. Expo Go does not contain every native module the app uses, so some features will fail in it, for example push notifications on Android and the encrypted session storage behind sign-in.
 
 The home screen runs without a `.env` file. The Supabase client reads the configuration the first time it is imported and stops with a clear error if a value is missing.
 
-Push notifications do not work in Expo Go on Android, so that feature will need a development build.
+### Development build
+
+Builds are made with [EAS](https://docs.expo.dev/build/introduction/), configured in `eas.json`. Cloud builds use the build minutes of the Expo account that owns the project.
+
+```sh
+npx eas-cli@latest login
+npx eas-cli@latest init          # once: creates the EAS project
+npx eas-cli@latest build -p android --profile development
+```
+
+`eas init` cannot edit `app.config.ts`, so it prints a project ID instead. Add it to `app.config.ts` as `extra.eas.projectId` and commit it. When the build finishes, install the APK from the link EAS prints. Rebuild only when native code changes: a new package with native code, a config plugin, or a change to `app.config.ts`.
+
+| Profile       | For                                               | Output            |
+| ------------- | ------------------------------------------------- | ----------------- |
+| `development` | Day-to-day work, loads code from the dev server   | Installable APK   |
+| `preview`     | Testing a standalone build without the dev server | Installable APK   |
+| `production`  | Store releases                                    | Play Store bundle |
+
+Cloud builds do not receive your local `.env`. Before a `preview` or `production` build, store the two `EXPO_PUBLIC_` values as EAS environment variables for that environment (`npx eas-cli@latest env:create`).
 
 ## Scripts
 
-| Command                                   | What it does                           |
-| ----------------------------------------- | -------------------------------------- |
-| `npm start`                               | Start the Expo dev server              |
-| `npm run android` / `npm run ios`         | Start and open on a device or emulator |
-| `npm run lint`                            | ESLint with Expo's rules               |
-| `npm run typecheck`                       | TypeScript, strict mode                |
-| `npm test`                                | Jest unit tests                        |
-| `npm run format` / `npm run format:check` | Prettier                               |
-| `npm run db:types`                        | Regenerate `src/types/database.ts`     |
+| Command                                   | What it does                                   |
+| ----------------------------------------- | ---------------------------------------------- |
+| `npm start`                               | Start the dev server for the development build |
+| `npm run start:go`                        | Start the dev server for Expo Go               |
+| `npm run android` / `npm run ios`         | Start and open on a device or emulator         |
+| `npm run lint`                            | ESLint with Expo's rules                       |
+| `npm run typecheck`                       | TypeScript, strict mode                        |
+| `npm test`                                | Jest unit tests                                |
+| `npm run format` / `npm run format:check` | Prettier                                       |
+| `npm run db:types`                        | Regenerate `src/types/database.ts`             |
 
 CI runs `lint`, `typecheck` and `test` on every pull request.
 
@@ -96,13 +119,14 @@ Folders that will be added when their first code is written:
 | `expo-clipboard`                                                                                                                                                                                      | Copying a flatmate's shared account details                               |
 | `expo-linking`, `expo-web-browser`                                                                                                                                                                    | Deep links and the Google sign-in flow                                    |
 | `expo-splash-screen`, `expo-status-bar`, `expo-system-ui`, `expo-constants`, `expo-font`                                                                                                              | App shell                                                                 |
+| `expo-dev-client`                                                                                                                                                                                     | The development build                                                     |
 
 `react-hook-form`, `expo-notifications`, `expo-image-picker`, `expo-clipboard` and `expo-web-browser` are installed for features in the first delivery phases and are not used by any screen yet.
 
 Development tools: TypeScript, ESLint with `eslint-config-expo`, Prettier, Jest with `jest-expo`, and React Native Testing Library.
 
-## Not decided yet
+## Identifiers
 
-`app.config.ts` has no Android package name or iOS bundle identifier. They are needed for the first development or store build, cannot be changed after release, and depend on the final product name (SRS section 12, item 11).
+The Android package name and the iOS bundle identifier are both `com.manaslatif.flatmate`. They cannot be changed once the app is published.
 
 The general engineering rules are in [AGENTS.md](../AGENTS.md).

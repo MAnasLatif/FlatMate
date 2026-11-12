@@ -9,7 +9,12 @@ const config: ExpoConfig = {
   // Follow the device's light or dark setting (SRS section 7).
   userInterfaceStyle: 'automatic',
   icon: './assets/images/icon.png',
+  // Store identifiers. They cannot be changed once the app is published.
+  ios: {
+    bundleIdentifier: 'com.manaslatif.flatmate',
+  },
   android: {
+    package: 'com.manaslatif.flatmate',
     adaptiveIcon: {
       foregroundImage: './assets/images/android-icon-foreground.png',
       backgroundImage: './assets/images/android-icon-background.png',
