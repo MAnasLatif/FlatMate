@@ -18,6 +18,8 @@ A few product facts shape almost every technical decision:
 
 The full requirements live in [docs/SRS.md](docs/SRS.md). Its section 12 lists product decisions that are still open. If your task depends on one of them, stop and ask instead of quietly choosing.
 
+The remaining work is listed in order in [docs/TASKS.md](docs/TASKS.md). When the user asks you to continue or to do the next task, take the first unticked one. Tick a task in the same change that completes it, and add a task there when you find work the list is missing.
+
 ## Repository map
 
 | Path | What it is |

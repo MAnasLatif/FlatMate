@@ -5,6 +5,7 @@ All project documentation lives in this folder.
 | Document | What it covers |
 |---|---|
 | [SRS.md](SRS.md) | Software Requirements Specification: what the product must do, the proposed data model, acceptance criteria, delivery phases and open decisions. |
+| [TASKS.md](TASKS.md) | The ordered list of remaining work, from the current state to release. |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | How the app, backend and website fit together, and where each responsibility lives. |
 | [decisions/](decisions/) | Architecture decision records: significant choices and the reasons behind them. |
 

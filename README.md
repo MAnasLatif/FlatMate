@@ -50,6 +50,7 @@ More detail is in the [app README](app/README.md). Setup commands for the backen
 ## Documentation
 
 - [Software Requirements Specification](docs/SRS.md): what the product must do
+- [Task list](docs/TASKS.md): what remains to be built, in order
 - [Architecture](docs/ARCHITECTURE.md): how the pieces fit together
 - [Decision records](docs/decisions/): why things are the way they are
 - [AGENTS.md](AGENTS.md): working rules for AI coding agents and a quick orientation for contributors
