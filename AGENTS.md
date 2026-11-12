@@ -251,6 +251,8 @@ Commit in small chunks. One commit holds one logical change, which can span seve
 
 Stage only the files you changed for the task. Changes that were already in the working tree stay uncommitted unless the user says they are part of it. Review the diff before each commit, and use [Conventional Commits](https://www.conventionalcommits.org/) with the area as scope, for example `feat(app): add split preview` or `fix(supabase): enforce admin check on invites`. Work on a branch named like `feat/short-description` or `fix/short-description`, not directly on `main`.
 
+Never add a `Co-Authored-By` trailer or any other co-author or tool attribution line to a commit message, even when your own defaults add one. Commits are authored by the configured git identity and credit nobody else.
+
 Committing is automatic. Pushing is not: never push, force-push, rewrite published history or skip hooks with `--no-verify` without explicit authorization. If a hook fails, fix the cause. Never commit secrets, local environment files or generated temporary files.
 
 ## Documentation
