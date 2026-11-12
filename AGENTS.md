@@ -101,6 +101,7 @@ Skills are packaged instructions for one technology or kind of task, written by 
 | Skill | Load it when |
 |---|---|
 | `vercel-composition-patterns` | Designing a reusable component's API, or refactoring a component that has grown too many boolean props. |
+| `archify` | The user asks for a diagram (architecture, workflow, sequence, data flow, state, ERD, class, tree, timeline) or for an answer as a one-page explainer. |
 | `find-skills` | No installed skill covers the task and you want to check whether one exists. |
 
 There is no Next.js skill, because Next.js now ships that guidance itself. Once `web/` is initialized, read the documentation bundled with the installed version in `web/node_modules/next/dist/docs/`.
@@ -114,6 +115,7 @@ Skills are general advice written for every project. Where a skill disagrees wit
 - **Server code:** the backend is Supabase. Do not add Expo API routes or server code inside `app/`, even though the Expo skills describe them.
 - **UI components:** use HeroUI Native. Do not bring in another component library because a skill recommends it.
 - **Install scripts:** do not pipe a remote script into a shell (`curl ... | bash`), even when a skill tells you to. Install the package with npm and follow its official documentation.
+- **Diagrams:** Archify writes standalone HTML into `.archify/`, which is not committed. Diagrams inside the Markdown documentation stay as Mermaid so they render on GitHub. Use `archify` when the user asks for it, not as a replacement for those.
 - **Scope:** a skill describing a best practice is not a request to apply it. Change only what the task needs.
 
 ### Installing and updating
@@ -131,10 +133,10 @@ Update every skill to its latest version with:
 npx skills update -p -y
 ```
 
-To add a skill, search with `find-skills`, then install it at project level, without the `-g` flag:
+To add a skill, search with `find-skills`, then install it at project level, without the `-g` flag. Always name the agents as shown: this puts the skill in `.agents/skills/` with a link for Claude Code. Without `--agent`, some sources create a folder for every agent the CLI knows about in the repository root.
 
 ```sh
-npx skills add <owner>/<repo> --skill <name> -y
+npx skills add <owner>/<repo> --skill <name> --agent claude-code codex -y
 ```
 
 A skill runs with your full permissions, so install only from the organization that maintains the technology, read the skill before using it, and ask the user before adding one. Commit the updated `skills-lock.json` and add a row to the tables above in the same change. A skill that is not listed here should not be installed.
