@@ -57,11 +57,93 @@ Every task is done in one of these roles. Pick the one that matches the work. A 
 
 **Docs maintainer** (`docs/`). Keeps the documentation true. Updates it in the same change that alters behavior, and records significant decisions.
 
+## Skills
+
+Skills are packaged instructions for one technology or kind of task, written by the teams that maintain that technology. They are more current than what you remember about a framework, so load the matching skill before you start work in its area, and load every skill that applies when a task spans several.
+
+### Which skill to use
+
+**Mobile app (`app/`)**
+
+| Skill | Load it when |
+|---|---|
+| `expo-overview` | Starting any Expo or EAS task. Load it first: it routes you to the other Expo skills. |
+| `expo-router` | Adding or changing routes, layouts, tabs, modals, headers or navigation. |
+| `expo-data-fetching` | Writing or debugging any network request, caching, offline handling, or a screen's loading, empty and error states. |
+| `expo-dev-client` | Building or distributing a development build, which is needed once a library does not run in Expo Go. |
+| `expo-upgrade` | Upgrading the Expo SDK or fixing dependency version conflicts. |
+| `eas-app-stores` | Configuring `eas.json`, signing, versions and build numbers, or submitting to Google Play or the App Store. |
+| `heroui-native` | Building any UI with HeroUI Native: components, theming, light and dark mode, or looking up a component's API. |
+| `vercel-react-native-skills` | Writing or reviewing React Native components, lists, animations or anything performance-sensitive. |
+| `react-native-testing` | Writing, reviewing or fixing component tests with React Native Testing Library. |
+
+**Backend (`supabase/`)**
+
+| Skill | Load it when |
+|---|---|
+| `supabase` | Doing anything with Supabase: Auth, Storage, Edge Functions, cron, the client library, the CLI, or local development. |
+| `supabase-postgres-best-practices` | Before writing or changing anything in the database: tables, column types, migrations, indexes, RLS policies, functions or queries. |
+
+**Website (`web/`)**
+
+| Skill | Load it when |
+|---|---|
+| `vercel-react-best-practices` | Writing, reviewing or refactoring React or Next.js code. |
+| `web-design-guidelines` | Reviewing a page's UI and UX against interface guidelines. |
+| `accessibility` | Building or auditing pages for WCAG compliance, keyboard navigation and screen readers. |
+| `seo` | Working on metadata, structured data, sitemaps or search visibility. |
+| `performance` | Reducing load time, bundle size or asset weight. |
+| `core-web-vitals` | Fixing LCP, INP or CLS, including layout shift. |
+| `web-quality-audit` | Running a full audit of the site before a launch or a release. |
+
+**Any project**
+
+| Skill | Load it when |
+|---|---|
+| `vercel-composition-patterns` | Designing a reusable component's API, or refactoring a component that has grown too many boolean props. |
+| `find-skills` | No installed skill covers the task and you want to check whether one exists. |
+
+There is no Next.js skill, because Next.js now ships that guidance itself. Once `web/` is initialized, read the documentation bundled with the installed version in `web/node_modules/next/dist/docs/`.
+
+### Project rules come first
+
+Skills are general advice written for every project. Where a skill disagrees with this file, the SRS or a folder's README, the project wins. The conflicts you are most likely to meet:
+
+- **Package manager:** use npm, whatever the skill's examples use.
+- **Folder layout:** follow [app/README.md](app/README.md), not a layout a skill suggests.
+- **Server code:** the backend is Supabase. Do not add Expo API routes or server code inside `app/`, even though the Expo skills describe them.
+- **UI components:** use HeroUI Native. Do not bring in another component library because a skill recommends it.
+- **Install scripts:** do not pipe a remote script into a shell (`curl ... | bash`), even when a skill tells you to. Install the package with npm and follow its official documentation.
+- **Scope:** a skill describing a best practice is not a request to apply it. Change only what the task needs.
+
+### Installing and updating
+
+Skills are managed with the [skills CLI](https://skills.sh/). The installed set is recorded in `skills-lock.json`, which is committed. The skill files themselves live in `.agents/skills/` and are not committed, so restore them after cloning. Use the first command for agents that read `.agents/skills/` directly, such as Codex, Gemini CLI and GitHub Copilot, and the second for Claude Code, which needs links in `.claude/skills/`:
+
+```sh
+npx skills experimental_install
+npx skills experimental_install -a claude-code
+```
+
+Update every skill to its latest version with:
+
+```sh
+npx skills update -p -y
+```
+
+To add a skill, search with `find-skills`, then install it at project level, without the `-g` flag:
+
+```sh
+npx skills add <owner>/<repo> --skill <name> -y
+```
+
+A skill runs with your full permissions, so install only from the organization that maintains the technology, read the skill before using it, and ask the user before adding one. Commit the updated `skills-lock.json` and add a row to the tables above in the same change. A skill that is not listed here should not be installed.
+
 ## How to work
 
 ### Before you write code
 
-Understand the whole task first. Read the README, [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), the SRS sections that cover the feature, and the README of the folder you will work in. Then read the code around your change: its conventions, its dependencies, how neighbouring features are structured. Run `git status` so you know what was already modified, and leave other people's uncommitted work alone.
+Understand the whole task first. Read the README, [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), the SRS sections that cover the feature, and the README of the folder you will work in. Load the [skills](#skills) that match the task. Then read the code around your change: its conventions, its dependencies, how neighbouring features are structured. Run `git status` so you know what was already modified, and leave other people's uncommitted work alone.
 
 For anything beyond a small change, write a plan and split it into steps you can verify one at a time. State the assumptions you are making. If a requirement is unclear or an SRS decision is still open, ask.
 
