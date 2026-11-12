@@ -41,7 +41,7 @@ The repository started as a scaffold. A folder without a `package.json` (or, for
 - **Website:** Next.js with TypeScript.
 - **Package manager:** npm, with the lockfile committed.
 
-Versions are whatever is installed, not whatever you remember. Before using a framework or library API, check the installed version in `package.json` and read the official documentation for that version. The app is on Expo SDK 58 with HeroUI Native 1.x. That pair installs cleanly and bundles for Android, but it has not been run on a device yet (SRS section 12, item 12), so confirm a component exists and works before building on it.
+Versions are whatever is installed, not whatever you remember. Before using a framework or library API, check the installed version in `package.json` and read the official documentation for that version. The app is on Expo SDK 58 with HeroUI Native 1.x, and runs on an Android device ([decision 0002](docs/decisions/0002-heroui-native-on-expo-sdk-58.md)). Individual HeroUI components have not been exercised on a device yet, so confirm a component exists and works before building on it.
 
 ## Roles
 

@@ -21,3 +21,4 @@ Records are not edited after they are accepted, apart from their status. To chan
 | No. | Decision | Status |
 |---|---|---|
 | [0001](0001-repository-structure.md) | Repository structure | Accepted |
+| [0002](0002-heroui-native-on-expo-sdk-58.md) | HeroUI Native 1.x on Expo SDK 58 | Accepted |
