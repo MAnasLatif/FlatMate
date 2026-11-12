@@ -2,20 +2,21 @@
 
 Everything that runs on Supabase: the database schema, security policies, database functions, Edge Functions, scheduled jobs, seed data and database tests.
 
-> **Status: not initialized.** `supabase init` has not been run yet. The layout below is the agreed target, not a description of existing files.
+> **Status: initialized, no schema yet.** The local stack starts and the database tests run, but there are no migrations. The first tables arrive with the accounts tasks in [docs/TASKS.md](../docs/TASKS.md).
 
-## Target layout
+## Layout
 
 ```
 supabase/
-├── config.toml         Local Supabase configuration, created by `supabase init`.
+├── config.toml         Local Supabase configuration.
 ├── migrations/         Versioned SQL migrations: tables, constraints, indexes,
 │                       RLS policies and Postgres functions.
 ├── functions/          Edge Functions, one folder per function.
-├── tests/              Database tests (pgTAP), mainly for RLS policies and
-│                       financial functions.
+├── tests/database/     pgTAP tests, mainly for RLS policies and financial functions.
 └── seed.sql            Development seed data. Never real user data.
 ```
+
+`migrations/` and `functions/` are created by the CLI with their first file.
 
 ## What lives here and why
 
@@ -37,16 +38,31 @@ The proposed data model is in [section 6 of the SRS](../docs/SRS.md#6-supabase-d
 - Receipts and payment proofs go in private storage buckets and are served through signed URLs.
 - Regenerate the app's database types after every schema change.
 
-## Common commands
+## Supabase CLI
 
-Run these from the repository root once the project is initialized. They need Docker and the [Supabase CLI](https://supabase.com/docs/guides/cli).
+The project uses **Supabase CLI 3.1.0**, the same version CI installs. You also need Docker running. The CLI can be used without installing it, through npx:
 
 ```sh
-supabase start                    # start the local stack
-supabase migration new <name>     # create a new migration file
-supabase db reset                 # rebuild the local database from migrations and seed
-supabase test db                  # run the database tests
-supabase gen types typescript --local   # print TypeScript types for the schema
+npx supabase@3.1.0 <command>
 ```
+
+Or install it with Homebrew (`brew install supabase/tap/supabase`) and check that `supabase --version` matches. When upgrading, change the version here, in `.github/workflows/ci.yml` and in the `db:types` script in `app/package.json` together.
+
+CLI 3 runs every command against the **local** stack unless you pass `--remote`, and asks for confirmation before changing a hosted project. Never pass `--yes` to a command that targets a hosted project unless you mean it.
+
+## Common commands
+
+Run these from the repository root.
+
+```sh
+npx supabase@3.1.0 start                   # start the local stack (first run downloads the images)
+npx supabase@3.1.0 status                  # print local URLs and keys
+npx supabase@3.1.0 migration new <name>    # create a new, timestamped migration file
+npx supabase@3.1.0 db reset                # rebuild the local database from migrations and seed.sql
+npx supabase@3.1.0 test db                 # run the pgTAP tests
+npx supabase@3.1.0 stop                    # stop the local stack
+```
+
+`supabase status` prints the local API URL and the publishable key. Put them in `app/.env` to point the app at the local stack.
 
 The general engineering rules are in [AGENTS.md](../AGENTS.md).
