@@ -1,0 +1,4 @@
+-- Development seed data, applied by `supabase db reset` after all migrations.
+--
+-- Only fictional data belongs here, never real people, accounts or
+-- transactions. Tests must not depend on it: each test creates its own data.
