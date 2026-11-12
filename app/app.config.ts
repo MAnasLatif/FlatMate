@@ -3,6 +3,8 @@ import type { ExpoConfig } from 'expo/config';
 const config: ExpoConfig = {
   name: 'FlatMate',
   slug: 'flatmate',
+  // The Expo account that owns the EAS project.
+  owner: 'm.anaslatif',
   version: '0.1.0',
   orientation: 'portrait',
   scheme: 'flatmate',
@@ -40,6 +42,11 @@ const config: ExpoConfig = {
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
+  },
+  extra: {
+    eas: {
+      projectId: '1bbde0d8-94b5-4446-8591-a0179d09d30d',
+    },
   },
 };
 
