@@ -6,6 +6,9 @@ const config: ExpoConfig = {
   // The Expo account that owns the EAS project.
   owner: 'm.anaslatif',
   version: '0.1.0',
+  // Mobile only. Without this, Expo also targets web because react-dom is
+  // installed, and the dev server offers a web build the app does not support.
+  platforms: ['ios', 'android'],
   orientation: 'portrait',
   scheme: 'flatmate',
   // Follow the device's light or dark setting (SRS section 7).
