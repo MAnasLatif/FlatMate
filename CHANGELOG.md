@@ -8,3 +8,5 @@ Notable changes to FlatMate are recorded here. The format follows [Keep a Change
 
 - Repository structure, contributor documentation, CI workflow, and issue and pull request templates.
 - Software Requirements Specification and architecture overview.
+- Mobile app foundation: Expo SDK 58 with Expo Router, HeroUI Native, the Supabase client with encrypted session storage, linting, type checks and unit tests.
+- App icon, Android adaptive icon and splash screen.
