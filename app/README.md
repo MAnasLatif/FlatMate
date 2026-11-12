@@ -23,15 +23,14 @@ The home screen runs without a `.env` file. The Supabase client reads the config
 
 ### Development build
 
-Builds are made with [EAS](https://docs.expo.dev/build/introduction/), configured in `eas.json`. Cloud builds use the build minutes of the Expo account that owns the project.
+Builds are made with [EAS](https://docs.expo.dev/build/introduction/), configured in `eas.json`. The EAS project is `@m.anaslatif/flatmate`, set as `owner` and `extra.eas.projectId` in `app.config.ts`. Cloud builds count against that account's build allowance, so building needs access to it. If you fork the project, remove those two fields and run `npx eas-cli@latest init` to create your own.
 
 ```sh
 npx eas-cli@latest login
-npx eas-cli@latest init          # once: creates the EAS project
 npx eas-cli@latest build -p android --profile development
 ```
 
-`eas init` cannot edit `app.config.ts`, so it prints a project ID instead. Add it to `app.config.ts` as `extra.eas.projectId` and commit it. When the build finishes, install the APK from the link EAS prints. Rebuild only when native code changes: a new package with native code, a config plugin, or a change to `app.config.ts`.
+When the build finishes, open the link EAS prints on the phone and install the APK. Rebuild only when native code changes: a new package with native code, a config plugin, or a change to `app.config.ts`. Android signing keys are generated and stored by EAS.
 
 | Profile       | For                                               | Output            |
 | ------------- | ------------------------------------------------- | ----------------- |
