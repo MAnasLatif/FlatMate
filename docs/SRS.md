@@ -1,8 +1,8 @@
 # FlatMate — Software Requirements Specification (SRS)
 
-**Version:** 1.0 (development baseline)  
-**Date:** 2026-11-12  
-**Status:** Draft for implementation; unresolved product decisions explicitly identified  
+**Version:** 1.1  
+**Date:** 2026-11-13  
+**Status:** Baseline for implementation. Product decisions are recorded in section 12; the few still open are marked there.  
 **Product:** Open-source shared-flat expense management application  
 **Platforms:** Android first, iOS supported from the same codebase  
 **Stack:** Expo, React Native, TypeScript, HeroUI Native, Expo Router, Supabase (Auth, PostgreSQL, Storage, Edge Functions), Expo Notifications
@@ -95,7 +95,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-03.5 Preview payer contributions, individual shares, and resulting pairwise balances before save.
 - FR-03.6 Expense details display receipt, split, payer(s), payment state, due date, status, audit trail, and actions according to role.
 - FR-03.7 Edits to financially posted expenses must be versioned; settled historical records are corrected with explicit adjustment/reversal, not silent overwrite.
-- FR-03.8 Optional apartment-level approval requirement can be configured for specific scenarios; otherwise expenses are auto-accepted on save.
+- FR-03.8 Optional apartment-level approval requirement can be configured for specific scenarios; otherwise expenses are auto-accepted on save. *Deferred beyond the MVP (section 12, item 1).*
 
 ### FR-04 Recurring Expenses
 - FR-04.1 Admin-only recurring template management; multiple admins may act.
@@ -109,7 +109,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-05.1 **Default: auto-accepted immediately**, visible in balances and to all affected members. No mandatory Accept click.
 - FR-05.2 Affected member can `Decline` with mandatory reason, or `Request Adjustment` with proposed share and explanation.
 - FR-05.3 Notify expense creator. Creator may accept a proposed change (recalculate and record adjustment) or reject it (create unresolved settlement case).
-- FR-05.4 Only the disputed portion should be held from final settlement where mathematically feasible; when split redistribution affects all shares, hold the impacted allocation set. Uncontested obligations remain payable.
+- FR-05.4 Only the disputed portion should be held from final settlement where mathematically feasible; when split redistribution affects all shares, hold the impacted allocation set. Uncontested obligations remain payable. *Decided: a dispute holds every share of the disputed expense (section 12, item 2).*
 - FR-05.5 Configurable dispute/approval window, default **7 days**. If no objection, the provisional acceptance becomes final at the end of the window. An objection filed within the window pauses finalization for affected shares.
 - FR-05.6 Late objections after finalization may create a new adjustment case, not mutate a closed historical settlement.
 - FR-05.7 Every dispute includes initiator, reason, proposed value, evidence, state, responses, timestamps, and resolution history.
@@ -290,20 +290,22 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 **Phase 4 — Release:** Android QA/store publication, iOS QA/store publication, privacy policy, store disclosures, documentation and open-source contribution workflow.
 
-## 12. Decisions Requiring Confirmation Before Coding
+## 12. Product Decisions
 
-1. **Default vs optional approval:** Expenses are auto-accepted; a configurable explicit-approval policy was also suggested. Define precisely which apartment modes support it and how its 7-day timer interacts with objections.
-2. **Dispute effect:** Decide whether only the objecting member's share or all mathematically impacted shares are frozen; the system must not settle inconsistent totals.
-3. **Payment objection deadline:** Seven days is the agreed default. Define whether the window begins at payment record time or recipient notification delivery; recommend record time with reliable notification retries.
-4. **Post-deadline challenges:** Use adjustment case rather than retroactive mutation; specify admin mediation vs mutual approval.
-5. **Payable vendor bills:** Specify recipient type (roommate, landlord, utility provider) and whether third-party bills can be settled externally without an apartment member as creditor.
-6. **Bank account data:** Decide encryption/visibility policy and whether wallet-specific fields differ from bank accounts.
-7. **Currency:** Start with apartment currency (likely PKR), but specify whether multi-currency apartments and conversion are prohibited or supported.
-8. **Member privacy:** Define visibility of apartment-wide expense details versus pairwise private payment history.
-9. **Settlement period:** Define month boundaries, changes to settlement date mid-cycle, and handling of 29th–31st.
-10. **Open-source license:** Choose a license (e.g. MIT or Apache-2.0) after evaluating contributor and branding expectations; repository name is not guaranteed available.
-11. **Product name:** FlatMate is selected provisionally; verify trademark, app-store names and domains before publication.
-12. **HeroUI Native version:** Verify current official package/version, compatibility with chosen Expo SDK, and actual available components before locking dependencies.
+Items 1–9 and 12 were decided on 2026-11-13. Items 10 and 11 are still open, and part of item 6.
+
+1. **Explicit approval mode — decided.** Not part of the MVP. Every expense is accepted automatically, and affected members object within the window (FR-05). An optional approval mode (FR-03.8) may be reconsidered after release.
+2. **What a dispute holds — decided.** A dispute holds every share of the disputed expense until it is resolved, so settlement never sees inconsistent totals. Other expenses stay payable.
+3. **Payment objection window — decided.** The 7-day window starts when the payment is recorded, with reliable notification retries.
+4. **Objections after the deadline — decided.** They open an adjustment case and never change closed history. The two members involved agree on the adjustment; if they cannot, an admin of the apartment decides.
+5. **Who can be owed — decided.** Only apartment members can be creditors. A bill owed to a third party, such as a landlord or utility, becomes a debt to the member who pays it. Until a member pays it, it has no creditor and creates no reimbursement.
+6. **Receiving accounts — decided in part.** One table holds bank and wallet accounts. Accounts are private by default and visible to other members only when the owner shares them, and account numbers are shown masked until shared. *Still open:* whether account numbers need encryption beyond the platform's encryption at rest. Decide before task 1.26.
+7. **Currency — decided.** One currency per apartment, PKR by default. No multi-currency apartments and no conversion.
+8. **Member visibility — decided.** Every current member sees all of the apartment's expenses. A payment is visible to its payer, its recipient and the apartment's admins. A former member sees only the records they were part of.
+9. **Settlement period — decided.** A period runs from the settlement day to the day before the next settlement day. A settlement day of 29, 30 or 31 falls on the last day of shorter months. A change to the settlement day takes effect from the next period.
+10. **Open-source license — open.** The repository currently uses MIT; MIT or Apache-2.0 remain the options. Decide before the open-source launch.
+11. **Product name — open in part.** The store identifiers are `com.manaslatif.flatmate` on Android and iOS. Trademark, store-name and domain checks for "FlatMate" are still to be done before publication.
+12. **HeroUI Native version — decided.** HeroUI Native 1.x runs on Expo SDK 58. See decision record 0002 in `docs/decisions/`.
 
 
 ## 13. Suggested First Implementation Tasks
@@ -320,4 +322,4 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ---
 
-**Document control:** Requirements reflect the product discussion as of 2026-11-12. Sections marked proposed or requiring confirmation are not settled technical contracts. Keep schema changes in versioned migrations and update this SRS when decisions change.
+**Document control:** Requirements reflect the product discussion as of 2026-11-12, with the decisions in section 12 recorded on 2026-11-13. Sections marked proposed or requiring confirmation are not settled technical contracts. Keep schema changes in versioned migrations and update this SRS when decisions change.

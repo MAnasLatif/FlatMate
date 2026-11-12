@@ -1,6 +1,6 @@
 # Architecture
 
-This is an overview of how FlatMate is put together. It describes the intended design at the start of development. The data model and several product rules are still proposals (see [SRS section 12](SRS.md#12-decisions-requiring-confirmation-before-coding)), so update this document as they are settled and built.
+This is an overview of how FlatMate is put together. It describes the intended design at the start of development. The data model is still a proposal, and the product decisions it depends on are recorded in [SRS section 12](SRS.md#12-product-decisions). Update this document as the model is built.
 
 ## System overview
 
