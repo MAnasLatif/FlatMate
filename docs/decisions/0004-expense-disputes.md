@@ -11,7 +11,7 @@ Expenses are accepted by default, and an affected member can object (SRS FR-05).
 
 **Who and what.** Anyone in the expense's current split, except the person who added it, can raise a dispute: a *decline* (their share should be zero) or an *adjustment* (their share should be a stated amount). A reason is always required. Only one dispute per expense is open at a time, so each answer starts from the split everyone saw. Other expenses can be disputed at the same time.
 
-**Inside the window.** A dispute raised before the objection window closes holds the whole expense: its status becomes `disputed`, every entry it created is reported as disputed and none of it is payable. The window is paused, and the time left is stored on the dispute.
+**Inside the window.** Objection windows close at midnight in the apartment's timezone, after the last full day, and a scheduled job makes expenses final within minutes of that. A dispute raised before the window closes holds the whole expense: its status becomes `disputed`, every entry it created is reported as disputed and none of it is payable. The window is paused, and the time left is stored on the dispute.
 
 **After the deadline.** An objection to a final expense, or one raised after its window closed, is a late adjustment case. It holds nothing: the expense stays final and its figures do not move. Edits, voiding and recording a bill payment are refused while any dispute on the expense is open, late or not.
 

@@ -95,7 +95,7 @@ These come from section 12 of the SRS, where each decision is written out in ful
 ### Disputes
 
 - [x] **1.23 Dispute schema and functions.** Decline with a reason, request an adjustment with a proposed share, creator accepts or rejects, and the affected shares are held while uncontested amounts stay payable. Every step is recorded. *(FR-05.2, FR-05.3, FR-05.4, FR-05.7, AC-06)* See [decision 0004](decisions/0004-expense-disputes.md).
-- [ ] **1.24 Objection window.** A scheduled, idempotent job that finalizes expenses when the window closes, in the apartment's timezone. Late objections open a new adjustment case. *(FR-05.5, FR-05.6, AC-06)*
+- [x] **1.24 Objection window.** A scheduled, idempotent job that finalizes expenses when the window closes, in the apartment's timezone. Late objections open a new adjustment case. *(FR-05.5, FR-05.6, AC-06)*
 - [ ] **1.25 Dispute screens.** Decline and adjustment forms, dispute detail with its history, the creator's response, the admin's decision, and dispute status on expense screens. Includes evidence files on a dispute, stored privately like receipts. *(FR-05.2, FR-05.3, FR-05.7)*
 
 ### Payments
