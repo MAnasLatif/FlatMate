@@ -1,4 +1,4 @@
-import { storageStatusOf, userErrorMessage } from './errors';
+import { isRetryableError, storageStatusOf, userErrorMessage } from './errors';
 
 describe('userErrorMessage', () => {
   it('reports a failed request as a connection problem', () => {
@@ -50,5 +50,34 @@ describe('storageStatusOf', () => {
   it('returns nothing for errors without a status', () => {
     expect(storageStatusOf(new Error('boom'))).toBeUndefined();
     expect(storageStatusOf(null)).toBeUndefined();
+  });
+});
+
+describe('isRetryableError', () => {
+  it('retries a failed connection', () => {
+    expect(isRetryableError({ message: 'TypeError: Network request failed', code: '' })).toBe(true);
+  });
+
+  it('does not retry an answer the server will give again', () => {
+    expect(isRetryableError({ message: 'not_admin', code: 'P0001' })).toBe(false);
+    expect(isRetryableError({ message: 'permission denied', code: '42501' })).toBe(false);
+    expect(isRetryableError({ message: 'not found', code: 'PGRST116' })).toBe(false);
+  });
+
+  it('retries database errors that can pass on a second try', () => {
+    expect(isRetryableError({ message: 'deadlock detected', code: '40P01' })).toBe(true);
+    expect(isRetryableError({ message: 'canceling statement', code: '57014' })).toBe(true);
+    expect(isRetryableError({ message: 'could not connect', code: 'PGRST000' })).toBe(true);
+  });
+
+  it('retries storage only for timeouts, rate limits and server errors', () => {
+    expect(isRetryableError({ status: 403 })).toBe(false);
+    expect(isRetryableError({ status: 400, statusCode: '413' })).toBe(false);
+    expect(isRetryableError({ status: 429 })).toBe(true);
+    expect(isRetryableError({ status: 503 })).toBe(true);
+  });
+
+  it('retries failures it knows nothing about', () => {
+    expect(isRetryableError(new Error('boom'))).toBe(true);
   });
 });

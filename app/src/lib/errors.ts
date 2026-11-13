@@ -35,9 +35,40 @@ function stringField(error: unknown, field: 'message' | 'code'): string | undefi
   return undefined;
 }
 
-function isNetworkError(error: unknown): boolean {
+export function isNetworkError(error: unknown): boolean {
   const message = stringField(error, 'message');
   return message !== undefined && /network request failed|failed to fetch/i.test(message);
+}
+
+/**
+ * Error codes that can succeed on a second try: serialization failure,
+ * deadlock and statement timeout from Postgres, and PostgREST's errors for
+ * reaching the database. Every other code is the server's final answer.
+ */
+const TRANSIENT_CODES = new Set([
+  '40001',
+  '40P01',
+  '57014',
+  'PGRST000',
+  'PGRST001',
+  'PGRST002',
+  'PGRST003',
+]);
+
+/**
+ * Whether trying the same request again could give a different answer. A
+ * permission or validation error will not, so retrying it only delays the
+ * message the user needs to see.
+ */
+export function isRetryableError(error: unknown): boolean {
+  if (isNetworkError(error)) return true;
+  const code = stringField(error, 'code');
+  if (code) return TRANSIENT_CODES.has(code);
+  const status = storageStatusOf(error);
+  if (status !== undefined && status >= 400 && status < 500) {
+    return status === 408 || status === 429;
+  }
+  return true;
 }
 
 /**
