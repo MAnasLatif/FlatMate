@@ -38,7 +38,7 @@ These come from section 12 of the SRS, where each decision is written out in ful
 | D3 | Start of the payment objection window | Decided: when the payment is recorded | 1.27 |
 | D4 | Objections after the deadline | Decided: adjustment case; the two members agree, an admin decides if they cannot | 1.23 |
 | D5 | Who can be owed | Decided: members only; a third-party bill becomes a debt to the member who pays it | 1.12 |
-| D6 | Receiving accounts | Decided in part: one table for bank and wallet accounts, private by default, masked until shared. **Open:** encryption beyond the platform's encryption at rest | 1.26 |
+| D6 | Receiving accounts | Decided: one table for bank and wallet accounts, private by default, shared per apartment, masked until revealed; no encryption beyond the platform's at-rest encryption for the MVP | 1.26 |
 | D7 | Currency | Decided: one per apartment, PKR by default, no conversion | 1.6 |
 | D8 | Member visibility | Decided: members see all expenses; a payment is visible to its payer, recipient and admins; former members see only their own records | 1.10 |
 | D9 | Settlement period | Decided: settlement day to the day before the next; days 29 to 31 fall on the last day of short months; a change applies from the next period | 1.6, 1.32 |
@@ -100,7 +100,7 @@ These come from section 12 of the SRS, where each decision is written out in ful
 
 ### Payments
 
-- [ ] **1.26 Receiving accounts.** Accounts a user can be paid into, private by default and visible to flatmates only when shared, with copy to clipboard. *(FR-01.3, FR-01.4, AC-12. Needs the open part of D6.)* Also show the recipient's shared accounts on the pay screen (1.30).
+- [ ] **1.26 Receiving accounts.** Accounts a user can be paid into, private by default and visible to flatmates only when shared, with copy to clipboard. *(FR-01.3, FR-01.4, AC-12)* Also show the recipient's shared accounts on the pay screen (1.30).
 - [x] **1.27 Recording a payment.** A function that records a payment with an idempotency key, supports partial amounts, allocates it to specific obligations, and applies a provisional credit. *(FR-07.1, FR-07.3, FR-07.4, FR-07.7, AC-07, AC-09)* Allocation is derived oldest first, as decision 0003 requires; a payment's proof photo comes with the pay flow (1.30).
 - [x] **1.28 Payment objections and finalization.** The recipient can decline within the window, which marks the payment disputed and reverses the provisional credit while keeping the evidence. With no objection, a scheduled job finalizes it as confirmed by app policy. *(FR-07.5, FR-07.6, FR-07.8, AC-07, AC-08)* See [decision 0005](decisions/0005-payment-objections.md).
 - [x] **1.29 Net-off.** Offset reciprocal dues between two members, showing exactly which obligations are offset and never counting anything twice. *(FR-06.4, AC-09)* The database side; choosing net-off in the app is part of the pay flow (1.30).
