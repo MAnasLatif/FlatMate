@@ -675,6 +675,36 @@ export type Database = {
         }[];
       };
       get_my_monthly_share: { Args: { p_apartment_id: string; p_month: string }; Returns: number };
+      get_my_pair_balances: {
+        Args: { p_apartment_id: string };
+        Returns: {
+          counterparty_id: string;
+          owe_disputed_minor: number;
+          owe_final_minor: number;
+          owe_provisional_minor: number;
+          owed_disputed_minor: number;
+          owed_final_minor: number;
+          owed_provisional_minor: number;
+        }[];
+      };
+      get_my_pair_expenses: {
+        Args: {
+          p_apartment_id: string;
+          p_counterparty_id: string;
+          p_limit?: number;
+          p_offset?: number;
+        };
+        Returns: {
+          currency: string;
+          expense_date: string;
+          expense_id: string;
+          owe_minor: number;
+          owed_minor: number;
+          paid_status: string;
+          status: string;
+          title: string;
+        }[];
+      };
       join_apartment: { Args: { p_code: string }; Returns: Json };
       leave_apartment: { Args: { p_apartment_id: string }; Returns: undefined };
       post_expense: {
