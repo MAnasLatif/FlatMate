@@ -241,6 +241,8 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 | Reliability | Transactional financial updates, idempotent jobs, retries without duplicates, backup/restore plan |
 | Accuracy | Exact minor-unit arithmetic, deterministic split rounding, conservation of allocations and ledger entries |
 | Performance | Paginated expense feeds; indexed apartment/member/date lookups; responsive mobile navigation |
+| Offline reading | Data the user has already loaded stays readable without a connection, marked with when it was last updated; the saved copy is encrypted and removed at sign-out; recording or changing anything needs a connection (offline drafts: FR-10.7) |
+| Freshness | While online, changes made by other members or by scheduled jobs appear on open screens within seconds, without a manual refresh |
 | Accessibility | Screen-reader labels, dynamic font sizes where feasible, sufficient contrast |
 | Cross-platform | Android initial launch; iOS-ready implementation and device testing |
 | Open source | README, LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.md, .env.example, migration/seed scripts, test instructions |

@@ -2,7 +2,7 @@
 
 Everything that remains to take FlatMate from its current state to a released app, in the order it should be done. It is derived from the [SRS](SRS.md): every functional requirement (FR) and acceptance criterion (AC) is covered by a task below.
 
-Last reviewed: 2026-11-12.
+Last reviewed: 2026-11-14.
 
 ## How to use this list
 
@@ -25,7 +25,7 @@ Done:
 
 - [x] Backend initialized: Supabase CLI 3.1.0 local stack, a pgTAP test that every public table has row-level security, and generated database types in the app.
 
-Not started: the database schema, every app feature, and the website (`web/`).
+Phase 1 is built up to member exit (1.34). Next: offline reading and live sync (1.35 to 1.40), then notifications and the MVP acceptance pass. The website (`web/`) is not started.
 
 ## Decisions
 
@@ -113,10 +113,21 @@ These come from section 12 of the SRS, where each decision is written out in ful
 - [x] **1.33 Settlement screens.** Overview, preview, payment allocation, history and carried-forward balances. *(FR-08.3, FR-08.4)*
 - [x] **1.34 Member exit.** When a member leaves or is removed, show their final balance and an exit settlement, and keep their history auditable. *(FR-02.4, AC-11)*
 
+### Offline reading and live sync
+
+These follow [decision 0007](decisions/0007-offline-reading-and-live-sync.md). The server stays the only authority: the phone keeps an encrypted copy of what it has already loaded, and Realtime tells it when to refresh.
+
+- [ ] **1.35 Network and app lifecycle.** Feed React Query's `onlineManager` from `@react-native-community/netinfo` and its `focusManager` from `AppState`, so queries pause offline and refetch on reconnect and when the app returns to the foreground. Set the query client defaults: no retries for errors that will not change (permission and validation errors), and mutations that never wait in a queue while offline. Add a `useIsOnline` hook and an offline banner that shows when the data was last updated. Needs a new development build. *(SRS section 8: offline reading)*
+- [ ] **1.36 Saved cache.** Save the query cache with `@tanstack/react-query-persist-client` to `expo-sqlite/kv-store`, encrypted like the session (key in SecureStore). Store it per user, delete it on sign-out, discard it when its version tag changes, keep it up to 7 days with `gcTime` to match, and leave out failed queries and signed image links. Restore it behind the splash screen before the first signed-in screen renders. Tests: encryption round trip, a second user never sees the first user's data, sign-out deletes it, excluded queries are not saved. *(SRS section 8: offline reading)*
+- [ ] **1.37 Offline states on every screen.** Every screen that loads data shows its saved data with the offline banner when there is no connection, an offline state (not an error) when it was never loaded, and keeps its content when a refresh fails. Every action that writes is disabled offline with a reason. Private photos show "Available when online". Covers the apartment list, dashboard, expense detail and edit, pair ledger, payments, disputes, settlement, members, settings, profile and receiving accounts, with tests per feature. *(SRS section 7, section 8)*
+- [ ] **1.38 Change broadcasts.** Migration: an `AFTER INSERT` trigger on `audit_events` calls a `private` function that sends `{ "kind": entity_type }` with `realtime.send` to the private topic `apartment:<id>`, inside its own exception block so a failed send never rolls back the write. An RLS policy on `realtime.messages` lets only active members receive their apartment's topic. pgTAP tests: a financial write succeeds when the send fails, a non-member and a former member cannot receive the topic, the payload has no ids or amounts. Turn off "Allow public access" in the Realtime settings of the hosted project and document it in `supabase/README.md`. *(SRS section 8: freshness)*
+- [ ] **1.39 Live sync in the app.** A hook that joins the open apartment's private channel (after `supabase.realtime.setAuth()`), invalidates the matching queries for each kind of change, catches up by invalidating the apartment's queries whenever the channel (re)subscribes or the app returns to the foreground, and leaves the channel when the screen closes, the user signs out or the membership ends. Tests with a mocked channel. *(SRS section 8: freshness)*
+- [ ] **1.40 Sync check on a device.** With two accounts on two devices: a change on one appears on the other within seconds; a cron finalization appears without a refresh; in airplane mode the app opens with saved data and the banner; reconnecting refreshes it; signing out deletes the saved cache; a removed member stops receiving updates. Record the results in the pull request. *(Owner: two devices or a device and an emulator.)*
+
 ### Notifications and sign-off
 
-- [ ] **1.35 Notification foundation.** `notifications` table, in-app inbox, push token registration, and push delivery for expenses, payments, disputes and membership changes. Opening a notification goes to the record and rechecks permission. *(FR-09.1, FR-09.3)*
-- [ ] **1.36 MVP acceptance pass.** Walk through AC-01 to AC-13 on an Android device, review every RLS policy, and check loading, empty, error and offline states on every screen. Fix what fails.
+- [ ] **1.41 Notification foundation.** `notifications` table, in-app inbox, push token registration, and push delivery for expenses, payments, disputes and membership changes. Opening a notification goes to the record and rechecks permission. *(FR-09.1, FR-09.3)*
+- [ ] **1.42 MVP acceptance pass.** Walk through AC-01 to AC-13 on an Android device, review every RLS policy and the Realtime topic policy, and check loading, empty, error and offline states on every screen. Fix what fails.
 
 ## Phase 2: Automation and reporting
 
@@ -135,14 +146,14 @@ These come from section 12 of the SRS, where each decision is written out in ful
 - [ ] **3.1 Security deposits.** Track deposits, refunds and exit adjustments. *(FR-10.4)*
 - [ ] **3.2 Shared inventory.** Items, ownership and maintenance costs. *(FR-10.5)*
 - [ ] **3.3 Rooms and occupancy.** Room-based allocations and splits driven by who lived where and when. *(FR-10.6)*
-- [ ] **3.4 Offline drafts.** Save expense drafts offline, review them on reconnect, and submit without duplicates. *(FR-10.7)*
+- [ ] **3.4 Offline drafts.** Save expense drafts offline, review them on reconnect, and submit without duplicates. *(FR-10.7)* Builds on the saved cache and network detection from 1.35 and 1.36; drafts are kept apart from the cache and are never treated as saved records.
 - [ ] **3.5 Debt simplification.** Suggest fewer transfers across the group. The user applies a suggestion explicitly, and the underlying ledger is preserved. *(FR-06.5)*
 
 ## Phase 4: Release
 
 - [ ] **4.1 Marketing website.** Initialize the Next.js project in `web/` and build the landing page with store links.
 - [ ] **4.2 Privacy policy and terms.** Publish both on the website. The stores require a privacy policy link. *(Owner: the content must be approved by the owner.)*
-- [ ] **4.3 Production environment.** Production Supabase project, secrets, backups with a tested restore, and written deployment and rollback steps for migrations.
+- [ ] **4.3 Production environment.** Production Supabase project, secrets, backups with a tested restore, and written deployment and rollback steps for migrations. Turn off public Realtime access and check the plan's Realtime connection and message limits against expected usage (decision 0007).
 - [ ] **4.4 Error reporting and monitoring.** Crashes and failures in scheduled jobs, financial functions and notification delivery are visible to maintainers.
 - [ ] **4.5 Quality pass.** Screen reader labels, font scaling and contrast, plus performance of the dashboard and add-expense flows on a mid-range Android phone.
 - [ ] **4.6 Android release.** Device testing, store listing, data safety form and submission to Google Play. *(Needs the open part of D11. Owner: Google Play developer account.)*
