@@ -70,6 +70,10 @@ describe('isRetryableError', () => {
     expect(isRetryableError({ message: 'could not connect', code: 'PGRST000' })).toBe(true);
   });
 
+  it('retries an expired token, which the client refreshes before the next request', () => {
+    expect(isRetryableError({ message: 'JWT expired', code: 'PGRST303' })).toBe(true);
+  });
+
   it('retries storage only for timeouts, rate limits and server errors', () => {
     expect(isRetryableError({ status: 403 })).toBe(false);
     expect(isRetryableError({ status: 400, statusCode: '413' })).toBe(false);

@@ -42,8 +42,12 @@ export function isNetworkError(error: unknown): boolean {
 
 /**
  * Error codes that can succeed on a second try: serialization failure,
- * deadlock and statement timeout from Postgres, and PostgREST's errors for
- * reaching the database. Every other code is the server's final answer.
+ * deadlock and statement timeout from Postgres; PostgREST's errors for
+ * reaching the database (PGRST000 to PGRST003); and PGRST303, a token that
+ * failed validation, usually because it expired while the app was in the
+ * background. supabase-js refreshes the session before the next request, so
+ * a retry goes out with a valid token. Every other code is the server's final
+ * answer.
  */
 const TRANSIENT_CODES = new Set([
   '40001',
@@ -53,6 +57,7 @@ const TRANSIENT_CODES = new Set([
   'PGRST001',
   'PGRST002',
   'PGRST003',
+  'PGRST303',
 ]);
 
 /**

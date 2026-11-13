@@ -22,7 +22,7 @@ describe('connectQueryClientToDevice', () => {
   let appStateListener: ((status: AppStateStatus) => void) | undefined;
 
   beforeEach(() => {
-    jest.mocked(NetInfo.addEventListener).mockImplementation((listener) => {
+    jest.mocked(NetInfo.addEventListener).mockImplementationOnce((listener) => {
       netInfoListener = listener;
       return () => undefined;
     });
