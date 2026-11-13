@@ -7,6 +7,7 @@ export default function ApartmentLayout() {
       <Stack.Screen name="members" options={{ title: 'Members' }} />
       <Stack.Screen name="ledger/[memberId]" options={{ title: 'Balance' }} />
       <Stack.Screen name="settlement/index" options={{ title: 'Settlement' }} />
+      <Stack.Screen name="leave" options={{ title: 'Leave apartment', presentation: 'modal' }} />
       <Stack.Screen name="settlement/[memberId]" options={{ title: 'Settle up' }} />
       <Stack.Screen name="settings" options={{ title: 'Apartment settings' }} />
       <Stack.Screen name="expenses/new" options={{ title: 'Add expense', presentation: 'modal' }} />

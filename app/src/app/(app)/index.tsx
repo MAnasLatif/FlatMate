@@ -10,6 +10,7 @@ import { useMyApartments } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { ProfileAvatar } from '@/features/profile/components/profile-avatar';
 import { useProfile } from '@/features/profile/hooks';
+import { PastApartments } from '@/features/settlement/components/past-apartments';
 import { userErrorMessage } from '@/lib/errors';
 
 export default function MyApartmentsScreen() {
@@ -58,6 +59,8 @@ export default function MyApartmentsScreen() {
           Create or join another apartment
         </Button>
       ) : null}
+
+      <PastApartments />
     </Screen>
   );
 }

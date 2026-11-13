@@ -21,7 +21,6 @@ import { APARTMENT_ERROR_MESSAGES } from '@/features/apartments/errors';
 import {
   useApartment,
   useApartmentId,
-  useLeaveApartment,
   useMemberActions,
   useMembers,
 } from '@/features/apartments/hooks';
@@ -44,7 +43,6 @@ export default function MembersScreen() {
   const apartment = useApartment(apartmentId);
   const balances = usePairBalances(apartmentId);
   const actions = useMemberActions(apartmentId);
-  const leave = useLeaveApartment(apartmentId);
 
   if (members.isPending) {
     return (
@@ -82,21 +80,6 @@ export default function MembersScreen() {
       pathname: '/apartments/[apartmentId]/ledger/[memberId]',
       params: { apartmentId, memberId },
     });
-
-  const confirmLeave = () => {
-    Alert.alert(
-      'Leave this apartment?',
-      'You will lose access to its current expenses. Your past records and any money you owe or are owed stay as they are.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Leave',
-          style: 'destructive',
-          onPress: () => leave.mutate(undefined, { onSuccess: () => router.dismissTo('/') }),
-        },
-      ],
-    );
-  };
 
   return (
     <Screen
@@ -175,22 +158,14 @@ export default function MembersScreen() {
 
       <Separator />
 
-      <View className="gap-3">
-        <FormAlert
-          message={
-            leave.error
-              ? userErrorMessage(
-                  leave.error,
-                  'Could not leave the apartment.',
-                  APARTMENT_ERROR_MESSAGES,
-                )
-              : null
-          }
-        />
-        <Button variant="danger-soft" onPress={confirmLeave} isDisabled={leave.isPending}>
-          {leave.isPending ? 'Leaving…' : 'Leave apartment'}
-        </Button>
-      </View>
+      <Button
+        variant="danger-soft"
+        onPress={() =>
+          router.push({ pathname: '/apartments/[apartmentId]/leave', params: { apartmentId } })
+        }
+      >
+        Leave apartment
+      </Button>
     </Screen>
   );
 }
@@ -244,7 +219,7 @@ function MemberRow({
   const confirmRemove = () => {
     Alert.alert(
       `Remove ${name}?`,
-      'They will lose access to the apartment. Their past records and any money they owe or are owed stay as they are.',
+      'They will lose access to the apartment. What they owe and are owed is recorded and stays, and they can still settle it.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
