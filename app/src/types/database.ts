@@ -811,6 +811,49 @@ export type Database = {
           },
         ];
       };
+      payment_attachments: {
+        Row: {
+          content_type: string;
+          created_at: string;
+          id: string;
+          payment_id: string;
+          storage_path: string;
+          uploaded_by: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          content_type: string;
+          created_at?: string;
+          id?: string;
+          payment_id: string;
+          storage_path: string;
+          uploaded_by: string;
+        };
+        Update: {
+          content_type?: string;
+          created_at?: string;
+          id?: string;
+          payment_id?: string;
+          storage_path?: string;
+          uploaded_by?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payment_attachments_payment_id_fkey';
+            columns: ['payment_id'];
+            isOneToOne: false;
+            referencedRelation: 'payments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payment_attachments_uploaded_by_fkey';
+            columns: ['uploaded_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       payment_dispute_events: {
         Row: {
           action: string;
@@ -1081,6 +1124,10 @@ export type Database = {
       };
       add_expense_attachment: {
         Args: { p_expense_id: string; p_storage_path: string };
+        Returns: string;
+      };
+      add_payment_proof: {
+        Args: { p_payment_id: string; p_storage_path: string };
         Returns: string;
       };
       archive_category: { Args: { p_category_id: string }; Returns: undefined };
