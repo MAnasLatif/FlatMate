@@ -64,7 +64,7 @@ These come from section 12 of the SRS, where each decision is written out in ful
 - [x] **1.2 Email sign-up and sign-in.** Sign-up, sign-in, sign-out, session persistence, and a session check at launch that routes signed-out users to the auth screens. *(FR-01.1)* Test it in the development build: Expo Go lacks the native module behind the encrypted session storage (`react-native-get-random-values`).
 - [x] **1.3 Account recovery and email verification.** Password reset and email confirmation through deep links back into the app. *(FR-01.1)* Uses 6-digit codes instead of links, because mail apps can use up one-time links by opening them automatically. The hosted project needs the matching auth settings (`supabase/README.md`).
 - [ ] **1.4 Google sign-in.** *(FR-01.1. Owner: Google OAuth credentials.)* Done: the app side, behind `EXPO_PUBLIC_AUTH_GOOGLE_ENABLED`. Remaining: a Google OAuth client and enabling the provider in the hosted project (`supabase/README.md`).
-- [ ] **1.5 Profile screen.** Edit display name and photo, with photos in a private bucket. *(FR-01.2)*
+- [x] **1.5 Profile screen.** Edit display name and photo, with photos in a private bucket. *(FR-01.2)* Also lets users change their password and sign out.
 
 ### Apartments and members
 
