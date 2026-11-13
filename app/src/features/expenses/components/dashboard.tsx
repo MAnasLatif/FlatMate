@@ -3,6 +3,7 @@ import { Button, Skeleton, Spinner, Typography } from 'heroui-native';
 import { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 
+import { OfflineBanner } from '@/components/offline-banner';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import type { Apartment } from '@/features/apartments/api';
 import { useApartment } from '@/features/apartments/hooks';
@@ -62,6 +63,7 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
       )}
       ListHeaderComponent={
         <View className="gap-4 pb-1">
+          <OfflineBanner updatedAt={expenses.dataUpdatedAt} />
           <BalanceSummary
             apartmentId={apartment.id}
             currency={apartment.currency}

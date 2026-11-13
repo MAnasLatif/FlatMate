@@ -43,6 +43,17 @@ export function formatDate(value: string | Date): string {
   });
 }
 
+/** A moment for display, such as "14 Nov 2026, 2:14 PM", in the device's locale and zone. */
+export function formatDateTime(value: number | Date): string {
+  return new Date(value).toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 /** Today's date in the given IANA time zone, as YYYY-MM-DD. */
 export function todayInTimeZone(timeZone: string, now: Date = new Date()): string {
   try {

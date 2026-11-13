@@ -3,6 +3,7 @@ import {
   addMonths,
   deviceTimeZone,
   formatDate,
+  formatDateTime,
   lastDayBefore,
   monthStart,
   ordinal,
@@ -68,5 +69,15 @@ describe('lastDayBefore', () => {
     // Midnight on 21 Nov in Karachi (UTC+5) and in New York (UTC-5).
     expect(lastDayBefore('2026-11-20T19:00:00Z', 'Asia/Karachi')).toBe('2026-11-20');
     expect(lastDayBefore('2026-11-21T05:00:00+00:00', 'America/New_York')).toBe('2026-11-20');
+  });
+});
+
+describe('formatDateTime', () => {
+  it('shows the day, month, year and time', () => {
+    const text = formatDateTime(new Date(2026, 10, 14, 14, 5));
+    expect(text).toMatch(/14/);
+    expect(text).toMatch(/Nov/);
+    expect(text).toMatch(/2026/);
+    expect(text).toMatch(/2:05|14:05/);
   });
 });
