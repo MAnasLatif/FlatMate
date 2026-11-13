@@ -28,13 +28,19 @@ const SPLIT_METHOD_TITLES: Record<SplitMethod, string> = {
   fixed: 'Split by amount',
 };
 
-/** Everything about one expense and what the viewer can do with it (SRS FR-03.6). */
+/**
+ * Everything about one expense and what the viewer can do with it (SRS
+ * FR-03.6). `children` are sections other features add, such as disputes,
+ * shown after the actions.
+ */
 export function ExpenseDetailView({
   apartmentId,
   expenseId,
+  children,
 }: {
   apartmentId: string;
   expenseId: string;
+  children?: ReactNode;
 }) {
   const detail = useExpenseDetail(apartmentId, expenseId);
   const members = useMembers(apartmentId);
@@ -193,6 +199,8 @@ export function ExpenseDetailView({
           </View>
         </View>
       ) : null}
+
+      {children}
 
       <Section title="Paid by">
         {expense.payers.length === 0 ? (

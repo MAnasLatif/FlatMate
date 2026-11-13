@@ -17,6 +17,11 @@ export default function ApartmentLayout() {
         name="expenses/[expenseId]/record-payment"
         options={{ title: 'Record payment', presentation: 'modal' }}
       />
+      <Stack.Screen
+        name="expenses/[expenseId]/dispute"
+        options={{ title: 'Dispute expense', presentation: 'modal' }}
+      />
+      <Stack.Screen name="disputes/[disputeId]" options={{ title: 'Dispute' }} />
       <Stack.Screen name="photo" options={{ title: 'Photo', presentation: 'modal' }} />
     </Stack>
   );

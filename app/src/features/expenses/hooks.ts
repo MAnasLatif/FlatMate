@@ -93,10 +93,12 @@ export function useUploadReceipt(apartmentId: string) {
   });
 }
 
-export function useExpenseDetail(apartmentId: string, expenseId: string) {
+/** `enabled` waits for the expense id, for screens that learn it from another query. */
+export function useExpenseDetail(apartmentId: string, expenseId: string, enabled = true) {
   return useQuery({
     queryKey: expenseKeys.detail(apartmentId, expenseId),
     queryFn: () => fetchExpenseDetail(expenseId),
+    enabled,
   });
 }
 
