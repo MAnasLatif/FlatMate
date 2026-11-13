@@ -1,5 +1,10 @@
 import 'react-native-gesture-handler/jestSetup';
 
+// NetInfo is a native module. Its own mock reports a connected device.
+jest.mock('@react-native-community/netinfo', () =>
+  jest.requireActual('@react-native-community/netinfo/jest/netinfo-mock.js'),
+);
+
 // Reanimated and its worklets runtime need native modules that do not exist
 // under Jest. Both libraries ship mocks for this.
 jest.mock('react-native-worklets', () => jest.requireActual('react-native-worklets/src/mock'));
