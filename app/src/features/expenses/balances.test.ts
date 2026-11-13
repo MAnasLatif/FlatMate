@@ -105,6 +105,12 @@ describe('pairPosition', () => {
     expect(position.isProvisional).toBe(false);
   });
 
+  it('does not call a square balance provisional when a final offset cancels provisional charges', () => {
+    const position = pairPosition(pair(amounts(-12_000, 12_000), amounts(-12_000, 12_000)));
+    expect(position.netMinor).toBe(0);
+    expect(position.isProvisional).toBe(false);
+  });
+
   it('treats a person with no balance as square', () => {
     expect(pairPosition(undefined).netMinor).toBe(0);
   });

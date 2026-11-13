@@ -86,7 +86,10 @@ export function pairPosition(balance: PairBalance | undefined): PairPosition {
     oweMinor,
     owedMinor,
     netMinor: owedMinor - oweMinor,
-    isProvisional: owe.provisionalMinor !== 0 || owed.provisionalMinor !== 0,
+    // Offsets are final, so a square pair can still have provisional amounts that cancel out.
+    isProvisional:
+      (oweMinor !== 0 && owe.provisionalMinor !== 0) ||
+      (owedMinor !== 0 && owed.provisionalMinor !== 0),
     heldOweMinor: owe.disputedMinor,
     heldOwedMinor: owed.disputedMinor,
   };
