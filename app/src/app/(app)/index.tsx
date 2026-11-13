@@ -1,54 +1,38 @@
-import { useMutation } from '@tanstack/react-query';
-import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { Button, Typography } from 'heroui-native';
-import { StyleSheet, useColorScheme, View } from 'react-native';
+import { View } from 'react-native';
 
-import { FormAlert } from '@/components/form/form-alert';
 import { Screen } from '@/components/screen';
-import { signOut } from '@/features/auth/api';
-import { authErrorMessage } from '@/features/auth/errors';
-import { useSession } from '@/features/auth/session-provider';
-
-const logoMark = require('@/assets/images/logo-mark.png');
-const logoMarkDark = require('@/assets/images/logo-mark-dark.png');
+import { useCurrentUserId } from '@/features/auth/session-provider';
+import { ProfileAvatar } from '@/features/profile/components/profile-avatar';
+import { useProfile } from '@/features/profile/hooks';
 
 export default function HomeScreen() {
-  const isDark = useColorScheme() === 'dark';
-  const { session } = useSession();
-  const signOutMutation = useMutation({ mutationFn: signOut });
+  const userId = useCurrentUserId();
+  const profile = useProfile(userId);
 
   return (
     <Screen>
       <View className="flex-1 items-center justify-center gap-6">
-        <Image
-          source={isDark ? logoMarkDark : logoMark}
-          style={styles.logo}
-          contentFit="contain"
-          accessibilityLabel="FlatMate logo"
+        <ProfileAvatar
+          name={profile.data?.display_name}
+          avatarPath={profile.data?.avatar_path}
+          size="lg"
         />
         <View className="items-center gap-2">
-          <Typography.Heading type="h1" accessibilityRole="header">
-            FlatMate
+          <Typography.Heading type="h2" accessibilityRole="header">
+            {profile.data?.display_name
+              ? `Hello, ${profile.data.display_name}`
+              : 'Welcome to FlatMate'}
           </Typography.Heading>
-          <Typography.Paragraph color="muted">
-            Signed in as {session?.user.email}
+          <Typography.Paragraph color="muted" className="text-center">
+            Your apartments will appear here.
           </Typography.Paragraph>
         </View>
-        <FormAlert
-          message={signOutMutation.error ? authErrorMessage(signOutMutation.error) : null}
-        />
-        <Button
-          variant="secondary"
-          onPress={() => signOutMutation.mutate()}
-          isDisabled={signOutMutation.isPending}
-        >
-          Sign out
+        <Button variant="secondary" onPress={() => router.push('/profile')}>
+          Your profile
         </Button>
       </View>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  logo: { width: 160, height: 160 },
-});
