@@ -874,6 +874,96 @@ export type Database = {
           },
         ];
       };
+      member_exit_balances: {
+        Row: {
+          counterparty_id: string;
+          disputed_minor: number;
+          exit_id: string;
+          final_minor: number;
+          provisional_minor: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          counterparty_id: string;
+          disputed_minor: number;
+          exit_id: string;
+          final_minor: number;
+          provisional_minor: number;
+        };
+        Update: {
+          counterparty_id?: string;
+          disputed_minor?: number;
+          exit_id?: string;
+          final_minor?: number;
+          provisional_minor?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'member_exit_balances_counterparty_id_fkey';
+            columns: ['counterparty_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'member_exit_balances_exit_id_fkey';
+            columns: ['exit_id'];
+            isOneToOne: false;
+            referencedRelation: 'member_exits';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      member_exits: {
+        Row: {
+          apartment_id: string;
+          exited_at: string;
+          exited_by: string;
+          id: string;
+          reason: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          exited_at?: string;
+          exited_by: string;
+          id?: string;
+          reason: string;
+          user_id: string;
+        };
+        Update: {
+          apartment_id?: string;
+          exited_at?: string;
+          exited_by?: string;
+          id?: string;
+          reason?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'member_exits_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'member_exits_exited_by_fkey';
+            columns: ['exited_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'member_exits_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       offsets: {
         Row: {
           amount_minor: number;
