@@ -1,5 +1,7 @@
-import type { Balance } from './api';
-import { summarizeBalances } from './balances';
+import { formatMinorUnits } from '@/lib/money';
+
+import type { Balance, PairBalance } from './api';
+import { describePairNet, pairPosition, summarizeBalances } from './balances';
 
 function balance(overrides: Partial<Balance>): Balance {
   return {
@@ -70,5 +72,52 @@ describe('summarizeBalances', () => {
     expect(summary.heldOweMinor).toBe(9000);
     expect(summary.heldReceiveMinor).toBe(1500);
     expect(summary.netMinor).toBe(-2000);
+  });
+});
+
+describe('pairPosition', () => {
+  const amounts = (finalMinor = 0, provisionalMinor = 0, disputedMinor = 0) => ({
+    finalMinor,
+    provisionalMinor,
+    disputedMinor,
+  });
+  const pair = (owe = amounts(), owed = amounts()): PairBalance => ({
+    counterpartyId: 'zubair',
+    owe,
+    owed,
+  });
+
+  it('keeps both directions and nets them (AC-04)', () => {
+    expect(pairPosition(pair(amounts(0, 15_000), amounts(0, 6667)))).toEqual({
+      oweMinor: 15_000,
+      owedMinor: 6667,
+      netMinor: -8333,
+      isProvisional: true,
+      heldOweMinor: 0,
+      heldOwedMinor: 0,
+    });
+  });
+
+  it('holds disputed amounts out of the figures', () => {
+    const position = pairPosition(pair(amounts(2000, 0, 9000), amounts()));
+    expect(position.oweMinor).toBe(2000);
+    expect(position.heldOweMinor).toBe(9000);
+    expect(position.isProvisional).toBe(false);
+  });
+
+  it('treats a person with no balance as square', () => {
+    expect(pairPosition(undefined).netMinor).toBe(0);
+  });
+});
+
+describe('describePairNet', () => {
+  const money = (amount: number) => `${formatMinorUnits(amount)} PKR`;
+
+  it.each([
+    [6667, 'Zubair owes you 66.67 PKR'],
+    [-15_000, 'You owe Zubair 150.00 PKR'],
+    [0, 'You and Zubair are square'],
+  ])('describes a net of %p', (netMinor, expected) => {
+    expect(describePairNet({ netMinor }, 'Zubair', money)).toBe(expected);
   });
 });

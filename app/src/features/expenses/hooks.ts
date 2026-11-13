@@ -11,6 +11,9 @@ import {
   fetchExpensesPage,
   fetchMyBalances,
   fetchMyMonthlyShare,
+  fetchPairBalances,
+  fetchPairExpensesPage,
+  PAIR_EXPENSES_PAGE_SIZE,
   type PickedReceipt,
   postExpense,
   RECEIPT_URL_STALE_TIME_MS,
@@ -31,6 +34,9 @@ export const expenseKeys = {
     ['money', apartmentId, 'monthly-share', monthStartDate] as const,
   detail: (apartmentId: string, expenseId: string) =>
     ['money', apartmentId, 'expense', expenseId] as const,
+  pairBalances: (apartmentId: string) => ['money', apartmentId, 'pair-balances'] as const,
+  pairExpenses: (apartmentId: string, counterpartyId: string) =>
+    ['money', apartmentId, 'pair-expenses', counterpartyId] as const,
 };
 
 export function useExpenses(apartmentId: string, monthStartDate: string) {
@@ -130,5 +136,23 @@ export function useVoidExpense(apartmentId: string, expenseId: string) {
   return useMutation({
     mutationFn: () => voidExpense(expenseId),
     onSuccess: refresh,
+  });
+}
+
+/** What the signed-in user owes and is owed by each person, gross and by state. */
+export function usePairBalances(apartmentId: string) {
+  return useQuery({
+    queryKey: expenseKeys.pairBalances(apartmentId),
+    queryFn: () => fetchPairBalances(apartmentId),
+  });
+}
+
+export function usePairExpenses(apartmentId: string, counterpartyId: string) {
+  return useInfiniteQuery({
+    queryKey: expenseKeys.pairExpenses(apartmentId, counterpartyId),
+    queryFn: ({ pageParam }) => fetchPairExpensesPage(apartmentId, counterpartyId, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) =>
+      lastPage.length === PAIR_EXPENSES_PAGE_SIZE ? pages.length : undefined,
   });
 }

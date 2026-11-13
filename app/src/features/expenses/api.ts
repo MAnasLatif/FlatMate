@@ -30,6 +30,28 @@ export type Balance = {
 
 export const EXPENSES_PAGE_SIZE = 20;
 
+/** Amounts by state. Final and provisional are payable; disputed amounts are held. */
+export type StateAmounts = { finalMinor: number; provisionalMinor: number; disputedMinor: number };
+
+/** What the signed-in user owes one person and what that person owes them, gross. */
+export type PairBalance = { counterpartyId: string; owe: StateAmounts; owed: StateAmounts };
+
+/** An expense between the signed-in user and one person, with what it adds each way. */
+export type PairExpense = {
+  expenseId: string;
+  title: string;
+  expenseDate: string;
+  currency: string;
+  status: ExpenseStatus;
+  paidStatus: 'paid' | 'unpaid';
+  /** What it makes the user owe them, after any reversals. */
+  oweMinor: number;
+  /** What it makes them owe the user, after any reversals. */
+  owedMinor: number;
+};
+
+export const PAIR_EXPENSES_PAGE_SIZE = 20;
+
 /** One entry in an expense's history, from the apartment's audit trail. */
 export type HistoryEvent = {
   id: number;
@@ -254,6 +276,50 @@ export async function fetchMyBalances(apartmentId: string): Promise<Balance[]> {
     finalMinor: row.final_minor,
     provisionalMinor: row.provisional_minor,
     disputedMinor: row.disputed_minor,
+  }));
+}
+
+export async function fetchPairBalances(apartmentId: string): Promise<PairBalance[]> {
+  const { data, error } = await supabase.rpc('get_my_pair_balances', {
+    p_apartment_id: apartmentId,
+  });
+  if (error) throw error;
+  return data.map((row) => ({
+    counterpartyId: row.counterparty_id,
+    owe: {
+      finalMinor: row.owe_final_minor,
+      provisionalMinor: row.owe_provisional_minor,
+      disputedMinor: row.owe_disputed_minor,
+    },
+    owed: {
+      finalMinor: row.owed_final_minor,
+      provisionalMinor: row.owed_provisional_minor,
+      disputedMinor: row.owed_disputed_minor,
+    },
+  }));
+}
+
+export async function fetchPairExpensesPage(
+  apartmentId: string,
+  counterpartyId: string,
+  page: number,
+): Promise<PairExpense[]> {
+  const { data, error } = await supabase.rpc('get_my_pair_expenses', {
+    p_apartment_id: apartmentId,
+    p_counterparty_id: counterpartyId,
+    p_limit: PAIR_EXPENSES_PAGE_SIZE,
+    p_offset: page * PAIR_EXPENSES_PAGE_SIZE,
+  });
+  if (error) throw error;
+  return data.map((row) => ({
+    expenseId: row.expense_id,
+    title: row.title,
+    expenseDate: row.expense_date,
+    currency: row.currency,
+    status: row.status as ExpenseStatus,
+    paidStatus: row.paid_status as PairExpense['paidStatus'],
+    oweMinor: row.owe_minor,
+    owedMinor: row.owed_minor,
   }));
 }
 
