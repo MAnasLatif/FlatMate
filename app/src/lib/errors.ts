@@ -39,3 +39,18 @@ function isNetworkError(error: unknown): boolean {
   const message = stringField(error, 'message');
   return message !== undefined && /network request failed|failed to fetch/i.test(message);
 }
+
+/**
+ * The status that explains a failed storage request. Storage answers some
+ * failures with HTTP 400 and puts the real reason (such as 413) in statusCode,
+ * so statusCode wins when present.
+ */
+export function storageStatusOf(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) return undefined;
+  if ('statusCode' in error && typeof error.statusCode === 'string') {
+    const parsed = Number.parseInt(error.statusCode, 10);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  if ('status' in error && typeof error.status === 'number') return error.status;
+  return undefined;
+}

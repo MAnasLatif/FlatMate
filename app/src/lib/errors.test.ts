@@ -1,4 +1,4 @@
-import { userErrorMessage } from './errors';
+import { storageStatusOf, userErrorMessage } from './errors';
 
 describe('userErrorMessage', () => {
   it('reports a failed request as a connection problem', () => {
@@ -34,5 +34,21 @@ describe('userErrorMessage', () => {
         '23505': 'A category with this name already exists.',
       }),
     ).toBe('A category with this name already exists.');
+  });
+});
+
+describe('storageStatusOf', () => {
+  it('prefers the status code storage puts in the body', () => {
+    expect(storageStatusOf({ status: 400, statusCode: '413' })).toBe(413);
+  });
+
+  it('falls back to the HTTP status', () => {
+    expect(storageStatusOf({ status: 415 })).toBe(415);
+    expect(storageStatusOf({ status: 403, statusCode: 'not a number' })).toBe(403);
+  });
+
+  it('returns nothing for errors without a status', () => {
+    expect(storageStatusOf(new Error('boom'))).toBeUndefined();
+    expect(storageStatusOf(null)).toBeUndefined();
   });
 });
