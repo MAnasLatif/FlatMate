@@ -198,6 +198,39 @@ export type Database = {
           },
         ];
       };
+      expense_categories: {
+        Row: {
+          apartment_id: string;
+          archived_at: string | null;
+          created_at: string;
+          id: string;
+          name: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          archived_at?: string | null;
+          created_at?: string;
+          id?: string;
+          name: string;
+        };
+        Update: {
+          apartment_id?: string;
+          archived_at?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'expense_categories_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_path: string | null;
@@ -228,6 +261,8 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      add_category: { Args: { p_apartment_id: string; p_name: string }; Returns: string };
+      archive_category: { Args: { p_category_id: string }; Returns: undefined };
       create_apartment: {
         Args: {
           p_approval_days?: number;
@@ -242,7 +277,30 @@ export type Database = {
       };
       create_invite: { Args: { p_apartment_id: string; p_valid_days?: number }; Returns: string };
       join_apartment: { Args: { p_code: string }; Returns: Json };
+      leave_apartment: { Args: { p_apartment_id: string }; Returns: undefined };
+      remove_member: { Args: { p_apartment_id: string; p_user_id: string }; Returns: undefined };
+      rename_category: { Args: { p_category_id: string; p_name: string }; Returns: undefined };
       revoke_invite: { Args: { p_invite_id: string }; Returns: undefined };
+      set_member_can_add_expense: {
+        Args: { p_allowed: boolean; p_apartment_id: string; p_user_id: string };
+        Returns: undefined;
+      };
+      set_member_role: {
+        Args: { p_apartment_id: string; p_role: string; p_user_id: string };
+        Returns: undefined;
+      };
+      update_apartment_settings: {
+        Args: {
+          p_apartment_id: string;
+          p_approval_days: number;
+          p_location: string;
+          p_name: string;
+          p_settlement_day: number;
+          p_show_location: boolean;
+          p_timezone: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;
