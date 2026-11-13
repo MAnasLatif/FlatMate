@@ -19,7 +19,9 @@ import { formatMinorUnits } from '@/lib/money';
 import { addDays } from '@/lib/time';
 
 import type { DraftResult, ExpenseDraft } from '../draft';
+import { memberLabel } from '../member-label';
 import type { SplitMethod } from '../split';
+import { PayerFields } from './payer-fields';
 
 type ExpenseFormProps = {
   draft: ExpenseDraft;
@@ -33,11 +35,6 @@ type ExpenseFormProps = {
   today: string;
   currentUserId: string;
 };
-
-export function memberLabel(member: Pick<Member, 'userId' | 'displayName'>, currentUserId: string) {
-  if (member.userId === currentUserId) return 'You';
-  return member.displayName ?? 'Unnamed member';
-}
 
 /** The fields of an expense: details, who paid, how it is split, and a preview. */
 export function ExpenseForm(props: ExpenseFormProps) {
@@ -170,45 +167,14 @@ function PaidSection({
         </ControlField>
 
         {draft.paidNow ? (
-          <View className="gap-3">
-            <Label>Who paid?</Label>
-            <ChoiceChips
-              accessibilityLabel="Who paid"
-              choices={[
-                ...members.map((member) => ({
-                  value: member.userId,
-                  label: memberLabel(member, currentUserId),
-                })),
-                { value: 'several', label: 'Several people' },
-              ]}
-              selected={draft.payerMode === 'multiple' ? 'several' : draft.payerId}
-              onSelect={(value) =>
-                value === 'several'
-                  ? update({ payerMode: 'multiple' })
-                  : update({ payerMode: 'single', payerId: value })
-              }
-            />
-            {draft.payerMode === 'multiple'
-              ? members.map((member) => (
-                  <TextField key={member.userId}>
-                    <Label>{memberLabel(member, currentUserId)} paid</Label>
-                    <Input
-                      value={draft.payerAmounts[member.userId] ?? ''}
-                      onChangeText={(text) =>
-                        setDraft((current) => ({
-                          ...current,
-                          payerAmounts: { ...current.payerAmounts, [member.userId]: text },
-                        }))
-                      }
-                      keyboardType="decimal-pad"
-                      placeholder="0.00"
-                      accessibilityLabel={`${memberLabel(member, currentUserId)} paid, in ${currency}`}
-                    />
-                  </TextField>
-                ))
-              : null}
-            {payersError ? <FieldError isInvalid>{payersError}</FieldError> : null}
-          </View>
+          <PayerFields
+            value={draft}
+            onChange={update}
+            members={members}
+            currentUserId={currentUserId}
+            currency={currency}
+            error={payersError}
+          />
         ) : null}
 
         <TextField isInvalid={dueDateError !== undefined}>

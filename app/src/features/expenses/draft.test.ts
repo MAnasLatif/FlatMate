@@ -1,4 +1,4 @@
-import { type ExpenseDraft, isValidDate, newDraft, validateDraft } from './draft';
+import { type ExpenseDraft, isValidDate, newDraft, validateDraft, validatePayers } from './draft';
 
 const A = '11111111-1111-1111-1111-111111111111';
 const Z = '22222222-2222-2222-2222-222222222222';
@@ -141,4 +141,42 @@ describe('isValidDate', () => {
       expect(isValidDate(value)).toBe(false);
     },
   );
+});
+
+describe('validatePayers', () => {
+  const single = { payerMode: 'single' as const, payerId: Z, payerAmounts: {} };
+
+  it('lets one member pay the whole bill', () => {
+    expect(validatePayers(single, members, 9000)).toEqual({
+      payers: [{ userId: Z, amountMinor: 9000 }],
+    });
+  });
+
+  it('refuses a payer who has left', () => {
+    expect(validatePayers(single, [A, J], 9000).error).toBe('Choose who paid.');
+  });
+
+  it('leaves out members with a blank or zero amount', () => {
+    const result = validatePayers(
+      { payerMode: 'multiple', payerId: A, payerAmounts: { [A]: '60', [Z]: '', [J]: '0' } },
+      members,
+      6000,
+    );
+    expect(result).toEqual({ payers: [{ userId: A, amountMinor: 6000 }] });
+  });
+
+  it('says what several payers add up to when it is not the amount', () => {
+    const result = validatePayers(
+      { payerMode: 'multiple', payerId: A, payerAmounts: { [A]: '60', [Z]: '20' } },
+      members,
+      9000,
+    );
+    expect(result.error).toBe('What people paid must add up to 90.00. It adds up to 80.00.');
+  });
+
+  it('asks for amounts when nobody entered one', () => {
+    expect(
+      validatePayers({ payerMode: 'multiple', payerId: A, payerAmounts: {} }, members, 9000).error,
+    ).toBe('Enter how much each person paid.');
+  });
 });

@@ -39,6 +39,9 @@ export type ExpenseDraft = {
   payerAmounts: Record<string, string>;
 };
 
+/** Who paid, as the user enters it. Part of a draft, and of recording that a bill was paid. */
+export type PayerInput = Pick<ExpenseDraft, 'payerMode' | 'payerId' | 'payerAmounts'>;
+
 export type DraftField =
   'title' | 'amount' | 'expenseDate' | 'dueDate' | 'description' | 'split' | 'payers';
 
@@ -196,30 +199,9 @@ export function validateDraft(
 
   let payers: Contribution[] = [];
   if (draft.paidNow) {
-    if (draft.payerMode === 'single') {
-      if (!memberIds.includes(draft.payerId)) errors.payers = 'Choose who paid.';
-      else if (amountMinor !== null) payers = [{ userId: draft.payerId, amountMinor }];
-    } else {
-      const entered = memberIds
-        .map((userId) => ({ userId, text: (draft.payerAmounts[userId] ?? '').trim() }))
-        .filter((item) => item.text !== '');
-      const parsed = entered.map((item) => ({
-        userId: item.userId,
-        amountMinor: parseAmountToMinorUnits(item.text, minorUnitDigits),
-      }));
-      if (parsed.some((item) => item.amountMinor === null)) {
-        errors.payers = 'Enter valid amounts for the people who paid.';
-      } else {
-        payers = parsed
-          .map((item) => ({ userId: item.userId, amountMinor: item.amountMinor ?? 0 }))
-          .filter((item) => item.amountMinor > 0);
-        const total = payers.reduce((sum, item) => sum + item.amountMinor, 0);
-        if (payers.length === 0) errors.payers = 'Enter how much each person paid.';
-        else if (amountMinor !== null && amountMinor > 0 && total !== amountMinor) {
-          errors.payers = `What people paid must add up to ${format(amountMinor)}. It adds up to ${format(total)}.`;
-        }
-      }
-    }
+    const checked = validatePayers(draft, memberIds, amountMinor, minorUnitDigits);
+    payers = checked.payers;
+    if (checked.error) errors.payers = checked.error;
   }
 
   let debts: Debt[] | undefined;
@@ -247,4 +229,47 @@ export function validateDraft(
           }
         : undefined,
   };
+}
+
+/**
+ * Checks who paid. One payer pays the whole amount. Several payers each enter
+ * what they paid; blank or zero amounts leave a member out, and the rest must
+ * add up to the amount. `amountMinor` is null while the amount is invalid.
+ */
+export function validatePayers(
+  input: PayerInput,
+  memberIds: readonly string[],
+  amountMinor: number | null,
+  minorUnitDigits = 2,
+): { payers: Contribution[]; error?: string } {
+  const format = (value: number) => formatMinorUnits(value, minorUnitDigits);
+
+  if (input.payerMode === 'single') {
+    if (!memberIds.includes(input.payerId)) return { payers: [], error: 'Choose who paid.' };
+    return { payers: amountMinor !== null ? [{ userId: input.payerId, amountMinor }] : [] };
+  }
+
+  const parsed = memberIds
+    .map((userId) => ({ userId, text: (input.payerAmounts[userId] ?? '').trim() }))
+    .filter((item) => item.text !== '')
+    .map((item) => ({
+      userId: item.userId,
+      amountMinor: parseAmountToMinorUnits(item.text, minorUnitDigits),
+    }));
+  if (parsed.some((item) => item.amountMinor === null)) {
+    return { payers: [], error: 'Enter valid amounts for the people who paid.' };
+  }
+
+  const payers = parsed
+    .map((item) => ({ userId: item.userId, amountMinor: item.amountMinor ?? 0 }))
+    .filter((item) => item.amountMinor > 0);
+  const total = payers.reduce((sum, item) => sum + item.amountMinor, 0);
+  if (payers.length === 0) return { payers, error: 'Enter how much each person paid.' };
+  if (amountMinor !== null && amountMinor > 0 && total !== amountMinor) {
+    return {
+      payers,
+      error: `What people paid must add up to ${format(amountMinor)}. It adds up to ${format(total)}.`,
+    };
+  }
+  return { payers };
 }
