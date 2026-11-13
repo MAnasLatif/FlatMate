@@ -1,3 +1,5 @@
+import { storageStatusOf, userErrorMessage } from '@/lib/errors';
+
 /** Sentences for the error keys the expense functions raise. Pass to userErrorMessage. */
 export const EXPENSE_ERROR_MESSAGES: Record<string, string> = {
   not_allowed_to_add_expense:
@@ -15,3 +17,14 @@ export const EXPENSE_ERROR_MESSAGES: Record<string, string> = {
   not_allowed_to_edit_expense: 'Only the person who added this expense or an admin can change it.',
   immutable_record: 'This record cannot be changed.',
 };
+
+/** Explains why a receipt upload failed, using the limits of the receipts bucket. */
+export function receiptUploadErrorMessage(error: unknown): string {
+  const status = storageStatusOf(error);
+  if (status === 413) return 'This photo is too large. Choose one under 10 MB.';
+  if (status === 415) return 'Choose a JPEG, PNG or WebP photo.';
+  return userErrorMessage(error, 'Could not upload the receipt. Please try again.', {
+    ...EXPENSE_ERROR_MESSAGES,
+    receipt_not_uploaded: 'The receipt did not finish uploading. Please try again.',
+  });
+}

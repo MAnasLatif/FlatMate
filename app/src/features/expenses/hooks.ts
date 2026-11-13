@@ -3,11 +3,16 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { addMonths } from '@/lib/time';
 
 import {
+  createReceiptUrl,
   EXPENSES_PAGE_SIZE,
+  fetchAttachments,
   fetchExpensesPage,
   fetchMyBalances,
   fetchMyMonthlyShare,
+  type PickedReceipt,
   postExpense,
+  RECEIPT_URL_STALE_TIME_MS,
+  uploadReceipt,
 } from './api';
 import type { ValidExpense } from './draft';
 
@@ -59,6 +64,31 @@ export function usePostExpense(apartmentId: string) {
   return useMutation({
     mutationFn: (input: { expense: ValidExpense; requestId: string }) =>
       postExpense(apartmentId, input.expense, input.requestId),
+    onSuccess: refresh,
+  });
+}
+
+export function useAttachments(apartmentId: string, expenseId: string) {
+  return useQuery({
+    queryKey: [...expenseKeys.detail(apartmentId, expenseId), 'attachments'],
+    queryFn: () => fetchAttachments(expenseId),
+  });
+}
+
+/** A temporary link to a receipt image, refreshed before it expires. */
+export function useReceiptUrl(path: string) {
+  return useQuery({
+    queryKey: ['receipt-url', path],
+    queryFn: () => createReceiptUrl(path),
+    staleTime: RECEIPT_URL_STALE_TIME_MS,
+  });
+}
+
+export function useUploadReceipt(apartmentId: string) {
+  const refresh = useRefreshMoney(apartmentId);
+  return useMutation({
+    mutationFn: (input: { expenseId: string; receipt: PickedReceipt }) =>
+      uploadReceipt(apartmentId, input.expenseId, input.receipt),
     onSuccess: refresh,
   });
 }
