@@ -20,7 +20,7 @@ Each apartment settles monthly on its settlement day (SRS FR-08, section 12 item
 - Reconciled obligations are those that payments and offsets cover, worked out oldest first as before.
 
 **Locking.**
-- A *final* expense dated in a closed period is locked: it cannot be edited, voided or have a bill payment recorded.
+- A *final* expense dated in a closed period is locked: it cannot be edited or voided. Recording who paid an unpaid bill is still allowed, because the bill counted nothing when the period closed and the payment is a new event.
 - No expense can be posted with, or moved by an edit to, a date in a closed period.
 - Provisional and disputed expenses are not yet reconciled, so they stay open to change until they become final.
 
