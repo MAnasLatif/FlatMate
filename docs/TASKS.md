@@ -68,12 +68,12 @@ These come from section 12 of the SRS, where each decision is written out in ful
 
 ### Apartments and members
 
-- [ ] **1.6 Apartments and membership.** `apartments` and `apartment_members` tables, membership and role helper functions for RLS, and a function that creates an apartment and makes the creator its admin. Tests prove one apartment's data is invisible from another. *(FR-02.1, FR-02.3, AC-01)*
-- [ ] **1.7 Join codes.** Hashed codes with expiry, rotation and revocation, and a rate-limited join function that fails safely on a bad code. *(FR-02.2)*
-- [ ] **1.8 My Apartments and New Apartment screens.** List of joined apartments, join by code, and the create form (name, optional location, settlement day, approval window, currency, timezone). *(SRS 3.1)*
-- [ ] **1.9 Apartment shell.** Top bar with the apartment switcher, members and notification entries, the bottom navigation in the order Profile, Add, Expenses, and an empty dashboard. *(SRS 3.2, AC-13)*
-- [ ] **1.10 Members and roles.** Member directory, promote and demote admins, the expense-creation permission, remove a member, leave an apartment, the rule that one admin must remain, and join and leave dates. *(FR-02.4, FR-02.5, FR-02.6, AC-11)*
-- [ ] **1.11 Apartment settings.** Admin screen for name, location visibility, settlement day, approval window, expense categories and invite codes. *(FR-08.1)*
+- [x] **1.6 Apartments and membership.** `apartments` and `apartment_members` tables, membership and role helper functions for RLS, and a function that creates an apartment and makes the creator its admin. Tests prove one apartment's data is invisible from another. *(FR-02.1, FR-02.3, AC-01)*
+- [x] **1.7 Join codes.** Hashed codes with expiry, rotation and revocation, and a rate-limited join function that fails safely on a bad code. *(FR-02.2)*
+- [x] **1.8 My Apartments and New Apartment screens.** List of joined apartments, join by code, and the create form (name, optional location, settlement day, approval window, currency, timezone). *(SRS 3.1)*
+- [x] **1.9 Apartment shell.** Top bar with the apartment switcher, members and notification entries, the bottom navigation in the order Profile, Add, Expenses, and an empty dashboard. *(SRS 3.2, AC-13)* The Add tab arrives with task 1.17, and the notification entry with task 1.35.
+- [x] **1.10 Members and roles.** Member directory, promote and demote admins, the expense-creation permission, remove a member, leave an apartment, the rule that one admin must remain, and join and leave dates. *(FR-02.4, FR-02.5, FR-02.6, AC-11)*
+- [x] **1.11 Apartment settings.** Admin screen for name, location visibility, settlement day, approval window, expense categories and invite codes. *(FR-08.1)*
 
 ### Ledger core
 

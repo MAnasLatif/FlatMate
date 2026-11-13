@@ -2,7 +2,7 @@
 
 Everything that runs on Supabase: the database schema, security policies, database functions, Edge Functions, scheduled jobs, seed data and database tests.
 
-> **Status: first schema in place.** The only table is `profiles`, created for each user at sign-up. The rest of the schema arrives with the tasks in [docs/TASKS.md](../docs/TASKS.md).
+> **Status: accounts and apartments in place.** Profiles, photos, apartments, memberships, join codes, settings and categories exist. The financial schema arrives with the tasks in [docs/TASKS.md](../docs/TASKS.md).
 
 ## Layout
 
@@ -38,7 +38,10 @@ The proposed data model is in [section 6 of the SRS](../docs/SRS.md#6-supabase-d
 - Receipts and payment proofs go in private storage buckets and are served through signed URLs.
 - Regenerate the app's database types after every schema change.
 - Grant client roles only what they need: revoke the default table privileges from `anon` and `authenticated`, then grant specific operations and columns. Row-level policies decide which rows; grants decide which operations and columns.
-- Functions that run with elevated rights (`security definer`), trigger functions and other internal helpers go in the `private` schema. It is not exposed through the Data API and grants nothing to client roles. Set `search_path = ''` on every function and write fully qualified names.
+- Functions that run with elevated rights (`security definer`), trigger functions and other internal helpers go in the `private` schema, which the Data API does not expose. Set `search_path = ''` on every function and write fully qualified names.
+- An RPC endpoint is a `security invoker` wrapper in `public` that calls the `private` function doing the work. Revoke execute from `public` and `anon` on the wrapper and grant it to `authenticated`.
+- Postgres lets everyone execute a new function, and a per-schema default cannot take that away. Revoke execute from `public` on every function in `private`, then grant only what a client needs. A database test fails if any `private` function is executable without signing in.
+- Database functions raise stable, lower-case error keys such as `not_admin` or `last_admin`. The app maps them to sentences and never shows server messages.
 - Check a new migration with `npx supabase@3.1.0 db advisors` before committing it.
 
 ## Supabase CLI
