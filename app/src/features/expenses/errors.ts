@@ -1,0 +1,17 @@
+/** Sentences for the error keys the expense functions raise. Pass to userErrorMessage. */
+export const EXPENSE_ERROR_MESSAGES: Record<string, string> = {
+  not_allowed_to_add_expense:
+    'You are not allowed to add expenses in this apartment. Ask an admin.',
+  participant_not_member: 'Someone in the split is no longer a member. Refresh and try again.',
+  payer_not_member: 'Someone who paid is no longer a member. Refresh and try again.',
+  payers_must_match_total: 'What people paid must add up to the amount.',
+  percentages_must_total_100: 'Percentages must add up to 100%.',
+  fixed_amounts_must_match_total: 'The amounts must add up to the total.',
+  invalid_category: 'This category no longer exists. Choose another one.',
+  due_date_before_expense_date: 'The due date cannot be before the expense date.',
+  expense_not_found: 'This expense no longer exists.',
+  expense_not_unpaid: 'This bill has already been paid.',
+  expense_disputed: 'This expense is disputed. Resolve the dispute first.',
+  not_allowed_to_edit_expense: 'Only the person who added this expense or an admin can change it.',
+  immutable_record: 'This record cannot be changed.',
+};

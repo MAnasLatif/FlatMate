@@ -25,7 +25,7 @@ export default function ApartmentTabsLayout() {
         tabBarInactiveTintColor: muted,
       }}
     >
-      {/* SRS section 3.2: Profile on the left, Expenses on the right. */}
+      {/* SRS section 3.2 and AC-13: Profile | Add | Expenses. */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -33,6 +33,25 @@ export default function ApartmentTabsLayout() {
           tabBarIcon: ({ focused, size }) => (
             <TabIcon name="person-circle-outline" focused={focused} size={size} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="add"
+        options={{
+          title: 'Add',
+          tabBarAccessibilityLabel: 'Add an expense',
+          tabBarIcon: ({ focused, size }) => (
+            <TabIcon name="add-circle" focused={focused} size={size + 8} />
+          ),
+        }}
+        listeners={{
+          tabPress: (event) => {
+            event.preventDefault();
+            router.push({
+              pathname: '/apartments/[apartmentId]/expenses/new',
+              params: { apartmentId },
+            });
+          },
         }}
       />
       <Tabs.Screen
