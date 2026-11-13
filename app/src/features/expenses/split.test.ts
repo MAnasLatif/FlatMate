@@ -1,4 +1,5 @@
 import {
+  adjustedSplit,
   computeShares,
   matchDebts,
   parsePercentageToBasisPoints,
@@ -230,5 +231,57 @@ describe('parsePercentageToBasisPoints', () => {
 
   it.each(['', 'abc', '100.01', '101', '33.333', '-5'])('rejects %p', (input) => {
     expect(parsePercentageToBasisPoints(input)).toBeNull();
+  });
+});
+
+describe('adjustedSplit', () => {
+  const A = '11111111-1111-1111-1111-111111111111';
+  const Z = '22222222-2222-2222-2222-222222222222';
+  const J = '33333333-3333-3333-3333-333333333333';
+
+  it('spreads the difference over the others in proportion to their shares (decision 0004)', () => {
+    const shares = [
+      { userId: A, amountMinor: 10_000 },
+      { userId: Z, amountMinor: 10_000 },
+      { userId: J, amountMinor: 10_000 },
+    ];
+    expect(adjustedSplit(shares, A, 5000)).toEqual([
+      { userId: A, amountMinor: 5000 },
+      { userId: Z, amountMinor: 12_500 },
+      { userId: J, amountMinor: 12_500 },
+    ]);
+  });
+
+  it('gives leftover units to the largest remainders, the same as the database', () => {
+    const shares = [
+      { userId: A, amountMinor: 3334 },
+      { userId: Z, amountMinor: 3333 },
+      { userId: J, amountMinor: 3333 },
+    ];
+    // 10,000 over weights 3334 and 3333: 5000.75 and 4999.25, so Anas gets the extra unit.
+    expect(adjustedSplit(shares, Z, 0)).toEqual([
+      { userId: A, amountMinor: 5001 },
+      { userId: Z, amountMinor: 0 },
+      { userId: J, amountMinor: 4999 },
+    ]);
+  });
+
+  it('keeps zero shares at zero and refuses when nobody can take on the difference', () => {
+    const shares = [
+      { userId: A, amountMinor: 1000 },
+      { userId: Z, amountMinor: 0 },
+    ];
+    expect(adjustedSplit(shares, A, 500)).toBeNull();
+    expect(adjustedSplit(shares, A, 1001)).toBeNull();
+  });
+
+  it('stays exact at the largest amount', () => {
+    const shares = [
+      { userId: A, amountMinor: 999_999_999_999 },
+      { userId: Z, amountMinor: 1 },
+      { userId: J, amountMinor: 0 },
+    ];
+    const result = adjustedSplit(shares, J, 7) ?? [];
+    expect(result.reduce((sum, share) => sum + share.amountMinor, 0)).toBe(1_000_000_000_000);
   });
 });

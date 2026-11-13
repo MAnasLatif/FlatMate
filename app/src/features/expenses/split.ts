@@ -189,6 +189,35 @@ export function matchDebts(
 }
 
 /**
+ * The split after giving one participant a new share (a dispute's proposal):
+ * the difference is spread over the other participants in proportion to their
+ * current shares, by the largest-remainder rule with ties to the lowest user
+ * id; participants with a zero share keep it. Mirrors private.adjusted_split.
+ * Returns null when nobody else has a share that could take on the difference.
+ */
+export function adjustedSplit(
+  shares: readonly Share[],
+  userId: string,
+  shareMinor: number,
+): Share[] | null {
+  const total = shares.reduce((sum, share) => sum + share.amountMinor, 0);
+  if (!isWholeAmount(shareMinor) || shareMinor > total) return null;
+  const others = byUserId(
+    shares.filter((share) => share.userId !== userId && share.amountMinor > 0),
+  );
+  if (others.length === 0) return null;
+
+  const spread = apportion(
+    total - shareMinor,
+    others.map((share) => ({ userId: share.userId, weight: share.amountMinor })),
+  );
+  const zeroShares = shares
+    .filter((share) => share.userId !== userId && share.amountMinor === 0)
+    .map((share) => ({ userId: share.userId, amountMinor: 0 }));
+  return byUserId([{ userId, amountMinor: shareMinor }, ...spread, ...zeroShares]);
+}
+
+/**
  * A percentage typed by the user, such as "33.33" or "50", in basis points.
  * Returns null for anything that is not a number with at most two decimals
  * between 0 and 100.
