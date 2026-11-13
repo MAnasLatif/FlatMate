@@ -3,6 +3,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
   CLOSED_PERIODS_PAGE_SIZE,
   fetchClosedPeriodsPage,
+  fetchMyExits,
   fetchPairObligations,
   fetchSettlementPreview,
 } from './api';
@@ -13,6 +14,7 @@ export const settlementKeys = {
   obligations: (apartmentId: string, counterpartyId: string) =>
     ['money', apartmentId, 'obligations', counterpartyId] as const,
   history: (apartmentId: string) => ['money', apartmentId, 'settlement-history'] as const,
+  exits: (userId: string) => ['exits', userId] as const,
 };
 
 export function useSettlementPreview(apartmentId: string) {
@@ -37,4 +39,8 @@ export function useClosedPeriods(apartmentId: string) {
     getNextPageParam: (lastPage, pages) =>
       lastPage.length === CLOSED_PERIODS_PAGE_SIZE ? pages.length : undefined,
   });
+}
+
+export function useMyExits(userId: string) {
+  return useQuery({ queryKey: settlementKeys.exits(userId), queryFn: () => fetchMyExits(userId) });
 }

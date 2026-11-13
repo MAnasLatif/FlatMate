@@ -21,6 +21,20 @@ export async function fetchProfile(userId: string): Promise<Profile> {
   return data;
 }
 
+/**
+ * The names of people the user shares or shared an apartment with, by id.
+ * Row-level security returns only those; anyone else is left out.
+ */
+export async function fetchDisplayNames(userIds: string[]): Promise<Record<string, string | null>> {
+  if (userIds.length === 0) return {};
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, display_name')
+    .in('id', userIds);
+  if (error) throw error;
+  return Object.fromEntries(data.map((row) => [row.id, row.display_name]));
+}
+
 export async function updateDisplayName(userId: string, displayName: string): Promise<void> {
   const { error } = await supabase
     .from('profiles')

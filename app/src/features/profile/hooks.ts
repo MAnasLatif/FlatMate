@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AVATAR_URL_STALE_TIME_MS,
   createAvatarUrl,
+  fetchDisplayNames,
   fetchProfile,
   type PickedImage,
   removeAvatar,
@@ -13,7 +14,17 @@ import {
 export const profileKeys = {
   profile: (userId: string) => ['profile', userId] as const,
   avatarUrl: (path: string) => ['avatar-url', path] as const,
+  names: (userIds: string[]) => ['profile-names', [...userIds].sort().join(',')] as const,
 };
+
+/** Names for people who may not be listed as current members, such as after someone left. */
+export function useDisplayNames(userIds: string[]) {
+  return useQuery({
+    queryKey: profileKeys.names(userIds),
+    queryFn: () => fetchDisplayNames(userIds),
+    enabled: userIds.length > 0,
+  });
+}
 
 export function useProfile(userId: string) {
   return useQuery({

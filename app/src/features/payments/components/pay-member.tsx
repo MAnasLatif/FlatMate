@@ -23,6 +23,7 @@ import { useApartment, useMembers } from '@/features/apartments/hooks';
 import { pairPosition } from '@/features/expenses/balances';
 import { isValidDate } from '@/features/expenses/draft';
 import { usePairBalances } from '@/features/expenses/hooks';
+import { useNameOf } from '@/features/settlement/names';
 import { userErrorMessage } from '@/lib/errors';
 import { formatMinorUnits } from '@/lib/money';
 import type { PickedImage } from '@/lib/private-images';
@@ -48,6 +49,8 @@ export function PayMember({
   const apartment = useApartment(apartmentId);
   const members = useMembers(apartmentId);
   const balances = usePairBalances(apartmentId);
+  // A former member settling up cannot list current members, so the name may come from a profile.
+  const nameOf = useNameOf(apartmentId, [memberId]);
 
   if (apartment.isPending || members.isPending || balances.isPending) {
     return (
@@ -72,8 +75,7 @@ export function PayMember({
     );
   }
 
-  const name =
-    members.data.find((member) => member.userId === memberId)?.displayName ?? 'This member';
+  const name = nameOf(memberId);
   const position = pairPosition(
     balances.data.find((balance) => balance.counterpartyId === memberId),
   );

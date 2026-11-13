@@ -129,3 +129,43 @@ export async function fetchClosedPeriodsPage(
     })),
   }));
 }
+
+/** A time the user left or was removed from an apartment, with what they owed each person then. */
+export type MyExit = {
+  id: string;
+  apartmentId: string;
+  apartmentName: string;
+  currency: string;
+  reason: 'left' | 'removed';
+  exitedAt: string;
+  /** Positive: the user owed the counterparty when they left. */
+  balances: { counterpartyId: string; payableMinor: number; heldMinor: number }[];
+};
+
+export const MY_EXITS_LIMIT = 20;
+
+/** The user's most recent exits, newest first. */
+export async function fetchMyExits(userId: string): Promise<MyExit[]> {
+  const { data, error } = await supabase
+    .from('member_exits')
+    .select(
+      'id, apartment_id, reason, exited_at, apartment:apartments!inner(name, currency), balances:member_exit_balances(counterparty_id, final_minor, provisional_minor, disputed_minor)',
+    )
+    .eq('user_id', userId)
+    .order('exited_at', { ascending: false })
+    .limit(MY_EXITS_LIMIT);
+  if (error) throw error;
+  return data.map((row) => ({
+    id: row.id,
+    apartmentId: row.apartment_id,
+    apartmentName: row.apartment.name,
+    currency: row.apartment.currency,
+    reason: row.reason as MyExit['reason'],
+    exitedAt: row.exited_at,
+    balances: row.balances.map((balance) => ({
+      counterpartyId: balance.counterparty_id,
+      payableMinor: balance.final_minor + balance.provisional_minor,
+      heldMinor: balance.disputed_minor,
+    })),
+  }));
+}

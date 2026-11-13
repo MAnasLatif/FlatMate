@@ -5,10 +5,8 @@ import { View } from 'react-native';
 
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
-import type { Member } from '@/features/apartments/api';
-import { useApartment, useMembers } from '@/features/apartments/hooks';
+import { useApartment } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
-import { memberLabel } from '@/features/expenses/member-label';
 import { useRefreshMoney } from '@/features/expenses/hooks';
 import { userErrorMessage } from '@/lib/errors';
 import { formatMinorUnits } from '@/lib/money';
@@ -16,6 +14,7 @@ import { formatDate } from '@/lib/time';
 
 import type { PreviewRow } from '../api';
 import { useClosedPeriods, useSettlementPreview } from '../hooks';
+import { useNameOf } from '../names';
 import { describeClosingBalance, describePeriod } from '../rules';
 
 /**
@@ -25,28 +24,31 @@ import { describeClosingBalance, describePeriod } from '../rules';
 export function SettlementOverview({ apartmentId }: { apartmentId: string }) {
   const userId = useCurrentUserId();
   const apartment = useApartment(apartmentId);
-  const members = useMembers(apartmentId);
   const preview = useSettlementPreview(apartmentId);
   const history = useClosedPeriods(apartmentId);
   const refreshMoney = useRefreshMoney(apartmentId);
   const closed = useMemo(() => history.data?.pages.flat() ?? [], [history.data]);
+  // Former members cannot list current members, so names may come from profiles.
+  const nameOf = useNameOf(apartmentId, [
+    ...(preview.data?.rows.map((row) => row.counterpartyId) ?? []),
+    ...closed.flatMap((item) => item.balances.flatMap((b) => [b.memberA, b.memberB])),
+  ]);
 
-  if (apartment.isPending || members.isPending || preview.isPending) {
+  if (apartment.isPending || preview.isPending) {
     return (
       <Screen padTop={false}>
         <LoadingRows count={3} />
       </Screen>
     );
   }
-  const loadError = apartment.error ?? members.error ?? preview.error;
-  if (loadError || !apartment.data || !members.data || !preview.data) {
+  const loadError = apartment.error ?? preview.error;
+  if (loadError || !apartment.data || !preview.data) {
     return (
       <Screen padTop={false}>
         <LoadError
           message={userErrorMessage(loadError, 'Could not load the settlement.')}
           onRetry={() => {
             void apartment.refetch();
-            void members.refetch();
             void preview.refetch();
           }}
         />
@@ -56,7 +58,6 @@ export function SettlementOverview({ apartmentId }: { apartmentId: string }) {
 
   const money = (amountMinor: number) =>
     `${formatMinorUnits(amountMinor)} ${apartment.data.currency}`;
-  const nameOf = (id: string) => nameFrom(members.data, id, userId);
   const { period, rows } = preview.data;
 
   return (
@@ -204,9 +205,4 @@ function PreviewLine({
       ) : null}
     </PressableFeedback>
   );
-}
-
-function nameFrom(members: Member[], id: string, userId: string): string {
-  const member = members.find((item) => item.userId === id);
-  return member ? memberLabel(member, userId) : 'A former member';
 }
