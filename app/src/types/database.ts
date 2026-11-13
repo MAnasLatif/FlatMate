@@ -231,6 +231,297 @@ export type Database = {
           },
         ];
       };
+      expense_payers: {
+        Row: {
+          amount_minor: number;
+          expense_id: string;
+          revision: number;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_minor: number;
+          expense_id: string;
+          revision: number;
+          user_id: string;
+        };
+        Update: {
+          amount_minor?: number;
+          expense_id?: string;
+          revision?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'expense_payers_expense_id_revision_fkey';
+            columns: ['expense_id', 'revision'];
+            isOneToOne: false;
+            referencedRelation: 'expense_revisions';
+            referencedColumns: ['expense_id', 'revision'];
+          },
+          {
+            foreignKeyName: 'expense_payers_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      expense_revisions: {
+        Row: {
+          amount_minor: number;
+          created_at: string;
+          created_by: string;
+          expense_id: string;
+          reason: string | null;
+          revision: number;
+          split_method: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_minor: number;
+          created_at?: string;
+          created_by: string;
+          expense_id: string;
+          reason?: string | null;
+          revision: number;
+          split_method: string;
+        };
+        Update: {
+          amount_minor?: number;
+          created_at?: string;
+          created_by?: string;
+          expense_id?: string;
+          reason?: string | null;
+          revision?: number;
+          split_method?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'expense_revisions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'expense_revisions_expense_id_fkey';
+            columns: ['expense_id'];
+            isOneToOne: false;
+            referencedRelation: 'expenses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      expense_splits: {
+        Row: {
+          amount_minor: number;
+          basis_points: number | null;
+          expense_id: string;
+          revision: number;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_minor: number;
+          basis_points?: number | null;
+          expense_id: string;
+          revision: number;
+          user_id: string;
+        };
+        Update: {
+          amount_minor?: number;
+          basis_points?: number | null;
+          expense_id?: string;
+          revision?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'expense_splits_expense_id_revision_fkey';
+            columns: ['expense_id', 'revision'];
+            isOneToOne: false;
+            referencedRelation: 'expense_revisions';
+            referencedColumns: ['expense_id', 'revision'];
+          },
+          {
+            foreignKeyName: 'expense_splits_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      expenses: {
+        Row: {
+          amount_minor: number;
+          apartment_id: string;
+          category_id: string | null;
+          client_request_id: string | null;
+          created_at: string;
+          created_by: string;
+          currency: string;
+          description: string | null;
+          due_date: string | null;
+          expense_date: string;
+          finalize_after: string;
+          finalized_at: string | null;
+          id: string;
+          paid_status: string;
+          revision: number;
+          status: string;
+          title: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_minor: number;
+          apartment_id: string;
+          category_id?: string | null;
+          client_request_id?: string | null;
+          created_at?: string;
+          created_by: string;
+          currency: string;
+          description?: string | null;
+          due_date?: string | null;
+          expense_date: string;
+          finalize_after: string;
+          finalized_at?: string | null;
+          id?: string;
+          paid_status: string;
+          revision?: number;
+          status?: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount_minor?: number;
+          apartment_id?: string;
+          category_id?: string | null;
+          client_request_id?: string | null;
+          created_at?: string;
+          created_by?: string;
+          currency?: string;
+          description?: string | null;
+          due_date?: string | null;
+          expense_date?: string;
+          finalize_after?: string;
+          finalized_at?: string | null;
+          id?: string;
+          paid_status?: string;
+          revision?: number;
+          status?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'expenses_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'expenses_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'expense_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'expenses_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ledger_entries: {
+        Row: {
+          amount_minor: number;
+          apartment_id: string;
+          created_at: string;
+          creditor_id: string;
+          debtor_id: string;
+          expense_id: string | null;
+          expense_revision: number | null;
+          id: number;
+          kind: string;
+          offset_id: string | null;
+          payment_id: string | null;
+          reverses_entry_id: number | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_minor: number;
+          apartment_id: string;
+          created_at?: string;
+          creditor_id: string;
+          debtor_id: string;
+          expense_id?: string | null;
+          expense_revision?: number | null;
+          id?: never;
+          kind: string;
+          offset_id?: string | null;
+          payment_id?: string | null;
+          reverses_entry_id?: number | null;
+        };
+        Update: {
+          amount_minor?: number;
+          apartment_id?: string;
+          created_at?: string;
+          creditor_id?: string;
+          debtor_id?: string;
+          expense_id?: string | null;
+          expense_revision?: number | null;
+          id?: never;
+          kind?: string;
+          offset_id?: string | null;
+          payment_id?: string | null;
+          reverses_entry_id?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ledger_entries_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ledger_entries_creditor_id_fkey';
+            columns: ['creditor_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ledger_entries_debtor_id_fkey';
+            columns: ['debtor_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ledger_entries_expense_id_fkey';
+            columns: ['expense_id'];
+            isOneToOne: false;
+            referencedRelation: 'expenses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ledger_entries_reverses_entry_id_fkey';
+            columns: ['reverses_entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'ledger_entries';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_path: string | null;
@@ -258,7 +549,41 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      expense_current_payers: {
+        Row: {
+          amount_minor: number;
+          expense_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: 'expense_payers_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      expense_current_splits: {
+        Row: {
+          amount_minor: number;
+          basis_points: number | null;
+          expense_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: 'expense_splits_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Functions: {
       add_category: { Args: { p_apartment_id: string; p_name: string }; Returns: string };
@@ -276,8 +601,35 @@ export type Database = {
         Returns: string;
       };
       create_invite: { Args: { p_apartment_id: string; p_valid_days?: number }; Returns: string };
+      get_my_balances: {
+        Args: { p_apartment_id: string };
+        Returns: {
+          counterparty_id: string;
+          disputed_minor: number;
+          final_minor: number;
+          provisional_minor: number;
+        }[];
+      };
+      get_my_monthly_share: { Args: { p_apartment_id: string; p_month: string }; Returns: number };
       join_apartment: { Args: { p_code: string }; Returns: Json };
       leave_apartment: { Args: { p_apartment_id: string }; Returns: undefined };
+      post_expense: {
+        Args: {
+          p_amount_minor: number;
+          p_apartment_id: string;
+          p_category_id?: string;
+          p_client_request_id?: string;
+          p_description?: string;
+          p_due_date?: string;
+          p_expense_date: string;
+          p_participants: Json;
+          p_payers: Json;
+          p_split_method: string;
+          p_title: string;
+        };
+        Returns: string;
+      };
+      record_bill_payment: { Args: { p_expense_id: string; p_payers: Json }; Returns: undefined };
       remove_member: { Args: { p_apartment_id: string; p_user_id: string }; Returns: undefined };
       rename_category: { Args: { p_category_id: string; p_name: string }; Returns: undefined };
       revoke_invite: { Args: { p_invite_id: string }; Returns: undefined };
