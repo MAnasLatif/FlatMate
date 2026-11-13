@@ -85,7 +85,7 @@ These come from section 12 of the SRS, where each decision is written out in ful
 
 ### Expenses in the app
 
-- [ ] **1.17 Add expense.** Details, payer editor, split editor and a preview of shares and resulting balances before saving. *(FR-03.1–03.5)*
+- [x] **1.17 Add expense.** Details, payer editor, split editor and a preview of shares and resulting balances before saving. *(FR-03.1–03.5)* Dates are typed as YYYY-MM-DD with Today and Yesterday shortcuts; a native date picker needs a new development build and can follow.
 - [ ] **1.18 Receipts.** Upload to a private bucket, storage policies, signed URLs and a viewer. *(FR-03.1, AC-12)*
 - [ ] **1.19 Dashboard.** Summary cards and the monthly expense feed with a month selector, pagination and status indicators. *(FR-06.1, SRS 3.2)*
 - [ ] **1.20 Expense detail.** Receipt, split, payers, payment state, due date, status, audit trail and the actions the viewer's role allows. *(FR-03.6)*
