@@ -751,6 +751,124 @@ export type Database = {
           },
         ];
       };
+      payment_dispute_events: {
+        Row: {
+          action: string;
+          actor_id: string;
+          created_at: string;
+          dispute_id: string;
+          id: number;
+          message: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id: string;
+          created_at?: string;
+          dispute_id: string;
+          id?: never;
+          message?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string;
+          created_at?: string;
+          dispute_id?: string;
+          id?: never;
+          message?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payment_dispute_events_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payment_dispute_events_dispute_id_fkey';
+            columns: ['dispute_id'];
+            isOneToOne: false;
+            referencedRelation: 'payment_disputes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      payment_disputes: {
+        Row: {
+          apartment_id: string;
+          created_at: string;
+          id: string;
+          is_late: boolean;
+          payment_id: string;
+          raised_by: string;
+          reason: string;
+          resolution: string | null;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          state: string;
+          window_remaining: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          created_at?: string;
+          id?: string;
+          is_late: boolean;
+          payment_id: string;
+          raised_by: string;
+          reason: string;
+          resolution?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          state?: string;
+          window_remaining?: string | null;
+        };
+        Update: {
+          apartment_id?: string;
+          created_at?: string;
+          id?: string;
+          is_late?: boolean;
+          payment_id?: string;
+          raised_by?: string;
+          reason?: string;
+          resolution?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          state?: string;
+          window_remaining?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payment_disputes_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payment_disputes_payment_id_fkey';
+            columns: ['payment_id'];
+            isOneToOne: false;
+            referencedRelation: 'payments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payment_disputes_raised_by_fkey';
+            columns: ['raised_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payment_disputes_resolved_by_fkey';
+            columns: ['resolved_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       payments: {
         Row: {
           amount_minor: number;
@@ -923,6 +1041,7 @@ export type Database = {
         Args: { p_apply: boolean; p_dispute_id: string; p_message: string };
         Returns: undefined;
       };
+      decline_payment: { Args: { p_payment_id: string; p_reason: string }; Returns: string };
       edit_expense: {
         Args: {
           p_amount_minor: number;
@@ -1061,7 +1180,9 @@ export type Database = {
         Returns: undefined;
       };
       void_expense: { Args: { p_expense_id: string; p_reason?: string }; Returns: undefined };
+      void_payment: { Args: { p_payment_id: string; p_reason?: string }; Returns: undefined };
       withdraw_dispute: { Args: { p_dispute_id: string }; Returns: undefined };
+      withdraw_payment_decline: { Args: { p_dispute_id: string }; Returns: undefined };
     };
     Enums: {
       [_ in never]: never;
