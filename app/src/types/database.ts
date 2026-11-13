@@ -3,6 +3,52 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      apartment_invites: {
+        Row: {
+          apartment_id: string;
+          code_hash: string;
+          created_at: string;
+          created_by: string | null;
+          expires_at: string;
+          id: string;
+          revoked_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          code_hash: string;
+          created_at?: string;
+          created_by?: string | null;
+          expires_at: string;
+          id?: string;
+          revoked_at?: string | null;
+        };
+        Update: {
+          apartment_id?: string;
+          code_hash?: string;
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string;
+          id?: string;
+          revoked_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'apartment_invites_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'apartment_invites_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       apartment_members: {
         Row: {
           apartment_id: string;
@@ -194,6 +240,9 @@ export type Database = {
         };
         Returns: string;
       };
+      create_invite: { Args: { p_apartment_id: string; p_valid_days?: number }; Returns: string };
+      join_apartment: { Args: { p_code: string }; Returns: Json };
+      revoke_invite: { Args: { p_invite_id: string }; Returns: undefined };
     };
     Enums: {
       [_ in never]: never;
