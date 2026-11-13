@@ -736,6 +736,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'ledger_entries_offset_fk';
+            columns: ['offset_id'];
+            isOneToOne: false;
+            referencedRelation: 'offsets';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'ledger_entries_payment_fk';
             columns: ['payment_id'];
             isOneToOne: false;
@@ -747,6 +754,59 @@ export type Database = {
             columns: ['reverses_entry_id'];
             isOneToOne: false;
             referencedRelation: 'ledger_entries';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      offsets: {
+        Row: {
+          amount_minor: number;
+          apartment_id: string;
+          client_request_id: string | null;
+          counterparty_id: string;
+          created_at: string;
+          id: string;
+          initiator_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_minor: number;
+          apartment_id: string;
+          client_request_id?: string | null;
+          counterparty_id: string;
+          created_at?: string;
+          id?: string;
+          initiator_id: string;
+        };
+        Update: {
+          amount_minor?: number;
+          apartment_id?: string;
+          client_request_id?: string | null;
+          counterparty_id?: string;
+          created_at?: string;
+          id?: string;
+          initiator_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'offsets_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'offsets_counterparty_id_fkey';
+            columns: ['counterparty_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'offsets_initiator_id_fkey';
+            columns: ['initiator_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
         ];
@@ -1113,6 +1173,15 @@ export type Database = {
       };
       join_apartment: { Args: { p_code: string }; Returns: Json };
       leave_apartment: { Args: { p_apartment_id: string }; Returns: undefined };
+      net_off: {
+        Args: {
+          p_amount_minor?: number;
+          p_apartment_id: string;
+          p_client_request_id?: string;
+          p_counterparty_id: string;
+        };
+        Returns: string;
+      };
       post_expense: {
         Args: {
           p_amount_minor: number;
