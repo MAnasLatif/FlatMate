@@ -19,11 +19,14 @@ export async function renderWithProviders(ui: ReactElement) {
       mutations: { retry: false, gcTime: Infinity },
     },
   });
+  // The styling notice HeroUI prints in development is noise in test output.
   function Providers({ children }: { children: ReactNode }) {
     return (
       <SafeAreaProvider initialMetrics={SAFE_AREA_METRICS}>
         <QueryClientProvider client={queryClient}>
-          <HeroUINativeProvider>{children}</HeroUINativeProvider>
+          <HeroUINativeProvider config={{ devInfo: { stylingPrinciples: false } }}>
+            {children}
+          </HeroUINativeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     );
