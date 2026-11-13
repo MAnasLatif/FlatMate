@@ -75,6 +75,12 @@
     "moduleNameMapper": {
       "^@/assets/(.*)$": "<rootDir>/assets/$1",
       "^@/(.*)$": "<rootDir>/src/$1"
-    }
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|react-native-svg|heroui-native|uniwind|tailwind-variants|tailwind-merge|@gorhom/.*)"
+    ],
+    "setupFiles": [
+      "<rootDir>/jest.setup.ts"
+    ]
   }
 }
