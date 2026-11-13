@@ -66,6 +66,10 @@ npx supabase@3.1.0 test db                 # run the pgTAP tests
 npx supabase@3.1.0 stop                    # stop the local stack
 ```
 
+If `supabase start` stops with an unhealthy `supabase_analytics` or `supabase_vector` container, start without them: `npx supabase@3.1.0 start -x logflare,vector`. They only power the log explorer in Studio.
+
+Local emails, such as sign-up codes, are caught by Mailpit at http://127.0.0.1:54324 instead of being sent.
+
 `supabase status` prints the local API URL and the publishable key. Put them in `app/.env` to point the app at the local stack. A phone cannot reach `127.0.0.1` on your computer, so for testing on a device use the hosted development project below.
 
 ## Hosted development project
@@ -88,6 +92,18 @@ Each developer or self-hoster uses their own Supabase project for development, s
    ```
 
 Migrations reach a hosted project only through `db push` from the committed files in `migrations/`. Never change a hosted schema in the dashboard's SQL editor or through an MCP server, because the change would exist in no migration and the environments would drift apart. AI agents connected through the Supabase MCP server use it to inspect the project (tables, migrations, advisors, logs), not to change it.
+
+### Auth settings
+
+`config.toml` holds the auth settings for the local stack: email confirmation on, passwords of at least 8 characters, 6-digit email codes, the email templates in `templates/`, and `flatmate://auth/callback` as an allowed redirect. A hosted project needs the same settings, or sign-up confirmation emails will contain a link the app cannot use. Either push them, after checking the diff:
+
+```sh
+npx supabase@3.1.0 config push --remote
+```
+
+or set them in the dashboard: under Authentication, set the email OTP length to 6, paste `templates/confirmation.html` and `templates/recovery.html` into the "Confirm signup" and "Reset password" templates, and add `flatmate://auth/callback` to the redirect URLs.
+
+Google sign-in additionally needs a Google OAuth client. Enable the Google provider in the project with its client ID and secret, then set `EXPO_PUBLIC_AUTH_GOOGLE_ENABLED=true` in `app/.env` to show the button. Locally, put the two values in `supabase/.env` as `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` and set `enabled = true` under `[auth.external.google]`.
 
 New projects can be created with an option that turns row-level security on for every new table. It installs a `public.rls_auto_enable()` function and an event trigger, and the security advisor then warns that `anon` and `authenticated` can execute that function. Calling it directly fails, because it is an event trigger function, so the warning is harmless.
 
