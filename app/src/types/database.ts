@@ -736,10 +736,98 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'ledger_entries_payment_fk';
+            columns: ['payment_id'];
+            isOneToOne: false;
+            referencedRelation: 'payments';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'ledger_entries_reverses_entry_id_fkey';
             columns: ['reverses_entry_id'];
             isOneToOne: false;
             referencedRelation: 'ledger_entries';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      payments: {
+        Row: {
+          amount_minor: number;
+          apartment_id: string;
+          client_request_id: string | null;
+          created_at: string;
+          currency: string;
+          expense_id: string | null;
+          finalize_after: string;
+          finalized_at: string | null;
+          id: string;
+          paid_at: string;
+          payer_id: string;
+          recipient_id: string;
+          reference: string | null;
+          status: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_minor: number;
+          apartment_id: string;
+          client_request_id?: string | null;
+          created_at?: string;
+          currency: string;
+          expense_id?: string | null;
+          finalize_after: string;
+          finalized_at?: string | null;
+          id?: string;
+          paid_at: string;
+          payer_id: string;
+          recipient_id: string;
+          reference?: string | null;
+          status?: string;
+        };
+        Update: {
+          amount_minor?: number;
+          apartment_id?: string;
+          client_request_id?: string | null;
+          created_at?: string;
+          currency?: string;
+          expense_id?: string | null;
+          finalize_after?: string;
+          finalized_at?: string | null;
+          id?: string;
+          paid_at?: string;
+          payer_id?: string;
+          recipient_id?: string;
+          reference?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payments_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payments_expense_id_fkey';
+            columns: ['expense_id'];
+            isOneToOne: false;
+            referencedRelation: 'expenses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payments_payer_id_fkey';
+            columns: ['payer_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payments_recipient_id_fkey';
+            columns: ['recipient_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
         ];
@@ -892,6 +980,18 @@ export type Database = {
           title: string;
         }[];
       };
+      get_my_pair_obligations: {
+        Args: { p_apartment_id: string; p_counterparty_id: string };
+        Returns: {
+          amount_minor: number;
+          covered_minor: number;
+          direction: string;
+          expense_date: string;
+          expense_id: string;
+          is_held: boolean;
+          title: string;
+        }[];
+      };
       join_apartment: { Args: { p_code: string }; Returns: Json };
       leave_apartment: { Args: { p_apartment_id: string }; Returns: undefined };
       post_expense: {
@@ -921,6 +1021,18 @@ export type Database = {
         Returns: string;
       };
       record_bill_payment: { Args: { p_expense_id: string; p_payers: Json }; Returns: undefined };
+      record_payment: {
+        Args: {
+          p_amount_minor: number;
+          p_apartment_id: string;
+          p_client_request_id?: string;
+          p_expense_id?: string;
+          p_paid_at?: string;
+          p_recipient_id: string;
+          p_reference?: string;
+        };
+        Returns: string;
+      };
       remove_member: { Args: { p_apartment_id: string; p_user_id: string }; Returns: undefined };
       rename_category: { Args: { p_category_id: string; p_name: string }; Returns: undefined };
       respond_to_dispute: {
