@@ -1,6 +1,6 @@
 # Architecture
 
-This is an overview of how FlatMate is put together. It describes the intended design at the start of development. The data model is still a proposal, and the product decisions it depends on are recorded in [SRS section 12](SRS.md#12-product-decisions). Update this document as the model is built.
+This is an overview of how FlatMate is put together. The data model is built (decision records 0003 to 0006), and the product decisions it depends on are recorded in [SRS section 12](SRS.md#12-product-decisions). Parts marked *planned* follow [decision 0007](decisions/0007-offline-reading-and-live-sync.md) and are not built yet. Update this document as they are.
 
 ## System overview
 
@@ -17,7 +17,9 @@ flowchart LR
     AUTH["Auth"]
     DB[("PostgreSQL<br/>RLS + functions")]
     STORE["Storage<br/>private buckets"]
-    EDGE["Edge Functions<br/>and scheduled jobs"]
+    RT["Realtime<br/>private Broadcast (planned)"]
+    CRON["pg_cron<br/>scheduled jobs"]
+    EDGE["Edge Functions<br/>(planned: push)"]
   end
 
   PUSH["Expo push service"]
@@ -26,8 +28,10 @@ flowchart LR
   APP -->|sign in| AUTH
   APP -->|queries and RPC under RLS| DB
   APP -->|signed URLs| STORE
-  APP -->|calls| EDGE
-  EDGE --> DB
+  DB -->|change signals| RT
+  RT -->|apartment topic| APP
+  CRON --> DB
+  DB --> EDGE
   EDGE --> PUSH
   PUSH --> APP
   WEB -->|download links| STORES
@@ -43,7 +47,9 @@ flowchart LR
 | Financial operations | Postgres functions called by RPC | Transactional: posting expenses, payments, reversals, dispute resolution, settlement. |
 | Split validation and rounding | Database | The app previews. The server decides. |
 | Receipts and payment proofs | Supabase Storage | Private buckets, accessed with signed URLs. |
-| Scheduled work | Edge Functions and cron | Recurring charges, objection-window deadlines, reminders. Idempotent and timezone-aware. |
+| Scheduled work | pg_cron jobs calling Postgres functions | Objection-window deadlines and settlement periods today; recurring charges and reminders later. Idempotent and timezone-aware. |
+| Live updates (planned) | Realtime Broadcast from a trigger on `audit_events` | A signal that something changed, with no data in it. The app then refetches through RLS. |
+| Offline reading (planned) | Encrypted saved query cache on the phone | A copy of what the user already loaded, never a source of truth. |
 | Push notifications | Edge Functions to the Expo push service | Notification text carries no account details. |
 | Public marketing pages | `web/` | Static content and store links. No user data. |
 
@@ -67,6 +73,41 @@ Balances are never stored as a number that gets overwritten. They are derived fr
 These produce **ledger entries** between pairs of members, and every balance shown in the app can be traced back to them. Amounts are integers in minor units. Corrections are new linked entries, so closed periods stay auditable.
 
 The complete set of rules is in [AGENTS.md](../AGENTS.md#money-and-ledger-rules), and the proposed tables are in [SRS section 6](SRS.md#6-supabase-data-architecture-proposed).
+
+## Data in the app
+
+The app has four layers, and data only moves through them in this order:
+
+| Layer | Where | Job |
+|---|---|---|
+| Screen | `app/src/app/` | Renders the loading, empty, error, offline and content states. Never queries. |
+| Hooks | `features/<feature>/hooks.ts` | TanStack Query: cache keys, `useQuery` and `useMutation`, and which queries to refresh after a write. |
+| Data access | `features/<feature>/api.ts` | supabase-js calls, typed by the generated `types/database.ts`, turning rows into app types. |
+| Infrastructure | `app/src/lib/` | The Supabase client, the query client, configuration, errors, money and time. |
+
+**Reads** are table selects filtered by RLS, or read-only functions for figures computed on the server, such as balances. **Writes** to financial and apartment data always go through a function that runs as one transaction; client roles can only read tables, apart from their own profile name and photo. A function that fails raises a stable key such as `not_admin`, which the app turns into a sentence.
+
+**Cache keys** group everything about one apartment's money under `['money', apartmentId]`, so a single invalidation after any financial change refreshes balances, lists and detail screens together. Apartment, member and settings data sit under `['apartments', apartmentId]`.
+
+**Sync (planned, decision 0007).** Every change that matters to an apartment writes an `audit_events` row in the same transaction, including changes made by scheduled jobs. A trigger on that table sends a Broadcast message to the private topic `apartment:<id>`, readable only by active members. The message names only the kind of record that changed. The app invalidates the matching cache keys and refetches. After a reconnect, or when the app returns to the foreground, it refreshes the open apartment instead of trusting that no message was missed.
+
+**Offline reading (planned, decision 0007).** The query cache is saved on the phone, encrypted with a key held in the device keychain, per user, for up to 7 days, and deleted at sign-out. Without a connection, screens show the saved data with the time it was last updated. Anything that writes needs a connection.
+
+```mermaid
+sequenceDiagram
+  participant A as Member A's app
+  participant DB as Postgres
+  participant RT as Realtime
+  participant B as Member B's app
+  A->>DB: rpc post_expense (one transaction)
+  DB->>DB: expense, splits, ledger entries, audit_events row
+  DB-->>A: expense id
+  A->>A: invalidate ['money', apartment]
+  DB->>RT: trigger: { kind: "expense" } on apartment:<id>
+  RT-->>B: change signal
+  B->>B: invalidate ['money', apartment]
+  B->>DB: refetch through RLS
+```
 
 ## Data isolation
 

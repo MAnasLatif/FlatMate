@@ -2,7 +2,7 @@
 
 The FlatMate application for Android and iOS, built with Expo, React Native and TypeScript. This is the product itself. Everything a user does in FlatMate happens here.
 
-> **Status: accounts in progress.** Sign-up, sign-in and password reset work. Apartments, expenses and the rest of Phase 1 follow the order in [docs/TASKS.md](../docs/TASKS.md).
+> **Status: Phase 1 in progress.** Accounts, apartments, expenses, disputes, payments, settlement and member exit work. Offline reading, live sync and notifications are next, in the order in [docs/TASKS.md](../docs/TASKS.md).
 
 ## Run it
 
@@ -84,6 +84,12 @@ app/
 
 Tests sit next to the code they test, as `name.test.ts`. Tests for a route go in the feature's `__tests__` folder, because any file inside `src/app` would be bundled as a route.
 
+## How data flows
+
+A screen calls a feature's hooks; hooks wrap TanStack Query around the feature's `api.ts`; `api.ts` calls Supabase through the client in `src/lib/supabase.ts`. Reads are table selects or read-only functions, and writes are always database functions (`supabase.rpc`). After a write, a hook invalidates the affected cache keys: everything about an apartment's money is under `['money', apartmentId]` (`useRefreshMoney`), and apartment data under `['apartments', apartmentId]`. The full picture is in [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md#data-in-the-app).
+
+Planned in [decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md), tasks 1.35 to 1.40: network and app-state awareness for React Query, an encrypted saved cache so loaded data stays readable offline, and live updates through Supabase Realtime.
+
 ## Rules specific to this folder
 
 - A screen calls hooks and renders components. Queries, split calculations and permission decisions live in a feature's logic or data-access code, or on the server.
@@ -117,7 +123,7 @@ Tests sit next to the code they test, as `name.test.ts`. Tests for a route go in
 | `expo-splash-screen`, `expo-status-bar`, `expo-system-ui`, `expo-constants`, `expo-font`                                                                                                              | App shell                                                                 |
 | `expo-dev-client`                                                                                                                                                                                     | The development build                                                     |
 
-`react-hook-form`, `expo-notifications`, `expo-image-picker`, `expo-clipboard` and `expo-web-browser` are installed for features in the first delivery phases and are not used by any screen yet.
+`expo-notifications` is installed for task 1.41 and is not used by any screen yet.
 
 Development tools: TypeScript, ESLint with `eslint-config-expo`, Prettier, Jest with `jest-expo`, and React Native Testing Library.
 

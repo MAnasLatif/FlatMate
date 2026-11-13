@@ -2,7 +2,7 @@
 
 Everything that runs on Supabase: the database schema, security policies, database functions, Edge Functions, scheduled jobs, seed data and database tests.
 
-> **Status: accounts and apartments in place.** Profiles, photos, apartments, memberships, join codes, settings and categories exist. The financial schema arrives with the tasks in [docs/TASKS.md](../docs/TASKS.md).
+> **Status: Phase 1 schema in place.** Profiles, apartments and members, expenses and the ledger, disputes, payments, offsets, receiving accounts, settlement periods, adjustments and member exits exist, with pgTAP tests. Next are the Realtime change signals and notifications, in the order in [docs/TASKS.md](../docs/TASKS.md).
 
 ## Layout
 
@@ -25,7 +25,8 @@ The database is where FlatMate's rules are enforced. The mobile app is an untrus
 - **Authorization** is done with row-level security on every table that holds apartment data, checking membership and role.
 - **Financial operations** (posting an expense, recording or reversing a payment, resolving a dispute, closing a settlement) are transactional Postgres functions, so they either complete fully or not at all.
 - **Money arithmetic** (split validation, rounding, allocation sums) is checked on the server, using integer minor units.
-- **Scheduled work** (recurring charges, objection-window deadlines, reminders) is idempotent and uses each apartment's timezone.
+- **Scheduled work** (objection-window deadlines and settlement periods today; recurring charges and reminders later) runs as pg_cron jobs calling `private` functions. It is idempotent and uses each apartment's timezone.
+- **Change history.** Every change other members should see writes an `audit_events` row in the same transaction. From task 1.38 that row also triggers the Realtime signal that keeps open apps current ([decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md)), so a change that skips it is invisible until the next refresh.
 
 The proposed data model is in [section 6 of the SRS](../docs/SRS.md#6-supabase-data-architecture-proposed).
 
