@@ -90,7 +90,7 @@ These come from section 12 of the SRS, where each decision is written out in ful
 - [x] **1.19 Dashboard.** Summary cards and the monthly expense feed with a month selector, pagination and status indicators. *(FR-06.1, SRS 3.2)*
 - [x] **1.20 Expense detail.** Receipt, split, payers, payment state, due date, status, audit trail and the actions the viewer's role allows. *(FR-03.6)*
 - [x] **1.21 Editing a posted expense.** Edits create a new version. Corrections to settled records are linked adjustments or reversals. *(FR-03.7)*
-- [ ] **1.22 Member balances and pairwise ledger.** The members directory shows what the viewer owes and is owed by each member. Tapping a member shows their shared expenses, payments, dues and disputes. *(FR-06.2, FR-06.3)*
+- [x] **1.22 Member balances and pairwise ledger.** The members directory shows what the viewer owes and is owed by each member. Tapping a member shows their shared expenses, payments, dues and disputes. *(FR-06.2, FR-06.3)* Done for expenses; disputes (1.25), shared receiving accounts (1.26) and payments (1.30) are added to the pairwise ledger in their own tasks.
 
 ### Disputes
 
