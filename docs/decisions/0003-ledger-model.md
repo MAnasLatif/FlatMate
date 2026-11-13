@@ -78,6 +78,8 @@ An expense can be recorded as unpaid, with no payers, such as an electricity bil
 
 Editing the money of an expense creates a new revision: reversal entries cancel every charge of the previous revision, and new charges are posted for the new one, in one transaction. Descriptive edits (title, category, notes) change the expense row and are logged in `audit_events` with before and after values.
 
+Only the person who added an expense or an admin can edit or void it, and never while it is disputed. A money edit makes the expense provisional again with a new objection window, since the people in it have not seen the new version. The app sends the revision an edit started from; a money edit based on an older revision is refused, and repeating an edit that already succeeded changes nothing. Voiding reverses the charges still in force and marks the expense `void`; it stays visible with its history.
+
 ### Per-expense payment status
 
 Payments reduce what one member owes another as a whole. Whether a particular expense share is paid is worked out for display by applying the pair's payments to its charges, oldest first. It is not stored, so nothing can be counted twice.
