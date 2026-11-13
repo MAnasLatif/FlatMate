@@ -3,6 +3,155 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      apartment_members: {
+        Row: {
+          apartment_id: string;
+          can_add_expense: boolean;
+          id: string;
+          joined_at: string;
+          left_at: string | null;
+          left_reason: string | null;
+          role: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          can_add_expense?: boolean;
+          id?: string;
+          joined_at?: string;
+          left_at?: string | null;
+          left_reason?: string | null;
+          role?: string;
+          user_id: string;
+        };
+        Update: {
+          apartment_id?: string;
+          can_add_expense?: boolean;
+          id?: string;
+          joined_at?: string;
+          left_at?: string | null;
+          left_reason?: string | null;
+          role?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'apartment_members_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'apartment_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      apartments: {
+        Row: {
+          approval_days: number;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          id: string;
+          location: string | null;
+          name: string;
+          settlement_day: number;
+          show_location: boolean;
+          timezone: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          approval_days?: number;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          id?: string;
+          location?: string | null;
+          name: string;
+          settlement_day: number;
+          show_location?: boolean;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Update: {
+          approval_days?: number;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          id?: string;
+          location?: string | null;
+          name?: string;
+          settlement_day?: number;
+          show_location?: boolean;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'apartments_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      audit_events: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          apartment_id: string;
+          created_at: string;
+          details: NonNullable<Json>;
+          entity_id: string | null;
+          entity_type: string;
+          id: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          apartment_id: string;
+          created_at?: string;
+          details?: NonNullable<Json>;
+          entity_id?: string | null;
+          entity_type: string;
+          id?: never;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          apartment_id?: string;
+          created_at?: string;
+          details?: NonNullable<Json>;
+          entity_id?: string | null;
+          entity_type?: string;
+          id?: never;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'audit_events_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'audit_events_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_path: string | null;
@@ -33,7 +182,18 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      create_apartment: {
+        Args: {
+          p_approval_days?: number;
+          p_currency?: string;
+          p_location?: string;
+          p_name: string;
+          p_settlement_day: number;
+          p_show_location?: boolean;
+          p_timezone?: string;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       [_ in never]: never;
