@@ -38,5 +38,5 @@ Expenses are accepted by default, and an affected member can object (SRS FR-05).
 
 - An apartment where the creator is the only admin cannot decide an escalated dispute until another admin is appointed or the raiser withdraws. Settlement carries such disputes forward (task 1.32).
 - The finalisation job (task 1.24) only finalises `provisional` expenses, so held expenses wait automatically.
-- Payment disputes (task 1.28) are expected to extend the same tables with a payment subject.
+- Objections to payments work differently and have their own tables (decision 0005).
 - Evidence files for disputes are added with the dispute screens (task 1.25).

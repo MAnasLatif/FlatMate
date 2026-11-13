@@ -102,13 +102,13 @@ These come from section 12 of the SRS, where each decision is written out in ful
 
 - [ ] **1.26 Receiving accounts.** Accounts a user can be paid into, private by default and visible to flatmates only when shared, with copy to clipboard. *(FR-01.3, FR-01.4, AC-12. Needs the open part of D6.)*
 - [x] **1.27 Recording a payment.** A function that records a payment with an idempotency key, supports partial amounts, allocates it to specific obligations, and applies a provisional credit. *(FR-07.1, FR-07.3, FR-07.4, FR-07.7, AC-07, AC-09)* Allocation is derived oldest first, as decision 0003 requires; a payment's proof photo comes with the pay flow (1.30).
-- [ ] **1.28 Payment objections and finalization.** The recipient can decline within the window, which marks the payment disputed and reverses the provisional credit while keeping the evidence. With no objection, a scheduled job finalizes it as confirmed by app policy. *(FR-07.5, FR-07.6, FR-07.8, AC-07, AC-08)*
+- [x] **1.28 Payment objections and finalization.** The recipient can decline within the window, which marks the payment disputed and reverses the provisional credit while keeping the evidence. With no objection, a scheduled job finalizes it as confirmed by app policy. *(FR-07.5, FR-07.6, FR-07.8, AC-07, AC-08)* See [decision 0005](decisions/0005-payment-objections.md).
 - [ ] **1.29 Net-off.** Offset reciprocal dues between two members, showing exactly which obligations are offset and never counting anything twice. *(FR-06.4, AC-09)*
 - [ ] **1.30 Pay flow screens.** Start from an expense or a member's ledger, choose gross or net and the amount, see the recipient's shared accounts, mark as paid with an optional reference and proof, and view the payment with its status. *(FR-07.1, FR-07.2, FR-07.3, FR-07.8)*
 
 ### Settlement
 
-- [ ] **1.31 Settlement calculation and preview.** A function that computes balances from expenses, payments, offsets and adjustments, excludes disputed amounts, and returns a preview with the source obligations. *(FR-08.2, FR-08.3, AC-10)*
+- [ ] **1.31 Settlement calculation and preview.** A function that computes balances from expenses, payments, offsets and adjustments, excludes disputed amounts, and returns a preview with the source obligations. *(FR-08.2, FR-08.3, AC-10)* Includes adjustment entries, so a late objection to a final payment can be corrected without voiding it (decision 0005).
 - [ ] **1.32 Settlement cycle job.** Opens a cycle on each apartment's settlement day in its timezone, handles short months, closes only reconciled items and carries the rest forward. *(FR-08.4, FR-08.5, FR-08.6, FR-09.4, AC-10)* Once a period is closed, editing or voiding an expense dated in it, or moving an expense into it, must be refused or recorded as an adjustment in the open period (FR-03.7).
 - [ ] **1.33 Settlement screens.** Overview, preview, payment allocation, history and carried-forward balances. *(FR-08.3, FR-08.4)*
 - [ ] **1.34 Member exit.** When a member leaves or is removed, show their final balance and an exit settlement, and keep their history auditable. *(FR-02.4, AC-11)*

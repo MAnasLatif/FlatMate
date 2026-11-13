@@ -24,3 +24,4 @@ Records are not edited after they are accepted, apart from their status. To chan
 | [0002](0002-heroui-native-on-expo-sdk-58.md) | HeroUI Native 1.x on Expo SDK 58 | Accepted |
 | [0003](0003-ledger-model.md) | Ledger model | Accepted |
 | [0004](0004-expense-disputes.md) | Expense disputes | Accepted |
+| [0005](0005-payment-objections.md) | Payment objections | Accepted |
