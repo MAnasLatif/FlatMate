@@ -111,7 +111,7 @@ These come from section 12 of the SRS, where each decision is written out in ful
 - [x] **1.31 Settlement calculation and preview.** A function that computes balances from expenses, payments, offsets and adjustments, excludes disputed amounts, and returns a preview with the source obligations. *(FR-08.2, FR-08.3, AC-10)* Includes adjustment entries, so a late objection to a final payment can be corrected without voiding it (decision 0005). See [decision 0006](decisions/0006-settlement-periods.md).
 - [x] **1.32 Settlement cycle job.** Opens a cycle on each apartment's settlement day in its timezone, handles short months, closes only reconciled items and carries the rest forward. *(FR-08.4, FR-08.5, FR-08.6, FR-09.4, AC-10)* Once a period is closed, editing or voiding an expense dated in it, or moving an expense into it, must be refused or recorded as an adjustment in the open period (FR-03.7).
 - [x] **1.33 Settlement screens.** Overview, preview, payment allocation, history and carried-forward balances. *(FR-08.3, FR-08.4)*
-- [ ] **1.34 Member exit.** When a member leaves or is removed, show their final balance and an exit settlement, and keep their history auditable. *(FR-02.4, AC-11)*
+- [x] **1.34 Member exit.** When a member leaves or is removed, show their final balance and an exit settlement, and keep their history auditable. *(FR-02.4, AC-11)*
 
 ### Notifications and sign-off
 
