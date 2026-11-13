@@ -9,7 +9,7 @@ import {
   Spinner,
   Typography,
 } from 'heroui-native';
-import { useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 
 import { LoadError, LoadingRows } from '@/components/query-states';
@@ -31,11 +31,14 @@ export function PairLedger({
   counterpartyId,
   name,
   currency,
+  children,
 }: {
   apartmentId: string;
   counterpartyId: string;
   name: string;
   currency: string;
+  /** Sections other features add under the balance, such as payments. */
+  children?: ReactNode;
 }) {
   const expenses = usePairExpenses(apartmentId, counterpartyId);
   const refreshMoney = useRefreshMoney(apartmentId);
@@ -79,6 +82,7 @@ export function PairLedger({
             name={name}
             money={money}
           />
+          {children}
           <Typography.Heading type="h6" accessibilityRole="header">
             Shared expenses
           </Typography.Heading>
