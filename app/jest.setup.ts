@@ -12,6 +12,11 @@ jest.mock('react-native-reanimated/src/css/native', () => ({
   setCSSEventHandler: () => undefined,
 }));
 
+// @expo/vector-icons loads its fonts through expo-asset, which npm installs
+// inside the expo package. Metro finds it there and Jest does not. Icons are
+// decoration in tests, so they render nothing.
+jest.mock('@expo/vector-icons/Ionicons', () => ({ __esModule: true, default: () => null }));
+
 // Theme colours are CSS variables that Uniwind compiles through Metro, so they
 // do not exist under Jest and HeroUI falls back to black. These three messages
 // are expected in tests; every other warning and error still prints.
