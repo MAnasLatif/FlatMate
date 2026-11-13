@@ -1,4 +1,4 @@
-import { formatMinorUnits } from './money';
+import { formatMinorUnits, minorUnitsToInput, parseAmountToMinorUnits } from './money';
 
 describe('formatMinorUnits', () => {
   it.each([
@@ -39,5 +39,38 @@ describe('formatMinorUnits', () => {
   it('rejects an invalid number of minor unit digits', () => {
     expect(() => formatMinorUnits(100, -1)).toThrow(RangeError);
     expect(() => formatMinorUnits(100, 1.5)).toThrow(RangeError);
+  });
+});
+
+describe('parseAmountToMinorUnits', () => {
+  it.each([
+    ['200', 20_000],
+    ['200.5', 20_050],
+    ['200.05', 20_005],
+    ['1,234.56', 123_456],
+    [' 0.01 ', 1],
+    ['0', 0],
+    ['007.10', 710],
+  ])('reads %p as %i', (input, expected) => {
+    expect(parseAmountToMinorUnits(input)).toBe(expected);
+  });
+
+  it.each(['', 'abc', '-5', '1.234', '1.2.3', '12a', '.5'])('rejects %p', (input) => {
+    expect(parseAmountToMinorUnits(input)).toBeNull();
+  });
+
+  it('is exact where floating point is not', () => {
+    // 0.1 + 0.2 style errors cannot happen: the digits are joined as text.
+    expect(parseAmountToMinorUnits('1234567890.29')).toBe(123_456_789_029);
+  });
+
+  it('supports currencies without minor units', () => {
+    expect(parseAmountToMinorUnits('1500', 0)).toBe(1500);
+    expect(parseAmountToMinorUnits('1500.5', 0)).toBeNull();
+  });
+
+  it('round-trips with minorUnitsToInput', () => {
+    expect(minorUnitsToInput(123_450)).toBe('1234.50');
+    expect(parseAmountToMinorUnits(minorUnitsToInput(123_450))).toBe(123_450);
   });
 });
