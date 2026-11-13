@@ -1,6 +1,16 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { Button, Card, Chip, Menu, Separator, Typography, useThemeColor } from 'heroui-native';
+import {
+  Button,
+  Card,
+  Chip,
+  Menu,
+  PressableFeedback,
+  Separator,
+  Typography,
+  useThemeColor,
+} from 'heroui-native';
+import type { ReactNode } from 'react';
 import { Alert, View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
@@ -9,12 +19,16 @@ import { Screen } from '@/components/screen';
 import type { Member } from '@/features/apartments/api';
 import { APARTMENT_ERROR_MESSAGES } from '@/features/apartments/errors';
 import {
+  useApartment,
   useApartmentId,
   useLeaveApartment,
   useMemberActions,
   useMembers,
 } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
+import type { PairBalance } from '@/features/expenses/api';
+import { PairBalanceLine } from '@/features/expenses/components/pair-balance-line';
+import { usePairBalances } from '@/features/expenses/hooks';
 import { ProfileAvatar } from '@/features/profile/components/profile-avatar';
 import { userErrorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/time';
@@ -27,6 +41,8 @@ export default function MembersScreen() {
   const apartmentId = useApartmentId();
   const userId = useCurrentUserId();
   const members = useMembers(apartmentId);
+  const apartment = useApartment(apartmentId);
+  const balances = usePairBalances(apartmentId);
   const actions = useMemberActions(apartmentId);
   const leave = useLeaveApartment(apartmentId);
 
@@ -56,6 +72,16 @@ export default function MembersScreen() {
 
   const actionError =
     actions.setRole.error ?? actions.setCanAddExpense.error ?? actions.remove.error;
+  const currency = apartment.data?.currency;
+  const balanceOf = (memberId: string) =>
+    balances.data?.find((balance) => balance.counterpartyId === memberId);
+  // The balance shows once the balances and the currency have loaded.
+  const showBalances = balances.isSuccess && currency !== undefined;
+  const openLedger = (memberId: string) =>
+    router.push({
+      pathname: '/apartments/[apartmentId]/ledger/[memberId]',
+      params: { apartmentId, memberId },
+    });
 
   const confirmLeave = () => {
     Alert.alert(
@@ -76,12 +102,23 @@ export default function MembersScreen() {
     <Screen
       padTop={false}
       refreshing={members.isRefetching}
-      onRefresh={() => void members.refetch()}
+      onRefresh={() => {
+        void members.refetch();
+        void balances.refetch();
+      }}
     >
       <FormAlert
         message={
           actionError
             ? userErrorMessage(actionError, 'Could not make that change.', APARTMENT_ERROR_MESSAGES)
+            : null
+        }
+      />
+      <FormAlert
+        status="warning"
+        message={
+          balances.isError
+            ? 'Could not load balances. Pull down to try again; the members are still shown.'
             : null
         }
       />
@@ -94,6 +131,12 @@ export default function MembersScreen() {
             isViewer={member.userId === userId}
             viewerIsAdmin={viewerIsAdmin}
             actions={actions}
+            balance={
+              showBalances && member.userId !== userId
+                ? { value: balanceOf(member.userId), currency }
+                : undefined
+            }
+            onOpenLedger={member.userId === userId ? undefined : () => openLedger(member.userId)}
           />
         ))}
       </View>
@@ -104,14 +147,26 @@ export default function MembersScreen() {
           {former.map((member) => (
             <Card key={member.membershipId}>
               <Card.Body className="flex-row items-center gap-3">
-                <ProfileAvatar name={member.displayName} avatarPath={member.avatarPath} size="sm" />
-                <View className="flex-1">
-                  <Typography.Paragraph>{nameOf(member)}</Typography.Paragraph>
-                  <Typography.Paragraph type="body-xs" color="muted">
-                    {member.leftReason === 'removed' ? 'Removed' : 'Left'} on{' '}
-                    {formatDate(member.leftAt ?? member.joinedAt)}
-                  </Typography.Paragraph>
-                </View>
+                <OpensLedger
+                  name={nameOf(member)}
+                  onPress={member.userId === userId ? undefined : () => openLedger(member.userId)}
+                >
+                  <ProfileAvatar
+                    name={member.displayName}
+                    avatarPath={member.avatarPath}
+                    size="sm"
+                  />
+                  <View className="flex-1">
+                    <Typography.Paragraph>{nameOf(member)}</Typography.Paragraph>
+                    <Typography.Paragraph type="body-xs" color="muted">
+                      {member.leftReason === 'removed' ? 'Removed' : 'Left'} on{' '}
+                      {formatDate(member.leftAt ?? member.joinedAt)}
+                    </Typography.Paragraph>
+                    {showBalances && member.userId !== userId ? (
+                      <PairBalanceLine balance={balanceOf(member.userId)} currency={currency} />
+                    ) : null}
+                  </View>
+                </OpensLedger>
               </Card.Body>
             </Card>
           ))}
@@ -140,14 +195,47 @@ export default function MembersScreen() {
   );
 }
 
+/** The part of a member's row that opens the pairwise ledger, when there is one to open. */
+function OpensLedger({
+  name,
+  onPress,
+  children,
+}: {
+  name: string;
+  onPress: (() => void) | undefined;
+  children: ReactNode;
+}) {
+  if (!onPress) return <View className="flex-1 flex-row items-center gap-3">{children}</View>;
+  return (
+    <PressableFeedback
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Balance with ${name}`}
+      className="flex-1 flex-row items-center gap-3"
+    >
+      {children}
+    </PressableFeedback>
+  );
+}
+
 type MemberRowProps = {
   member: Member;
   isViewer: boolean;
   viewerIsAdmin: boolean;
   actions: ReturnType<typeof useMemberActions>;
+  /** The member's balance with the viewer, once loaded. */
+  balance?: { value: PairBalance | undefined; currency: string };
+  onOpenLedger?: () => void;
 };
 
-function MemberRow({ member, isViewer, viewerIsAdmin, actions }: MemberRowProps) {
+function MemberRow({
+  member,
+  isViewer,
+  viewerIsAdmin,
+  actions,
+  balance,
+  onOpenLedger,
+}: MemberRowProps) {
   const iconColor = useThemeColor('muted');
   const name = nameOf(member);
   const isBusy =
@@ -171,25 +259,30 @@ function MemberRow({ member, isViewer, viewerIsAdmin, actions }: MemberRowProps)
   return (
     <Card>
       <Card.Body className="flex-row items-center gap-3">
-        <ProfileAvatar name={member.displayName} avatarPath={member.avatarPath} size="md" />
-        <View className="flex-1 gap-1">
-          <Typography.Paragraph>
-            {name}
-            {isViewer ? ' (you)' : ''}
-          </Typography.Paragraph>
-          <View className="flex-row flex-wrap gap-2">
-            {member.role === 'admin' ? (
-              <Chip size="sm" variant="secondary">
-                Admin
-              </Chip>
+        <OpensLedger name={name} onPress={onOpenLedger}>
+          <ProfileAvatar name={member.displayName} avatarPath={member.avatarPath} size="md" />
+          <View className="flex-1 gap-1">
+            <Typography.Paragraph>
+              {name}
+              {isViewer ? ' (you)' : ''}
+            </Typography.Paragraph>
+            {balance ? (
+              <PairBalanceLine balance={balance.value} currency={balance.currency} />
             ) : null}
-            {member.canAddExpense ? null : (
-              <Chip size="sm" variant="tertiary">
-                Cannot add expenses
-              </Chip>
-            )}
+            <View className="flex-row flex-wrap gap-2">
+              {member.role === 'admin' ? (
+                <Chip size="sm" variant="secondary">
+                  Admin
+                </Chip>
+              ) : null}
+              {member.canAddExpense ? null : (
+                <Chip size="sm" variant="tertiary">
+                  Cannot add expenses
+                </Chip>
+              )}
+            </View>
           </View>
-        </View>
+        </OpensLedger>
         {viewerIsAdmin ? (
           <Menu>
             <Menu.Trigger
