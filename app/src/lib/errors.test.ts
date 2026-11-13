@@ -17,4 +17,22 @@ describe('userErrorMessage', () => {
     );
     expect(userErrorMessage(undefined, 'Could not save.')).toBe('Could not save.');
   });
+
+  it('explains a known error key raised by a database function', () => {
+    const error = { message: 'last_admin', code: 'P0001' };
+    expect(
+      userErrorMessage(error, 'Could not change the role.', {
+        last_admin: 'Make someone else an admin first.',
+      }),
+    ).toBe('Make someone else an admin first.');
+  });
+
+  it('explains a known Postgres error code', () => {
+    const error = { message: 'duplicate key value', code: '23505' };
+    expect(
+      userErrorMessage(error, 'Could not add the category.', {
+        '23505': 'A category with this name already exists.',
+      }),
+    ).toBe('A category with this name already exists.');
+  });
 });

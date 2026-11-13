@@ -2,25 +2,40 @@ const NETWORK_MESSAGE = 'Could not reach FlatMate. Check your connection and try
 
 /**
  * A sentence to show the user when a database, storage or function call fails.
- * Server messages are never shown as-is, since they can expose internals;
- * callers pass their own fallback for the situation.
+ * Server messages are never shown as-is, since they can expose internals.
+ *
+ * `known` maps the stable error keys our database functions raise (such as
+ * "last_admin") or a Postgres error code (such as "23505") to a sentence.
+ * Anything else gets `fallback`.
  */
-export function userErrorMessage(error: unknown, fallback: string): string {
+export function userErrorMessage(
+  error: unknown,
+  fallback: string,
+  known: Record<string, string> = {},
+): string {
   if (isNetworkError(error)) {
     return NETWORK_MESSAGE;
+  }
+  const message = stringField(error, 'message');
+  if (message && message in known) {
+    return known[message];
+  }
+  const code = stringField(error, 'code');
+  if (code && code in known) {
+    return known[code];
   }
   return fallback;
 }
 
-function isNetworkError(error: unknown): boolean {
-  if (error instanceof TypeError && /network request failed|failed to fetch/i.test(error.message)) {
-    return true;
+function stringField(error: unknown, field: 'message' | 'code'): string | undefined {
+  if (typeof error === 'object' && error !== null && field in error) {
+    const value = (error as Record<string, unknown>)[field];
+    return typeof value === 'string' ? value : undefined;
   }
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof error.message === 'string' &&
-    /network request failed|failed to fetch/i.test(error.message)
-  );
+  return undefined;
+}
+
+function isNetworkError(error: unknown): boolean {
+  const message = stringField(error, 'message');
+  return message !== undefined && /network request failed|failed to fetch/i.test(message);
 }

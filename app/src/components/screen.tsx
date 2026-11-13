@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ScreenProps = {
@@ -8,10 +8,19 @@ type ScreenProps = {
   scroll?: boolean;
   /** Pad for the status bar. Off for screens under a navigation header. */
   padTop?: boolean;
+  /** Pull to refresh, for screens that show server data. */
+  refreshing?: boolean;
+  onRefresh?: () => void;
 };
 
 /** Page container: theme background, safe areas, and room for the keyboard. */
-export function Screen({ children, scroll = true, padTop = true }: ScreenProps) {
+export function Screen({
+  children,
+  scroll = true,
+  padTop = true,
+  refreshing = false,
+  onRefresh,
+}: ScreenProps) {
   const insets = useSafeAreaInsets();
   const padding = {
     paddingTop: padTop ? insets.top + 16 : 16,
@@ -29,6 +38,9 @@ export function Screen({ children, scroll = true, padTop = true }: ScreenProps) 
           contentContainerClassName="grow gap-6 px-5"
           contentContainerStyle={padding}
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined
+          }
         >
           {children}
         </ScrollView>
