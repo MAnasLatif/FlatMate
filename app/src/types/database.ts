@@ -648,6 +648,23 @@ export type Database = {
         Returns: string;
       };
       create_invite: { Args: { p_apartment_id: string; p_valid_days?: number }; Returns: string };
+      edit_expense: {
+        Args: {
+          p_amount_minor: number;
+          p_category_id: string;
+          p_description: string;
+          p_due_date: string;
+          p_expected_revision: number;
+          p_expense_date: string;
+          p_expense_id: string;
+          p_participants: Json;
+          p_payers: Json;
+          p_reason?: string;
+          p_split_method: string;
+          p_title: string;
+        };
+        Returns: number;
+      };
       get_my_balances: {
         Args: { p_apartment_id: string };
         Returns: {
@@ -700,6 +717,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      void_expense: { Args: { p_expense_id: string; p_reason?: string }; Returns: undefined };
     };
     Enums: {
       [_ in never]: never;
