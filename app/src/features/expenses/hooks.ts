@@ -6,15 +6,18 @@ import {
   createReceiptUrl,
   EXPENSES_PAGE_SIZE,
   fetchAttachments,
+  fetchExpenseDetail,
   fetchExpensesPage,
   fetchMyBalances,
   fetchMyMonthlyShare,
   type PickedReceipt,
   postExpense,
   RECEIPT_URL_STALE_TIME_MS,
+  recordBillPayment,
   uploadReceipt,
 } from './api';
 import type { ValidExpense } from './draft';
+import type { Contribution } from './split';
 
 export const expenseKeys = {
   /** Everything about an apartment's money: invalidate after any financial change. */
@@ -89,6 +92,21 @@ export function useUploadReceipt(apartmentId: string) {
   return useMutation({
     mutationFn: (input: { expenseId: string; receipt: PickedReceipt }) =>
       uploadReceipt(apartmentId, input.expenseId, input.receipt),
+    onSuccess: refresh,
+  });
+}
+
+export function useExpenseDetail(apartmentId: string, expenseId: string) {
+  return useQuery({
+    queryKey: expenseKeys.detail(apartmentId, expenseId),
+    queryFn: () => fetchExpenseDetail(expenseId),
+  });
+}
+
+export function useRecordBillPayment(apartmentId: string, expenseId: string) {
+  const refresh = useRefreshMoney(apartmentId);
+  return useMutation({
+    mutationFn: (payers: Contribution[]) => recordBillPayment(expenseId, payers),
     onSuccess: refresh,
   });
 }

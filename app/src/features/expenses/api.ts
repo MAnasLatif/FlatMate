@@ -1,8 +1,9 @@
 import { storageStatusOf } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
-import type { Tables } from '@/types/database';
+import type { Json, Tables } from '@/types/database';
 
 import type { ValidExpense } from './draft';
+import type { Contribution, SplitMethod } from './split';
 
 export type ExpenseStatus = 'provisional' | 'disputed' | 'final' | 'void';
 
@@ -28,6 +29,44 @@ export type Balance = {
 };
 
 export const EXPENSES_PAGE_SIZE = 20;
+
+/** One entry in an expense's history, from the apartment's audit trail. */
+export type HistoryEvent = {
+  id: number;
+  actorId: string | null;
+  action: string;
+  details: Json;
+  createdAt: string;
+};
+
+/** Everything the expense detail screen shows, as of the expense's current revision. */
+export type ExpenseDetail = {
+  id: string;
+  apartmentId: string;
+  title: string;
+  description: string | null;
+  categoryName: string | null;
+  amountMinor: number;
+  currency: string;
+  expenseDate: string;
+  dueDate: string | null;
+  paidStatus: 'paid' | 'unpaid';
+  status: ExpenseStatus;
+  revision: number;
+  /** When the objection window closes, if no dispute is opened. */
+  finalizeAfter: string;
+  finalizedAt: string | null;
+  createdBy: string;
+  createdAt: string;
+  splitMethod: SplitMethod;
+  splits: { userId: string; amountMinor: number; basisPoints: number | null }[];
+  /** Empty while a bill is unpaid. */
+  payers: Contribution[];
+  history: HistoryEvent[];
+};
+
+/** The most history entries shown for one expense. */
+export const EXPENSE_HISTORY_LIMIT = 50;
 
 export async function postExpense(
   apartmentId: string,
@@ -79,6 +118,89 @@ export async function fetchExpensesPage(
     .range(from, from + EXPENSES_PAGE_SIZE - 1);
   if (error) throw error;
   return data;
+}
+
+/**
+ * Loads an expense with its current split and payers, or null when the user
+ * cannot see it. The revisions are embedded in the same request, so the split
+ * and payers always match the expense row even while someone records a payment.
+ */
+export async function fetchExpenseDetail(expenseId: string): Promise<ExpenseDetail | null> {
+  const [expenseResult, historyResult] = await Promise.all([
+    supabase
+      .from('expenses')
+      .select(
+        `id, apartment_id, title, description, amount_minor, currency, expense_date, due_date,
+         paid_status, status, revision, finalize_after, finalized_at, created_by, created_at,
+         category:expense_categories(name),
+         revisions:expense_revisions(revision, split_method,
+           splits:expense_splits(user_id, amount_minor, basis_points),
+           payers:expense_payers(user_id, amount_minor))`,
+      )
+      .eq('id', expenseId)
+      .maybeSingle(),
+    supabase
+      .from('audit_events')
+      .select('id, actor_id, action, details, created_at')
+      .eq('entity_type', 'expense')
+      .eq('entity_id', expenseId)
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
+      .limit(EXPENSE_HISTORY_LIMIT),
+  ]);
+  if (expenseResult.error) throw expenseResult.error;
+  if (historyResult.error) throw historyResult.error;
+  const row = expenseResult.data;
+  if (!row) return null;
+
+  const current = row.revisions.find((revision) => revision.revision === row.revision);
+  if (!current) throw new Error(`Expense ${row.id} has no revision ${row.revision}.`);
+
+  return {
+    id: row.id,
+    apartmentId: row.apartment_id,
+    title: row.title,
+    description: row.description,
+    categoryName: row.category?.name ?? null,
+    amountMinor: row.amount_minor,
+    currency: row.currency,
+    expenseDate: row.expense_date,
+    dueDate: row.due_date,
+    paidStatus: row.paid_status as ExpenseDetail['paidStatus'],
+    status: row.status as ExpenseStatus,
+    revision: row.revision,
+    finalizeAfter: row.finalize_after,
+    finalizedAt: row.finalized_at,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    splitMethod: current.split_method as SplitMethod,
+    splits: current.splits
+      .map((split) => ({
+        userId: split.user_id,
+        amountMinor: split.amount_minor,
+        basisPoints: split.basis_points,
+      }))
+      .sort((a, b) => (a.userId < b.userId ? -1 : a.userId > b.userId ? 1 : 0)),
+    payers: current.payers
+      .map((payer) => ({ userId: payer.user_id, amountMinor: payer.amount_minor }))
+      .sort((a, b) => (a.userId < b.userId ? -1 : a.userId > b.userId ? 1 : 0)),
+    history: historyResult.data.map((event) => ({
+      id: event.id,
+      actorId: event.actor_id,
+      action: event.action,
+      details: event.details,
+      createdAt: event.created_at,
+    })),
+  };
+}
+
+/** Records who paid a bill that was added as unpaid. Its debts start from this payment. */
+export async function recordBillPayment(expenseId: string, payers: Contribution[]): Promise<void> {
+  const { error } = await supabase.rpc('record_bill_payment', {
+    p_expense_id: expenseId,
+    p_payers: payers.map((payer) => ({ user_id: payer.userId, amount_minor: payer.amountMinor })),
+  });
+  if (error) throw error;
 }
 
 export async function fetchMyBalances(apartmentId: string): Promise<Balance[]> {
