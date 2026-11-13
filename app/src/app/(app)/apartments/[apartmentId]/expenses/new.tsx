@@ -13,10 +13,12 @@ import {
   useMembers,
 } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
+import type { PickedReceipt } from '@/features/expenses/api';
 import { ExpenseForm } from '@/features/expenses/components/expense-form';
+import { ReceiptPicker } from '@/features/expenses/components/receipt-picker';
 import { newDraft, validateDraft } from '@/features/expenses/draft';
-import { EXPENSE_ERROR_MESSAGES } from '@/features/expenses/errors';
-import { usePostExpense } from '@/features/expenses/hooks';
+import { EXPENSE_ERROR_MESSAGES, receiptUploadErrorMessage } from '@/features/expenses/errors';
+import { usePostExpense, useUploadReceipt } from '@/features/expenses/hooks';
 import { userErrorMessage } from '@/lib/errors';
 import { todayInTimeZone } from '@/lib/time';
 import { randomUuid } from '@/lib/uuid';
@@ -74,7 +76,11 @@ function AddExpenseForm({
   // One id per expense being added, so a retried save cannot create a duplicate.
   const [requestId] = useState(randomUuid);
   const [showErrors, setShowErrors] = useState(false);
+  const [receipt, setReceipt] = useState<PickedReceipt | null>(null);
+  // Set once the expense is posted, so a failed receipt upload is retried on its own.
+  const [savedExpenseId, setSavedExpenseId] = useState<string | null>(null);
   const post = usePostExpense(apartment.id);
+  const upload = useUploadReceipt(apartment.id);
 
   const memberIds = useMemo(() => members.map((member) => member.userId), [members]);
   const result = useMemo(() => validateDraft(draft, memberIds), [draft, memberIds]);
@@ -94,12 +100,52 @@ function AddExpenseForm({
     );
   }
 
+  const attach = (expenseId: string, picked: PickedReceipt) =>
+    upload.mutate({ expenseId, receipt: picked }, { onSuccess: () => router.back() });
+
+  if (savedExpenseId) {
+    return (
+      <Screen padTop={false}>
+        <FormAlert status="success" message="The expense was saved." />
+        <FormAlert
+          message={
+            upload.error
+              ? `The receipt was not attached. ${receiptUploadErrorMessage(upload.error)}`
+              : null
+          }
+        />
+        <ReceiptPicker receipt={receipt} onChange={setReceipt} isDisabled={upload.isPending} />
+        <Button
+          onPress={() => receipt && attach(savedExpenseId, receipt)}
+          isDisabled={upload.isPending || !receipt}
+        >
+          {upload.isPending ? 'Uploading receipt…' : 'Upload receipt'}
+        </Button>
+        <Button variant="ghost" onPress={() => router.back()} isDisabled={upload.isPending}>
+          Finish without a receipt
+        </Button>
+      </Screen>
+    );
+  }
+
   const save = () => {
     setShowErrors(true);
-    if (result.value) {
-      post.mutate({ expense: result.value, requestId }, { onSuccess: () => router.back() });
-    }
+    if (!result.value) return;
+    post.mutate(
+      { expense: result.value, requestId },
+      {
+        onSuccess: (expenseId) => {
+          if (!receipt) {
+            router.back();
+            return;
+          }
+          setSavedExpenseId(expenseId);
+          attach(expenseId, receipt);
+        },
+      },
+    );
   };
+  const isSaving = post.isPending || upload.isPending;
 
   return (
     <Screen padTop={false}>
@@ -114,6 +160,7 @@ function AddExpenseForm({
         today={today}
         currentUserId={userId}
       />
+      <ReceiptPicker receipt={receipt} onChange={setReceipt} isDisabled={isSaving} />
       <FormAlert
         message={
           post.error
@@ -127,7 +174,7 @@ function AddExpenseForm({
               : null
         }
       />
-      <Button onPress={save} isDisabled={post.isPending}>
+      <Button onPress={save} isDisabled={isSaving}>
         {post.isPending ? 'Saving…' : 'Save expense'}
       </Button>
     </Screen>
