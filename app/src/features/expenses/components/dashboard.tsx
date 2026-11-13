@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { Button, Skeleton, Spinner, Typography } from 'heroui-native';
 import { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
@@ -48,7 +49,17 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
       contentContainerClassName="gap-3 px-5 pb-8 pt-4"
       data={items}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <ExpenseRow expense={item} />}
+      renderItem={({ item }) => (
+        <ExpenseRow
+          expense={item}
+          onPress={() =>
+            router.push({
+              pathname: '/apartments/[apartmentId]/expenses/[expenseId]',
+              params: { apartmentId: apartment.id, expenseId: item.id },
+            })
+          }
+        />
+      )}
       ListHeaderComponent={
         <View className="gap-4 pb-1">
           <BalanceSummary

@@ -1,4 +1,5 @@
 import { screen, userEvent } from '@testing-library/react-native';
+import { router } from 'expo-router';
 
 import type { Apartment } from '@/features/apartments/api';
 import { fetchApartment } from '@/features/apartments/api';
@@ -110,6 +111,19 @@ it("lists the month's expenses with their status and the user's share", async ()
   expect(screen.getByText('Final')).toBeOnTheScreen();
   expect(await screen.findByText('66.67 PKR')).toBeOnTheScreen();
   expect(expensesPage).toHaveBeenCalledWith(apartment.id, thisMonth, addMonths(thisMonth, 1), 0);
+});
+
+it('opens an expense from the feed', async () => {
+  expensesPage.mockResolvedValue([expense({ id: 'e1', title: 'Cleaning' })]);
+  await renderWithProviders(<Dashboard apartment={apartment} />);
+  const user = userEvent.setup();
+
+  await user.press(await screen.findByRole('button', { name: /Cleaning/ }));
+
+  expect(router.push).toHaveBeenCalledWith({
+    pathname: '/apartments/[apartmentId]/expenses/[expenseId]',
+    params: { apartmentId: apartment.id, expenseId: 'e1' },
+  });
 });
 
 it('steps back a month but not past the current one', async () => {
