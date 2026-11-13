@@ -1,9 +1,9 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { PickedImage } from '@/lib/private-images';
 import { addMonths } from '@/lib/time';
 
 import {
-  createReceiptUrl,
   editExpense,
   EXPENSES_PAGE_SIZE,
   fetchAttachments,
@@ -14,9 +14,7 @@ import {
   fetchPairBalances,
   fetchPairExpensesPage,
   PAIR_EXPENSES_PAGE_SIZE,
-  type PickedReceipt,
   postExpense,
-  RECEIPT_URL_STALE_TIME_MS,
   recordBillPayment,
   uploadReceipt,
   voidExpense,
@@ -86,19 +84,10 @@ export function useAttachments(apartmentId: string, expenseId: string) {
   });
 }
 
-/** A temporary link to a receipt image, refreshed before it expires. */
-export function useReceiptUrl(path: string) {
-  return useQuery({
-    queryKey: ['receipt-url', path],
-    queryFn: () => createReceiptUrl(path),
-    staleTime: RECEIPT_URL_STALE_TIME_MS,
-  });
-}
-
 export function useUploadReceipt(apartmentId: string) {
   const refresh = useRefreshMoney(apartmentId);
   return useMutation({
-    mutationFn: (input: { expenseId: string; receipt: PickedReceipt }) =>
+    mutationFn: (input: { expenseId: string; receipt: PickedImage }) =>
       uploadReceipt(apartmentId, input.expenseId, input.receipt),
     onSuccess: refresh,
   });

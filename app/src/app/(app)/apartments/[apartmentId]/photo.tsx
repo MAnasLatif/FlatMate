@@ -4,23 +4,26 @@ import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FormAlert } from '@/components/form/form-alert';
+import { PrivateImageView } from '@/components/private-image';
 import { useApartmentId } from '@/features/apartments/hooks';
-import { ReceiptView } from '@/features/expenses/components/expense-receipts';
+import { isPrivateImageBucket } from '@/lib/private-images';
 
-export default function ReceiptScreen() {
+/** A receipt or a piece of dispute evidence at full size. */
+export default function PhotoScreen() {
   const apartmentId = useApartmentId();
-  const { path } = useLocalSearchParams<{ path?: string }>();
+  const { bucket, path } = useLocalSearchParams<{ bucket?: string; path?: string }>();
   const insets = useSafeAreaInsets();
-  // Storage only serves receipts to members, so this check only catches a malformed link.
-  const isValid = typeof path === 'string' && path.startsWith(`${apartmentId}/`);
+  // Storage only serves photos to people allowed to see them, so this only catches a malformed link.
+  const isValid =
+    isPrivateImageBucket(bucket) && typeof path === 'string' && path.startsWith(`${apartmentId}/`);
 
   return (
     <View className="flex-1 gap-4 bg-background p-4" style={{ paddingBottom: insets.bottom + 16 }}>
       {isValid ? (
-        <ReceiptView path={path} />
+        <PrivateImageView bucket={bucket} path={path} />
       ) : (
         <>
-          <FormAlert message="This receipt link is incomplete." />
+          <FormAlert message="This photo link is incomplete." />
           <Button variant="secondary" onPress={() => router.back()}>
             Go back
           </Button>

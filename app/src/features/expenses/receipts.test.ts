@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase';
 
-import { type PickedReceipt, receiptPathFor, uploadReceipt } from './api';
+import type { PickedImage } from '@/lib/private-images';
+
+import { receiptPathFor, uploadReceipt } from './api';
 import { receiptUploadErrorMessage } from './errors';
 
 jest.mock('@/lib/supabase', () => ({
@@ -9,7 +11,7 @@ jest.mock('@/lib/supabase', () => ({
 
 const APARTMENT = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const EXPENSE = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
-const receipt: PickedReceipt = {
+const receipt: PickedImage = {
   id: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
   uri: 'file:///receipt.jpg',
   mimeType: 'image/jpeg',

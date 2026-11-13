@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { LoadError, LoadingRows } from '@/components/query-states';
+import { PhotoPicker } from '@/components/photo-picker';
 import { Screen } from '@/components/screen';
 import type { Apartment, Category, Member } from '@/features/apartments/api';
 import {
@@ -13,14 +14,13 @@ import {
   useMembers,
 } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
-import type { PickedReceipt } from '@/features/expenses/api';
 import { ExpenseForm } from '@/features/expenses/components/expense-form';
-import { ReceiptPicker } from '@/features/expenses/components/receipt-picker';
 import { newDraft, validateDraft } from '@/features/expenses/draft';
 import { EXPENSE_ERROR_MESSAGES, receiptUploadErrorMessage } from '@/features/expenses/errors';
 import { usePostExpense, useUploadReceipt } from '@/features/expenses/hooks';
 import { userErrorMessage } from '@/lib/errors';
 import { todayInTimeZone } from '@/lib/time';
+import type { PickedImage } from '@/lib/private-images';
 import { randomUuid } from '@/lib/uuid';
 
 export default function AddExpenseScreen() {
@@ -76,7 +76,7 @@ function AddExpenseForm({
   // One id per expense being added, so a retried save cannot create a duplicate.
   const [requestId] = useState(randomUuid);
   const [showErrors, setShowErrors] = useState(false);
-  const [receipt, setReceipt] = useState<PickedReceipt | null>(null);
+  const [receipt, setReceipt] = useState<PickedImage | null>(null);
   // Set once the expense is posted, so a failed receipt upload is retried on its own.
   const [savedExpenseId, setSavedExpenseId] = useState<string | null>(null);
   const post = usePostExpense(apartment.id);
@@ -100,7 +100,7 @@ function AddExpenseForm({
     );
   }
 
-  const attach = (expenseId: string, picked: PickedReceipt) =>
+  const attach = (expenseId: string, picked: PickedImage) =>
     upload.mutate({ expenseId, receipt: picked }, { onSuccess: () => router.back() });
 
   if (savedExpenseId) {
@@ -114,7 +114,7 @@ function AddExpenseForm({
               : null
           }
         />
-        <ReceiptPicker receipt={receipt} onChange={setReceipt} isDisabled={upload.isPending} />
+        <ReceiptField receipt={receipt} onChange={setReceipt} isDisabled={upload.isPending} />
         <Button
           onPress={() => receipt && attach(savedExpenseId, receipt)}
           isDisabled={upload.isPending || !receipt}
@@ -160,7 +160,7 @@ function AddExpenseForm({
         today={today}
         currentUserId={userId}
       />
-      <ReceiptPicker receipt={receipt} onChange={setReceipt} isDisabled={isSaving} />
+      <ReceiptField receipt={receipt} onChange={setReceipt} isDisabled={isSaving} />
       <FormAlert
         message={
           post.error
@@ -178,5 +178,26 @@ function AddExpenseForm({
         {post.isPending ? 'Saving…' : 'Save expense'}
       </Button>
     </Screen>
+  );
+}
+
+function ReceiptField({
+  receipt,
+  onChange,
+  isDisabled,
+}: {
+  receipt: PickedImage | null;
+  onChange: (receipt: PickedImage | null) => void;
+  isDisabled: boolean;
+}) {
+  return (
+    <PhotoPicker
+      title="Receipt"
+      description="Optional. A photo your flatmates can check. It cannot be removed once saved."
+      attachLabel="Attach receipt"
+      image={receipt}
+      onChange={onChange}
+      isDisabled={isDisabled}
+    />
   );
 }

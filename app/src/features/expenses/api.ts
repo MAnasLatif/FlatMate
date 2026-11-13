@@ -1,4 +1,4 @@
-import { storageStatusOf } from '@/lib/errors';
+import { imagePath, type PickedImage, uploadPrivateImage } from '@/lib/private-images';
 import { supabase } from '@/lib/supabase';
 import type { Json, Tables } from '@/types/database';
 
@@ -335,49 +335,25 @@ export async function fetchMyMonthlyShare(
   return data;
 }
 
-const RECEIPTS_BUCKET = 'receipts';
-const RECEIPT_URL_LIFETIME_SECONDS = 60 * 60;
-export const RECEIPT_URL_STALE_TIME_MS = (RECEIPT_URL_LIFETIME_SECONDS - 5 * 60) * 1000;
-
-/** A photo chosen on the device. `id` is fixed when it is picked, so a retry reuses its path. */
-export type PickedReceipt = { id: string; uri: string; mimeType: string };
 export type Attachment = Pick<Tables<'expense_attachments'>, 'id' | 'storage_path' | 'created_at'>;
 
-const RECEIPT_EXTENSIONS: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-};
-/** The limits of the receipts bucket, checked again by storage. */
-export const RECEIPT_MIME_TYPES = Object.keys(RECEIPT_EXTENSIONS);
-export const RECEIPT_MAX_BYTES = 10 * 1024 * 1024;
-
 /** Where a receipt is stored: the database only accepts files under their apartment and expense. */
-export function receiptPathFor(apartmentId: string, expenseId: string, receipt: PickedReceipt) {
-  const extension = RECEIPT_EXTENSIONS[receipt.mimeType] ?? 'jpg';
-  return `${apartmentId}/${expenseId}/${receipt.id}.${extension}`;
+export function receiptPathFor(apartmentId: string, expenseId: string, receipt: PickedImage) {
+  return imagePath(`${apartmentId}/${expenseId}`, receipt);
 }
 
 /**
- * Uploads a receipt image under the expense's folder and registers it. Safe to
+ * Uploads a receipt under the expense's folder and registers it. Safe to
  * retry: a file that already reached storage is not sent again, and
  * registering the same file twice returns the same receipt.
  */
 export async function uploadReceipt(
   apartmentId: string,
   expenseId: string,
-  receipt: PickedReceipt,
+  receipt: PickedImage,
 ): Promise<void> {
   const path = receiptPathFor(apartmentId, expenseId, receipt);
-  const file = await fetch(receipt.uri);
-  const body = await file.arrayBuffer();
-
-  const { error: uploadError } = await supabase.storage
-    .from(RECEIPTS_BUCKET)
-    .upload(path, body, { contentType: receipt.mimeType });
-  // 409: an earlier attempt uploaded this file but its registration failed.
-  if (uploadError && storageStatusOf(uploadError) !== 409) throw uploadError;
-
+  await uploadPrivateImage('receipts', path, receipt);
   const { error } = await supabase.rpc('add_expense_attachment', {
     p_expense_id: expenseId,
     p_storage_path: path,
@@ -393,12 +369,4 @@ export async function fetchAttachments(expenseId: string): Promise<Attachment[]>
     .order('created_at', { ascending: true });
   if (error) throw error;
   return data;
-}
-
-export async function createReceiptUrl(path: string): Promise<string> {
-  const { data, error } = await supabase.storage
-    .from(RECEIPTS_BUCKET)
-    .createSignedUrl(path, RECEIPT_URL_LIFETIME_SECONDS);
-  if (error) throw error;
-  return data.signedUrl;
 }

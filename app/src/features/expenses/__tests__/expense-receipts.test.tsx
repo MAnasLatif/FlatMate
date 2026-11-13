@@ -3,14 +3,20 @@ import { router } from 'expo-router';
 
 import { renderWithProviders } from '@/test/render';
 
-import { createReceiptUrl, fetchAttachments } from '../api';
-import { ExpenseReceipts, ReceiptView } from '../components/expense-receipts';
+import { PrivateImageView } from '@/components/private-image';
+import { createSignedImageUrl } from '@/lib/private-images';
+
+import { fetchAttachments } from '../api';
+import { ExpenseReceipts } from '../components/expense-receipts';
 
 jest.mock('@/lib/supabase', () => ({ supabase: {} }));
 jest.mock('../api', () => ({
   ...jest.requireActual('../api'),
   fetchAttachments: jest.fn(),
-  createReceiptUrl: jest.fn(),
+}));
+jest.mock('@/lib/private-images', () => ({
+  ...jest.requireActual('@/lib/private-images'),
+  createSignedImageUrl: jest.fn(),
 }));
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn() } }));
 
@@ -19,7 +25,7 @@ const EXPENSE = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
 const PATH = `${APARTMENT}/${EXPENSE}/ffffffff-ffff-ffff-ffff-ffffffffffff.jpg`;
 
 const attachments = jest.mocked(fetchAttachments);
-const receiptUrl = jest.mocked(createReceiptUrl);
+const receiptUrl = jest.mocked(createSignedImageUrl);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -43,10 +49,10 @@ describe('ExpenseReceipts', () => {
 
     await user.press(await screen.findByRole('button', { name: 'Open receipt 1' }));
 
-    expect(receiptUrl).toHaveBeenCalledWith(PATH);
+    expect(receiptUrl).toHaveBeenCalledWith('receipts', PATH);
     expect(router.push).toHaveBeenCalledWith({
-      pathname: '/apartments/[apartmentId]/receipt',
-      params: { apartmentId: APARTMENT, path: PATH },
+      pathname: '/apartments/[apartmentId]/photo',
+      params: { apartmentId: APARTMENT, bucket: 'receipts', path: PATH },
     });
   });
 
@@ -62,19 +68,19 @@ describe('ExpenseReceipts', () => {
   });
 });
 
-describe('ReceiptView', () => {
-  it('shows the receipt through a signed link', async () => {
-    await renderWithProviders(<ReceiptView path={PATH} />);
+describe('PrivateImageView', () => {
+  it('shows a private photo through a signed link', async () => {
+    await renderWithProviders(<PrivateImageView bucket="receipts" path={PATH} />);
 
-    expect(await screen.findByLabelText('Receipt photo')).toBeOnTheScreen();
-    expect(receiptUrl).toHaveBeenCalledWith(PATH);
+    expect(await screen.findByLabelText('Photo')).toBeOnTheScreen();
+    expect(receiptUrl).toHaveBeenCalledWith('receipts', PATH);
   });
 
   it('explains when the link cannot be created, without the server message', async () => {
     receiptUrl.mockRejectedValue({ status: 400, statusCode: '404', message: 'Object not found' });
-    await renderWithProviders(<ReceiptView path={PATH} />);
+    await renderWithProviders(<PrivateImageView bucket="receipts" path={PATH} />);
 
-    expect(await screen.findByText('Could not show the receipt.')).toBeOnTheScreen();
+    expect(await screen.findByText('Could not show the photo.')).toBeOnTheScreen();
     expect(screen.queryByText('Object not found')).not.toBeOnTheScreen();
   });
 });

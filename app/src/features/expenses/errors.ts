@@ -1,4 +1,5 @@
-import { storageStatusOf, userErrorMessage } from '@/lib/errors';
+import { userErrorMessage } from '@/lib/errors';
+import { photoUploadErrorReason } from '@/lib/private-images';
 
 /** Sentences for the error keys the expense functions raise. Pass to userErrorMessage. */
 export const EXPENSE_ERROR_MESSAGES: Record<string, string> = {
@@ -28,9 +29,8 @@ export const EXPENSE_ERROR_MESSAGES: Record<string, string> = {
 
 /** Explains why a receipt upload failed, using the limits of the receipts bucket. */
 export function receiptUploadErrorMessage(error: unknown): string {
-  const status = storageStatusOf(error);
-  if (status === 413) return 'This photo is too large. Choose one under 10 MB.';
-  if (status === 415) return 'Choose a JPEG, PNG or WebP photo.';
+  const reason = photoUploadErrorReason(error);
+  if (reason) return reason;
   return userErrorMessage(error, 'Could not upload the receipt. Please try again.', {
     ...EXPENSE_ERROR_MESSAGES,
     receipt_not_uploaded: 'The receipt did not finish uploading. Please try again.',
