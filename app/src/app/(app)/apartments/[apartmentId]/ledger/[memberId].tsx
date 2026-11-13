@@ -3,6 +3,7 @@ import Stack from 'expo-router/stack';
 
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
+import { SharedAccounts } from '@/features/accounts/components/shared-accounts';
 import { useApartment, useApartmentId, useMembers } from '@/features/apartments/hooks';
 import { PairLedger } from '@/features/expenses/components/pair-ledger';
 import { PairPayments } from '@/features/payments/components/pair-payments';
@@ -50,6 +51,7 @@ export default function PairLedgerScreen() {
         currency={apartment.data.currency}
       >
         <PairPayments apartmentId={apartmentId} counterpartyId={memberId} name={name} />
+        <SharedAccounts apartmentId={apartmentId} userId={memberId} name={name} />
       </PairLedger>
     </>
   );

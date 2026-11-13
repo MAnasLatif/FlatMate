@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { FormAlert } from '@/components/form/form-alert';
 import { TextInputField } from '@/components/form/text-input-field';
 import { Screen } from '@/components/screen';
+import { MyAccountsSection } from '@/features/accounts/components/my-accounts';
 import { signOut, updatePassword } from '@/features/auth/api';
 import { authErrorMessage } from '@/features/auth/errors';
 import {
@@ -64,6 +65,7 @@ export function ProfileContent() {
         avatarPath={profile.data.avatar_path}
       />
       <NameSection userId={userId} currentName={profile.data.display_name} />
+      <MyAccountsSection />
       <Card>
         <Card.Body className="gap-1">
           <Typography.Paragraph type="body-sm" color="muted">

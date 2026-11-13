@@ -17,6 +17,7 @@ import { FormAlert } from '@/components/form/form-alert';
 import { PhotoPicker } from '@/components/photo-picker';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
+import { SharedAccounts } from '@/features/accounts/components/shared-accounts';
 import type { Apartment } from '@/features/apartments/api';
 import { useApartment, useMembers } from '@/features/apartments/hooks';
 import { pairPosition } from '@/features/expenses/balances';
@@ -199,6 +200,8 @@ function PayForm({
         FlatMate does not move money. Pay {name} with your bank or wallet, then record it here.{' '}
         {name} can object within the apartment&apos;s window if it does not arrive.
       </Typography.Paragraph>
+
+      <SharedAccounts apartmentId={apartment.id} userId={memberId} name={name} />
 
       <Card>
         <Card.Body className="gap-2">

@@ -6,6 +6,10 @@ export default function AppLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="profile" options={{ title: 'Profile' }} />
       <Stack.Screen name="apartments/new" options={{ title: 'New apartment' }} />
+      <Stack.Screen
+        name="accounts/edit"
+        options={{ title: 'Receiving account', presentation: 'modal' }}
+      />
       <Stack.Screen name="apartments/[apartmentId]" options={{ headerShown: false }} />
     </Stack>
   );
