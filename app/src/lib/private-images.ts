@@ -4,8 +4,8 @@ import { storageStatusOf } from './errors';
 import { supabase } from './supabase';
 import { randomUuid } from './uuid';
 
-/** Private buckets of photos, such as receipts and dispute evidence. Both have the same limits. */
-export const PRIVATE_IMAGE_BUCKETS = ['receipts', 'dispute-evidence'] as const;
+/** Private buckets of photos: receipts, dispute evidence and payment proof. All have the same limits. */
+export const PRIVATE_IMAGE_BUCKETS = ['receipts', 'dispute-evidence', 'payment-proofs'] as const;
 export type PrivateImageBucket = (typeof PRIVATE_IMAGE_BUCKETS)[number];
 
 export function isPrivateImageBucket(value: unknown): value is PrivateImageBucket {
