@@ -3,6 +3,112 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      adjustments: {
+        Row: {
+          amount_minor: number;
+          apartment_id: string;
+          client_request_id: string | null;
+          created_at: string;
+          created_by: string;
+          creditor_id: string;
+          debtor_id: string;
+          dispute_id: string | null;
+          expense_id: string | null;
+          id: string;
+          payment_dispute_id: string | null;
+          payment_id: string | null;
+          reason: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_minor: number;
+          apartment_id: string;
+          client_request_id?: string | null;
+          created_at?: string;
+          created_by: string;
+          creditor_id: string;
+          debtor_id: string;
+          dispute_id?: string | null;
+          expense_id?: string | null;
+          id?: string;
+          payment_dispute_id?: string | null;
+          payment_id?: string | null;
+          reason: string;
+        };
+        Update: {
+          amount_minor?: number;
+          apartment_id?: string;
+          client_request_id?: string | null;
+          created_at?: string;
+          created_by?: string;
+          creditor_id?: string;
+          debtor_id?: string;
+          dispute_id?: string | null;
+          expense_id?: string | null;
+          id?: string;
+          payment_dispute_id?: string | null;
+          payment_id?: string | null;
+          reason?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'adjustments_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'adjustments_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'adjustments_creditor_id_fkey';
+            columns: ['creditor_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'adjustments_debtor_id_fkey';
+            columns: ['debtor_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'adjustments_dispute_id_fkey';
+            columns: ['dispute_id'];
+            isOneToOne: false;
+            referencedRelation: 'disputes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'adjustments_expense_id_fkey';
+            columns: ['expense_id'];
+            isOneToOne: false;
+            referencedRelation: 'expenses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'adjustments_payment_dispute_id_fkey';
+            columns: ['payment_dispute_id'];
+            isOneToOne: false;
+            referencedRelation: 'payment_disputes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'adjustments_payment_id_fkey';
+            columns: ['payment_id'];
+            isOneToOne: false;
+            referencedRelation: 'payments';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       apartment_invites: {
         Row: {
           apartment_id: string;
@@ -664,6 +770,7 @@ export type Database = {
       };
       ledger_entries: {
         Row: {
+          adjustment_id: string | null;
           amount_minor: number;
           apartment_id: string;
           created_at: string;
@@ -679,6 +786,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          adjustment_id?: string | null;
           amount_minor: number;
           apartment_id: string;
           created_at?: string;
@@ -693,6 +801,7 @@ export type Database = {
           reverses_entry_id?: number | null;
         };
         Update: {
+          adjustment_id?: string | null;
           amount_minor?: number;
           apartment_id?: string;
           created_at?: string;
@@ -707,6 +816,13 @@ export type Database = {
           reverses_entry_id?: number | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'ledger_entries_adjustment_id_fkey';
+            columns: ['adjustment_id'];
+            isOneToOne: false;
+            referencedRelation: 'adjustments';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'ledger_entries_apartment_id_fkey';
             columns: ['apartment_id'];
@@ -1157,6 +1273,98 @@ export type Database = {
           },
         ];
       };
+      settlement_balances: {
+        Row: {
+          disputed_minor: number;
+          final_minor: number;
+          member_a: string;
+          member_b: string;
+          period_id: string;
+          provisional_minor: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          disputed_minor: number;
+          final_minor: number;
+          member_a: string;
+          member_b: string;
+          period_id: string;
+          provisional_minor: number;
+        };
+        Update: {
+          disputed_minor?: number;
+          final_minor?: number;
+          member_a?: string;
+          member_b?: string;
+          period_id?: string;
+          provisional_minor?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'settlement_balances_member_a_fkey';
+            columns: ['member_a'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'settlement_balances_member_b_fkey';
+            columns: ['member_b'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'settlement_balances_period_id_fkey';
+            columns: ['period_id'];
+            isOneToOne: false;
+            referencedRelation: 'settlement_periods';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      settlement_periods: {
+        Row: {
+          apartment_id: string;
+          closed_at: string | null;
+          created_at: string;
+          ends_on: string;
+          id: string;
+          open_dispute_count: number | null;
+          starts_on: string;
+          state: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          closed_at?: string | null;
+          created_at?: string;
+          ends_on: string;
+          id?: string;
+          open_dispute_count?: number | null;
+          starts_on: string;
+          state?: string;
+        };
+        Update: {
+          apartment_id?: string;
+          closed_at?: string | null;
+          created_at?: string;
+          ends_on?: string;
+          id?: string;
+          open_dispute_count?: number | null;
+          starts_on?: string;
+          state?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'settlement_periods_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       expense_current_payers: {
@@ -1297,6 +1505,19 @@ export type Database = {
           title: string;
         }[];
       };
+      get_settlement_preview: {
+        Args: { p_apartment_id: string };
+        Returns: {
+          counterparty_id: string;
+          ends_on: string;
+          held_owe_minor: number;
+          held_owed_minor: number;
+          owe_minor: number;
+          owed_minor: number;
+          period_id: string;
+          starts_on: string;
+        }[];
+      };
       get_shared_accounts: {
         Args: { p_apartment_id: string; p_user_id: string };
         Returns: {
@@ -1341,6 +1562,19 @@ export type Database = {
           p_expense_id: string;
           p_kind: string;
           p_proposed_share_minor?: number;
+          p_reason: string;
+        };
+        Returns: string;
+      };
+      record_adjustment: {
+        Args: {
+          p_amount_minor: number;
+          p_apartment_id: string;
+          p_client_request_id?: string;
+          p_creditor_id: string;
+          p_debtor_id: string;
+          p_expense_id?: string;
+          p_payment_dispute_id?: string;
           p_reason: string;
         };
         Returns: string;
