@@ -88,11 +88,12 @@ Tests sit next to the code they test, as `name.test.ts`. Tests for a route go in
 
 A screen calls a feature's hooks; hooks wrap TanStack Query around the feature's `api.ts`; `api.ts` calls Supabase through the client in `src/lib/supabase.ts`. Reads are table selects or read-only functions, and writes are always database functions (`supabase.rpc`). After a write, a hook invalidates the affected cache keys: everything about an apartment's money is under `['money', apartmentId]` (`useRefreshMoney`), and apartment data under `['apartments', apartmentId]`. The full picture is in [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md#data-in-the-app).
 
-Planned in [decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md), tasks 1.35 to 1.40: network and app-state awareness for React Query, an encrypted saved cache so loaded data stays readable offline, and live updates through Supabase Realtime.
+Planned in [decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md), tasks 1.35 to 1.42: the app becomes event-driven. One router in `src/lib/sync/` listens for change events through Supabase Realtime and invalidates the matching cache keys; React Query becomes aware of the network and of the app going to the background; and an encrypted saved cache keeps loaded data readable offline.
 
 ## Rules specific to this folder
 
 - A screen calls hooks and renders components. Queries, split calculations and permission decisions live in a feature's logic or data-access code, or on the server.
+- Freshness comes from events, not timers. Never poll or refetch on an interval. Once the event router exists (task 1.41), a new kind of record gets its event kind mapped to its cache keys in `src/lib/sync/`, and features never open Realtime channels themselves. A mutation still invalidates its own keys so the person acting sees the result at once.
 - The app can preview a split or a balance, but the server decides. Never treat a client-side calculation as authoritative.
 - Money is an integer number of minor units from the database to the screen. Format it with `formatMinorUnits` at the last step, and never divide it into a decimal.
 - Render screens in tests with `renderWithProviders` from `src/test/render.tsx`. Theme colours do not exist under Jest, so tests check behaviour and text, not colours.
@@ -123,7 +124,7 @@ Planned in [decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.
 | `expo-splash-screen`, `expo-status-bar`, `expo-system-ui`, `expo-constants`, `expo-font`                                                                                                              | App shell                                                                 |
 | `expo-dev-client`                                                                                                                                                                                     | The development build                                                     |
 
-`expo-notifications` is installed for task 1.41 and is not used by any screen yet.
+`expo-notifications` is installed for task 1.43 and is not used by any screen yet.
 
 Development tools: TypeScript, ESLint with `eslint-config-expo`, Prettier, Jest with `jest-expo`, and React Native Testing Library.
 

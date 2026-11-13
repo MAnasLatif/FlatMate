@@ -26,7 +26,7 @@ The database is where FlatMate's rules are enforced. The mobile app is an untrus
 - **Financial operations** (posting an expense, recording or reversing a payment, resolving a dispute, closing a settlement) are transactional Postgres functions, so they either complete fully or not at all.
 - **Money arithmetic** (split validation, rounding, allocation sums) is checked on the server, using integer minor units.
 - **Scheduled work** (objection-window deadlines and settlement periods today; recurring charges and reminders later) runs as pg_cron jobs calling `private` functions. It is idempotent and uses each apartment's timezone.
-- **Change history.** Every change other members should see writes an `audit_events` row in the same transaction. From task 1.38 that row also triggers the Realtime signal that keeps open apps current ([decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md)), so a change that skips it is invisible until the next refresh.
+- **Change events.** The app is event-driven ([decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md)): every write that changes data another member, or the same user on another device, can see must send a change event. Apartment changes do it by writing an `audit_events` row in the same transaction, which a trigger turns into an event; a table clients write directly needs its own trigger calling `private.emit_change`. From task 1.40 a database test fails when a function or table is not covered.
 
 The proposed data model is in [section 6 of the SRS](../docs/SRS.md#6-supabase-data-architecture-proposed).
 

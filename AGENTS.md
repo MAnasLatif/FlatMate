@@ -225,6 +225,8 @@ Keep contracts consistent and predictable across RPC functions and Edge Function
 
 Index for the queries the app really makes, and optimize a query once it is shown to be slow.
 
+The app is event-driven ([decision 0007](docs/decisions/0007-offline-reading-and-live-sync.md)). Every write that changes data another member, or the same user on another device, can see must send a change event, either by writing `audit_events` in the same transaction or through `private.emit_change`, and the app's event router must map the new event kind to the cache keys it refreshes. Events carry only the kind of record that changed, never ids, amounts or personal details. The app never polls.
+
 ### Performance
 
 Get it correct first, then measure before optimizing anything significant. Avoid the common waste: unnecessary re-renders, duplicate network requests, queries inside loops. Cache only with a clear invalidation rule. Lazy-load heavy screens and assets, size images for the devices that display them, and clean up subscriptions, timers and listeners so nothing leaks or runs unbounded. Core flows such as opening the dashboard and adding an expense must stay responsive on a mid-range Android phone.

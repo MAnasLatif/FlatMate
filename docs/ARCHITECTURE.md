@@ -48,7 +48,7 @@ flowchart LR
 | Split validation and rounding | Database | The app previews. The server decides. |
 | Receipts and payment proofs | Supabase Storage | Private buckets, accessed with signed URLs. |
 | Scheduled work | pg_cron jobs calling Postgres functions | Objection-window deadlines and settlement periods today; recurring charges and reminders later. Idempotent and timezone-aware. |
-| Live updates (planned) | Realtime Broadcast from a trigger on `audit_events` | A signal that something changed, with no data in it. The app then refetches through RLS. |
+| Change events (planned) | Realtime Broadcast, sent by `private.emit_change` from database triggers | One event for every visible change, on an apartment or user topic, with no data in it. The app's event router refetches through RLS. |
 | Offline reading (planned) | Encrypted saved query cache on the phone | A copy of what the user already loaded, never a source of truth. |
 | Push notifications | Edge Functions to the Expo push service | Notification text carries no account details. |
 | Public marketing pages | `web/` | Static content and store links. No user data. |
@@ -85,11 +85,17 @@ The app has four layers, and data only moves through them in this order:
 | Data access | `features/<feature>/api.ts` | supabase-js calls, typed by the generated `types/database.ts`, turning rows into app types. |
 | Infrastructure | `app/src/lib/` | The Supabase client, the query client, configuration, errors, money and time. |
 
-**Reads** are table selects filtered by RLS, or read-only functions for figures computed on the server, such as balances. **Writes** to financial and apartment data always go through a function that runs as one transaction; client roles can only read tables, apart from their own profile name and photo. A function that fails raises a stable key such as `not_admin`, which the app turns into a sentence.
+**Reads** are table selects filtered by RLS, or read-only functions for figures computed on the server, such as balances. **Writes** to financial and apartment data always go through a function that runs as one transaction. The only tables clients write directly, under RLS, are personal ones: their own profile name and photo, their receiving accounts and which apartments those are shared with. A function that fails raises a stable key such as `not_admin`, which the app turns into a sentence.
 
 **Cache keys** group everything about one apartment's money under `['money', apartmentId]`, so a single invalidation after any financial change refreshes balances, lists and detail screens together. Apartment, member and settings data sit under `['apartments', apartmentId]`.
 
-**Sync (planned, decision 0007).** Every change that matters to an apartment writes an `audit_events` row in the same transaction, including changes made by scheduled jobs. A trigger on that table sends a Broadcast message to the private topic `apartment:<id>`, readable only by active members. The message names only the kind of record that changed. The app invalidates the matching cache keys and refetches. After a reconnect, or when the app returns to the foreground, it refreshes the open apartment instead of trusting that no message was missed.
+**Event-driven sync (planned, decision 0007).** Every write that changes data another member, or the same user on another device, can see sends a change event. The app never polls.
+
+- Events go out as private Realtime Broadcast messages through one database function, `private.emit_change`, on two kinds of topic: `apartment:<id>` for an apartment's active members, and `user:<id>` for one person's own changes across apartments, such as being removed or editing their receiving accounts.
+- Apartment changes already write an `audit_events` row in the same transaction, including changes made by scheduled jobs; a trigger on that table emits the event. Personal tables that clients write directly have their own triggers.
+- An event names only the kind of record that changed. The app's event router (`src/lib/sync/`) maps each kind to the cache keys it invalidates, and the data is refetched through RLS.
+- A failed send never rolls back the write. After a reconnect, or when the app returns to the foreground, the router refreshes everything under its topics instead of trusting that no event was missed.
+- A database test fails if a function writes client-visible data without emitting an event, so new features stay covered.
 
 **Offline reading (planned, decision 0007).** The query cache is saved on the phone, encrypted with a key held in the device keychain, per user, for up to 7 days, and deleted at sign-out. Without a connection, screens show the saved data with the time it was last updated. Anything that writes needs a connection.
 
@@ -103,9 +109,9 @@ sequenceDiagram
   DB->>DB: expense, splits, ledger entries, audit_events row
   DB-->>A: expense id
   A->>A: invalidate ['money', apartment]
-  DB->>RT: trigger: { kind: "expense" } on apartment:<id>
+  DB->>RT: emit_change: { kind: "expense" } on apartment:<id>
   RT-->>B: change signal
-  B->>B: invalidate ['money', apartment]
+  B->>B: event router invalidates ['money', apartment]
   B->>DB: refetch through RLS
 ```
 
