@@ -10,7 +10,7 @@ Routine implementation choices do not need one.
 
 ## How to write one
 
-1. Copy [0000-template.md](0000-template.md) to a new file with the next number and a short name, for example `0003-ledger-entry-model.md`.
+1. Copy [0000-template.md](0000-template.md) to a new file with the next number and a short name, for example `0004-recurring-charges.md`.
 2. Fill it in. Keep it to about a page.
 3. Add it to the index below in the same pull request.
 
@@ -22,3 +22,4 @@ Records are not edited after they are accepted, apart from their status. To chan
 |---|---|---|
 | [0001](0001-repository-structure.md) | Repository structure | Accepted |
 | [0002](0002-heroui-native-on-expo-sdk-58.md) | HeroUI Native 1.x on Expo SDK 58 | Accepted |
+| [0003](0003-ledger-model.md) | Ledger model | Accepted |
