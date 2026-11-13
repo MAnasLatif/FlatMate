@@ -1078,6 +1078,85 @@ export type Database = {
         };
         Relationships: [];
       };
+      receiving_account_shares: {
+        Row: {
+          account_id: string;
+          apartment_id: string;
+          created_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          account_id: string;
+          apartment_id: string;
+          created_at?: string;
+        };
+        Update: {
+          account_id?: string;
+          apartment_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'receiving_account_shares_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: false;
+            referencedRelation: 'receiving_accounts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'receiving_account_shares_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      receiving_accounts: {
+        Row: {
+          account_identifier: string;
+          account_title: string;
+          created_at: string;
+          id: string;
+          is_preferred: boolean;
+          kind: string;
+          provider: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          account_identifier: string;
+          account_title: string;
+          created_at?: string;
+          id?: string;
+          is_preferred?: boolean;
+          kind: string;
+          provider: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          account_identifier?: string;
+          account_title?: string;
+          created_at?: string;
+          id?: string;
+          is_preferred?: boolean;
+          kind?: string;
+          provider?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'receiving_accounts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       expense_current_payers: {
@@ -1216,6 +1295,17 @@ export type Database = {
           expense_id: string;
           is_held: boolean;
           title: string;
+        }[];
+      };
+      get_shared_accounts: {
+        Args: { p_apartment_id: string; p_user_id: string };
+        Returns: {
+          account_identifier: string;
+          account_title: string;
+          id: string;
+          is_preferred: boolean;
+          kind: string;
+          provider: string;
         }[];
       };
       join_apartment: { Args: { p_code: string }; Returns: Json };
