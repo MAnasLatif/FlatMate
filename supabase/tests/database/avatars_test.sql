@@ -81,7 +81,7 @@ reset role;
 -- tested above.
 select is(
   (select qual from pg_policies where schemaname = 'storage' and policyname = 'Users can delete their own avatar'),
-  (select qual from pg_policies where schemaname = 'storage' and policyname = 'Users can read their own avatar'),
+  (select qual from pg_policies where schemaname = 'storage' and policyname = 'Users can replace their own avatar'),
   'a user can delete only within their own folder'
 );
 

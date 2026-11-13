@@ -3,7 +3,7 @@
 -- new table from the first migration onward.
 begin;
 
-select plan(1);
+select plan(2);
 
 select is_empty(
   $$
@@ -15,6 +15,19 @@ select is_empty(
       and not c.relrowsecurity
   $$,
   'every table in the public schema has row-level security enabled'
+);
+
+-- Postgres lets everyone execute a new function unless it is revoked, which is
+-- easy to forget. Nothing in the private schema may be callable without
+-- signing in.
+select is_empty(
+  $$
+    select p.oid::regprocedure::text
+    from pg_catalog.pg_proc p
+    where p.pronamespace = 'private'::regnamespace
+      and has_function_privilege('anon', p.oid, 'execute')
+  $$,
+  'no function in the private schema can be executed by signed-out requests'
 );
 
 select * from finish();

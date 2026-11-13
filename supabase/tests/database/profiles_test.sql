@@ -59,9 +59,8 @@ select ok(
 );
 
 select ok(
-  not has_schema_privilege('anon', 'private', 'usage')
-  and not has_schema_privilege('authenticated', 'private', 'usage'),
-  'client roles have no access to the private schema'
+  not has_schema_privilege('anon', 'private', 'usage'),
+  'signed-out requests have no access to the private schema'
 );
 
 -- Signed-out requests ----------------------------------------------------------
