@@ -26,4 +26,4 @@ Records are not edited after they are accepted, apart from their status. To chan
 | [0004](0004-expense-disputes.md) | Expense disputes | Accepted |
 | [0005](0005-payment-objections.md) | Payment objections | Accepted |
 | [0006](0006-settlement-periods.md) | Settlement periods and adjustments | Accepted |
-| [0007](0007-offline-reading-and-live-sync.md) | Offline reading and live sync | Proposed |
+| [0007](0007-offline-reading-and-live-sync.md) | Offline reading and live sync | Accepted |
