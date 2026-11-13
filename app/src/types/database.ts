@@ -198,6 +198,49 @@ export type Database = {
           },
         ];
       };
+      expense_attachments: {
+        Row: {
+          content_type: string;
+          created_at: string;
+          expense_id: string;
+          id: string;
+          storage_path: string;
+          uploaded_by: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          content_type: string;
+          created_at?: string;
+          expense_id: string;
+          id?: string;
+          storage_path: string;
+          uploaded_by: string;
+        };
+        Update: {
+          content_type?: string;
+          created_at?: string;
+          expense_id?: string;
+          id?: string;
+          storage_path?: string;
+          uploaded_by?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'expense_attachments_expense_id_fkey';
+            columns: ['expense_id'];
+            isOneToOne: false;
+            referencedRelation: 'expenses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'expense_attachments_uploaded_by_fkey';
+            columns: ['uploaded_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       expense_categories: {
         Row: {
           apartment_id: string;
@@ -587,6 +630,10 @@ export type Database = {
     };
     Functions: {
       add_category: { Args: { p_apartment_id: string; p_name: string }; Returns: string };
+      add_expense_attachment: {
+        Args: { p_expense_id: string; p_storage_path: string };
+        Returns: string;
+      };
       archive_category: { Args: { p_category_id: string }; Returns: undefined };
       create_apartment: {
         Args: {
