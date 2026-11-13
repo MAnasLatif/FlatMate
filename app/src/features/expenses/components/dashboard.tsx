@@ -67,6 +67,17 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
             currency={apartment.currency}
             settlementDay={apartment.settlement_day}
           />
+          <Button
+            variant="secondary"
+            onPress={() =>
+              router.push({
+                pathname: '/apartments/[apartmentId]/settlement',
+                params: { apartmentId: apartment.id },
+              })
+            }
+          >
+            Settle up
+          </Button>
           <MonthSelector month={month} latestMonth={latestMonth} onChange={setMonth} />
           <MonthlyShare apartmentId={apartment.id} month={month} currency={apartment.currency} />
         </View>
