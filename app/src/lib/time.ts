@@ -26,10 +26,21 @@ export function ordinal(day: number): string {
   }
 }
 
-/** A date for display, such as "12 Nov 2026", in the device's locale. */
+/**
+ * A date for display, such as "12 Nov 2026", in the device's locale. A
+ * timestamp shows the day it falls on where the device is. A calendar date
+ * (YYYY-MM-DD) shows that day everywhere: JavaScript reads it as midnight UTC,
+ * so it is formatted in UTC rather than shifted into the device's zone.
+ */
 export function formatDate(value: string | Date): string {
+  const isCalendarDate = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
   const date = typeof value === 'string' ? new Date(value) : value;
-  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    ...(isCalendarDate ? { timeZone: 'UTC' } : {}),
+  });
 }
 
 /** Today's date in the given IANA time zone, as YYYY-MM-DD. */

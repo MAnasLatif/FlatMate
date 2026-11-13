@@ -1,4 +1,12 @@
-import { addDays, addMonths, deviceTimeZone, monthStart, ordinal, todayInTimeZone } from './time';
+import {
+  addDays,
+  addMonths,
+  deviceTimeZone,
+  formatDate,
+  monthStart,
+  ordinal,
+  todayInTimeZone,
+} from './time';
 
 describe('ordinal', () => {
   it.each([
@@ -43,5 +51,13 @@ describe('date arithmetic', () => {
     expect(monthStart('2026-11-13')).toBe('2026-11-01');
     expect(addMonths('2026-12-01', 1)).toBe('2027-01-01');
     expect(addMonths('2026-01-01', -1)).toBe('2025-12-01');
+  });
+});
+
+describe('formatDate', () => {
+  it('shows a calendar date as that day, even west of UTC', () => {
+    // jest.global-setup.ts runs the suite west of UTC, where this goes wrong.
+    expect(new Date(2026, 10, 13).getTimezoneOffset()).toBeGreaterThan(0);
+    expect(formatDate('2026-11-13')).toMatch(/13/);
   });
 });
