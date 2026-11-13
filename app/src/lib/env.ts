@@ -3,11 +3,17 @@ import { z } from 'zod';
 const envSchema = z.object({
   EXPO_PUBLIC_SUPABASE_URL: z.url(),
   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
+  // Shows the Google sign-in button. Turn on only once the Google provider is
+  // configured in the Supabase project.
+  EXPO_PUBLIC_AUTH_GOOGLE_ENABLED: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => value === 'true'),
 });
 
 export type Env = z.infer<typeof envSchema>;
 
-type EnvSource = Record<keyof Env, string | undefined>;
+type EnvSource = Partial<Record<keyof Env, string>>;
 
 /**
  * Validates the app's configuration. The error names the variables that are
@@ -33,6 +39,7 @@ export function getEnv(): Env {
   cached ??= parseEnv({
     EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
     EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    EXPO_PUBLIC_AUTH_GOOGLE_ENABLED: process.env.EXPO_PUBLIC_AUTH_GOOGLE_ENABLED,
   });
   return cached;
 }
