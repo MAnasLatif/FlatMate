@@ -58,6 +58,14 @@ export function todayInTimeZone(timeZone: string, now: Date = new Date()): strin
   }
 }
 
+/**
+ * The last whole day, as YYYY-MM-DD in the given time zone, before a deadline
+ * that falls on a midnight there, such as the end of an objection window.
+ */
+export function lastDayBefore(deadline: string, timeZone: string): string {
+  return todayInTimeZone(timeZone, new Date(Date.parse(deadline) - 1));
+}
+
 /** The YYYY-MM-DD date a number of days before or after another. */
 export function addDays(date: string, days: number): string {
   const [year, month, day] = date.split('-').map(Number);

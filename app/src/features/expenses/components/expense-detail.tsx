@@ -7,7 +7,7 @@ import { FormAlert } from '@/components/form/form-alert';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { Member } from '@/features/apartments/api';
-import { useMembers } from '@/features/apartments/hooks';
+import { useApartment, useMembers } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { userErrorMessage } from '@/lib/errors';
 import { formatMinorUnits } from '@/lib/money';
@@ -38,18 +38,19 @@ export function ExpenseDetailView({
 }) {
   const detail = useExpenseDetail(apartmentId, expenseId);
   const members = useMembers(apartmentId);
+  const apartment = useApartment(apartmentId);
   const userId = useCurrentUserId();
   const voidMutation = useVoidExpense(apartmentId, expenseId);
 
-  if (detail.isPending || members.isPending) {
+  if (detail.isPending || members.isPending || apartment.isPending) {
     return (
       <Screen padTop={false}>
         <LoadingRows count={4} />
       </Screen>
     );
   }
-  const loadError = detail.error ?? members.error;
-  if (loadError || !members.data) {
+  const loadError = detail.error ?? members.error ?? apartment.error;
+  if (loadError || !members.data || !apartment.data) {
     return (
       <Screen padTop={false}>
         <LoadError
@@ -57,6 +58,7 @@ export function ExpenseDetailView({
           onRetry={() => {
             void detail.refetch();
             void members.refetch();
+            void apartment.refetch();
           }}
         />
       </Screen>
@@ -127,7 +129,7 @@ export function ExpenseDetailView({
             />
           </View>
           <Typography.Paragraph type="body-sm" color="muted">
-            {describeStatus(expense)}
+            {describeStatus(expense, apartment.data.timezone)}
           </Typography.Paragraph>
           {expense.dueDate ? (
             <Typography.Paragraph type="body-sm">

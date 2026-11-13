@@ -1,4 +1,4 @@
-import { formatDate } from '@/lib/time';
+import { formatDate, lastDayBefore } from '@/lib/time';
 
 import type { Member } from '@/features/apartments/api';
 import type { Json } from '@/types/database';
@@ -22,6 +22,8 @@ export function canEditExpense(
 /** What the expense's status means for the people in it, in one or two sentences. */
 export function describeStatus(
   expense: Pick<ExpenseDetail, 'status' | 'paidStatus' | 'finalizeAfter' | 'finalizedAt'>,
+  /** The apartment's time zone, where the objection window ends at midnight. */
+  timeZone: string,
 ): string {
   switch (expense.status) {
     case 'void':
@@ -34,7 +36,7 @@ export function describeStatus(
       if (expense.paidStatus === 'unpaid') {
         return 'Not paid yet. Nobody owes anything for it until someone records paying it.';
       }
-      return `Provisional. Anyone in the split can object until ${formatDate(expense.finalizeAfter)}; after that it becomes final.`;
+      return `Provisional. Anyone in the split can object until the end of ${formatDate(lastDayBefore(expense.finalizeAfter, timeZone))}; after that it becomes final.`;
   }
 }
 

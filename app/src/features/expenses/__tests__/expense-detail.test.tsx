@@ -1,7 +1,12 @@
 import { screen, userEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
-import { fetchMembers, type Member } from '@/features/apartments/api';
+import {
+  type Apartment,
+  fetchApartment,
+  fetchMembers,
+  type Member,
+} from '@/features/apartments/api';
 import { renderWithProviders } from '@/test/render';
 
 import {
@@ -26,6 +31,7 @@ jest.mock('../api', () => ({
 }));
 jest.mock('@/features/apartments/api', () => ({
   ...jest.requireActual('@/features/apartments/api'),
+  fetchApartment: jest.fn(),
   fetchMembers: jest.fn(),
 }));
 jest.mock('@/features/auth/session-provider', () => ({
@@ -108,8 +114,23 @@ const detail = jest.mocked(fetchExpenseDetail);
 const members = jest.mocked(fetchMembers);
 const recordPayment = jest.mocked(recordBillPayment);
 
+const apartment: Apartment = {
+  id: APARTMENT,
+  name: 'Flat 4B',
+  currency: 'PKR',
+  timezone: 'Asia/Karachi',
+  settlement_day: 1,
+  approval_days: 7,
+  location: null,
+  show_location: false,
+  created_by: ANAS,
+  created_at: '2026-11-01T00:00:00Z',
+  updated_at: '2026-11-01T00:00:00Z',
+};
+
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.mocked(fetchApartment).mockResolvedValue(apartment);
   jest.mocked(fetchAttachments).mockResolvedValue([]);
   members.mockResolvedValue([
     member(ANAS, 'Anas'),
@@ -126,7 +147,7 @@ describe('ExpenseDetailView', () => {
     expect(await screen.findByRole('header', { name: '200.00 PKR' })).toBeOnTheScreen();
     expect(screen.getAllByText('200.00 PKR')).toHaveLength(2); // the amount, and what Anas paid
     expect(screen.getByText('Provisional')).toBeOnTheScreen();
-    expect(screen.getByText(/can object until/)).toBeOnTheScreen();
+    expect(screen.getByText(/can object until the end of/)).toBeOnTheScreen();
     expect(screen.getByText('Split equally')).toBeOnTheScreen();
     expect(screen.getByText('Zubair owes you 66.67 PKR')).toBeOnTheScreen();
     expect(screen.getByText('Ajmal owes you 66.66 PKR')).toBeOnTheScreen();

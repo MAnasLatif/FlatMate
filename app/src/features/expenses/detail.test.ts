@@ -6,31 +6,36 @@ import { canEditExpense, describeHistoryEvent, describeStatus, historyReason } f
 
 jest.mock('@/lib/supabase', () => ({ supabase: {} }));
 
+const ZONE = 'Asia/Karachi';
+
 const base = {
   paidStatus: 'paid' as const,
-  finalizeAfter: '2026-11-20T10:00:00Z',
+  // Midnight starting 21 Nov in Karachi.
+  finalizeAfter: '2026-11-20T19:00:00Z',
   finalizedAt: null,
 };
 
 describe('describeStatus', () => {
   it('says until when a provisional expense can be objected to', () => {
-    expect(describeStatus({ ...base, status: 'provisional' })).toContain(
-      `can object until ${formatDate('2026-11-20T10:00:00Z')};`,
+    expect(describeStatus({ ...base, status: 'provisional' }, ZONE)).toContain(
+      `can object until the end of ${formatDate('2026-11-20')};`,
     );
   });
 
   it('says an unpaid bill creates no debts yet', () => {
-    expect(describeStatus({ ...base, status: 'provisional', paidStatus: 'unpaid' })).toMatch(
+    expect(describeStatus({ ...base, status: 'provisional', paidStatus: 'unpaid' }, ZONE)).toMatch(
       /Nobody owes anything/,
     );
   });
 
   it('keeps disputed, final and void distinct', () => {
-    expect(describeStatus({ ...base, status: 'disputed' })).toMatch(/^Held by an open dispute/);
-    expect(describeStatus({ ...base, status: 'final', finalizedAt: '2026-11-21T10:00:00Z' })).toBe(
-      `Final since ${formatDate('2026-11-21T10:00:00Z')}.`,
+    expect(describeStatus({ ...base, status: 'disputed' }, ZONE)).toMatch(
+      /^Held by an open dispute/,
     );
-    expect(describeStatus({ ...base, status: 'void' })).toMatch(/^Void/);
+    expect(
+      describeStatus({ ...base, status: 'final', finalizedAt: '2026-11-21T10:00:00Z' }, ZONE),
+    ).toBe(`Final since ${formatDate('2026-11-21T10:00:00Z')}.`);
+    expect(describeStatus({ ...base, status: 'void' }, ZONE)).toMatch(/^Void/);
   });
 });
 

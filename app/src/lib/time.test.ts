@@ -3,6 +3,7 @@ import {
   addMonths,
   deviceTimeZone,
   formatDate,
+  lastDayBefore,
   monthStart,
   ordinal,
   todayInTimeZone,
@@ -59,5 +60,13 @@ describe('formatDate', () => {
     // jest.global-setup.ts runs the suite west of UTC, where this goes wrong.
     expect(new Date(2026, 10, 13).getTimezoneOffset()).toBeGreaterThan(0);
     expect(formatDate('2026-11-13')).toMatch(/13/);
+  });
+});
+
+describe('lastDayBefore', () => {
+  it('names the day that ends at a midnight deadline, where the apartment is', () => {
+    // Midnight on 21 Nov in Karachi (UTC+5) and in New York (UTC-5).
+    expect(lastDayBefore('2026-11-20T19:00:00Z', 'Asia/Karachi')).toBe('2026-11-20');
+    expect(lastDayBefore('2026-11-21T05:00:00+00:00', 'America/New_York')).toBe('2026-11-20');
   });
 });
