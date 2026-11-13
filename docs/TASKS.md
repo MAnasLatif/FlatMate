@@ -78,7 +78,7 @@ These come from section 12 of the SRS, where each decision is written out in ful
 ### Ledger core
 
 - [x] **1.12 Ledger model decision record.** Write down the entities, the ledger entry model, the exact rounding rule for leftover minor units, the status transitions, and how unpaid vendor bills are represented. No code. *(SRS 5.2, 5.3)* See decision record 0003.
-- [ ] **1.13 Split arithmetic.** Equal, percentage and fixed splits with excluded members, as a TypeScript function for previews and as a database function that is the authority. Both run the same test cases, starting with the worked examples in SRS 5.1. *(FR-03.4, FR-06.6, AC-03)*
+- [x] **1.13 Split arithmetic.** Equal, percentage and fixed splits with excluded members, as a TypeScript function for previews and as a database function that is the authority. Both run the same test cases, starting with the worked examples in SRS 5.1. *(FR-03.4, FR-06.6, AC-03)*
 - [ ] **1.14 Expense and ledger schema.** `expenses`, `expense_payers`, `expense_splits`, `ledger_entries` and `audit_events`, with constraints and RLS. *(SRS 6)*
 - [ ] **1.15 Posting an expense.** One transactional function that checks permission, validates that payers and splits add up, writes the expense, its ledger entries and an audit event, and marks it accepted by default. Supports several payers and unpaid portions. Tests include a restricted member calling the function directly. *(FR-03.1, FR-03.2, FR-03.3, FR-05.1, AC-02, AC-04)*
 - [ ] **1.16 Balance queries.** A user's totals for an apartment (payable, receivable, net, monthly share) and pairwise balances with each member. *(FR-06.1, FR-06.2)*
