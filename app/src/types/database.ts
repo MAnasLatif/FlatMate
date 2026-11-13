@@ -198,6 +198,142 @@ export type Database = {
           },
         ];
       };
+      dispute_events: {
+        Row: {
+          action: string;
+          actor_id: string;
+          created_at: string;
+          details: NonNullable<Json>;
+          dispute_id: string;
+          id: number;
+          message: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id: string;
+          created_at?: string;
+          details?: NonNullable<Json>;
+          dispute_id: string;
+          id?: never;
+          message?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string;
+          created_at?: string;
+          details?: NonNullable<Json>;
+          dispute_id?: string;
+          id?: never;
+          message?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'dispute_events_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'dispute_events_dispute_id_fkey';
+            columns: ['dispute_id'];
+            isOneToOne: false;
+            referencedRelation: 'disputes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      disputes: {
+        Row: {
+          apartment_id: string;
+          client_request_id: string | null;
+          created_at: string;
+          expense_id: string | null;
+          expense_revision: number | null;
+          id: string;
+          is_late: boolean;
+          kind: string;
+          proposed_share_minor: number;
+          raised_by: string;
+          reason: string;
+          resolution: string | null;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          state: string;
+          subject_type: string;
+          window_remaining: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          client_request_id?: string | null;
+          created_at?: string;
+          expense_id?: string | null;
+          expense_revision?: number | null;
+          id?: string;
+          is_late: boolean;
+          kind: string;
+          proposed_share_minor: number;
+          raised_by: string;
+          reason: string;
+          resolution?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          state?: string;
+          subject_type?: string;
+          window_remaining?: string | null;
+        };
+        Update: {
+          apartment_id?: string;
+          client_request_id?: string | null;
+          created_at?: string;
+          expense_id?: string | null;
+          expense_revision?: number | null;
+          id?: string;
+          is_late?: boolean;
+          kind?: string;
+          proposed_share_minor?: number;
+          raised_by?: string;
+          reason?: string;
+          resolution?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          state?: string;
+          subject_type?: string;
+          window_remaining?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'disputes_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'disputes_expense_id_fkey';
+            columns: ['expense_id'];
+            isOneToOne: false;
+            referencedRelation: 'expenses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'disputes_raised_by_fkey';
+            columns: ['raised_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'disputes_resolved_by_fkey';
+            columns: ['resolved_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       expense_attachments: {
         Row: {
           content_type: string;
@@ -648,6 +784,10 @@ export type Database = {
         Returns: string;
       };
       create_invite: { Args: { p_apartment_id: string; p_valid_days?: number }; Returns: string };
+      decide_dispute: {
+        Args: { p_apply: boolean; p_dispute_id: string; p_message: string };
+        Returns: undefined;
+      };
       edit_expense: {
         Args: {
           p_amount_minor: number;
@@ -723,9 +863,23 @@ export type Database = {
         };
         Returns: string;
       };
+      raise_dispute: {
+        Args: {
+          p_client_request_id?: string;
+          p_expense_id: string;
+          p_kind: string;
+          p_proposed_share_minor?: number;
+          p_reason: string;
+        };
+        Returns: string;
+      };
       record_bill_payment: { Args: { p_expense_id: string; p_payers: Json }; Returns: undefined };
       remove_member: { Args: { p_apartment_id: string; p_user_id: string }; Returns: undefined };
       rename_category: { Args: { p_category_id: string; p_name: string }; Returns: undefined };
+      respond_to_dispute: {
+        Args: { p_accept: boolean; p_dispute_id: string; p_message?: string };
+        Returns: undefined;
+      };
       revoke_invite: { Args: { p_invite_id: string }; Returns: undefined };
       set_member_can_add_expense: {
         Args: { p_allowed: boolean; p_apartment_id: string; p_user_id: string };
@@ -748,6 +902,7 @@ export type Database = {
         Returns: undefined;
       };
       void_expense: { Args: { p_expense_id: string; p_reason?: string }; Returns: undefined };
+      withdraw_dispute: { Args: { p_dispute_id: string }; Returns: undefined };
     };
     Enums: {
       [_ in never]: never;
