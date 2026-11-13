@@ -35,7 +35,7 @@ The proposed data model is in [section 6 of the SRS](../docs/SRS.md#6-supabase-d
 - A new table is not finished until it has RLS enabled, policies written, and tests for those policies.
 - Before a destructive change, know what depends on the data and how it would be recovered, and get approval.
 - The service-role key is used only in server-side code and never appears in the repository, the app or the website.
-- Receipts and payment proofs go in private storage buckets and are served through signed URLs.
+- Receipts and payment proofs go in private storage buckets under `<apartment id>/<record id>/`, are served through signed URLs, and are evidence: storage policies allow no update or delete. A file counts only once a database function has checked and registered it.
 - Regenerate the app's database types after every schema change.
 - Grant client roles only what they need: revoke the default table privileges from `anon` and `authenticated`, then grant specific operations and columns. Row-level policies decide which rows; grants decide which operations and columns.
 - Functions that run with elevated rights (`security definer`), trigger functions and other internal helpers go in the `private` schema, which the Data API does not expose. Set `search_path = ''` on every function and write fully qualified names.
