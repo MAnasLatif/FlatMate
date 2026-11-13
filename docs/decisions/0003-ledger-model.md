@@ -48,6 +48,8 @@ An entry has no state of its own. It takes the state of its source:
 
 Balances are reported per state, so the app can show what is final, what is still provisional and what is held by a dispute.
 
+The dashboard turns these into three figures. For each person, final and provisional amounts are added together, because expenses are accepted by default; a figure that includes a provisional amount is marked provisional. Positive results add up to what the user owes and negative ones to what they will receive. Disputed amounts are netted per person on their own and shown separately as held, never counted in those figures.
+
 ### Splitting an expense
 
 The server computes every share; the app only previews with the same rules.
