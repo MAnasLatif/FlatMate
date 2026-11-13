@@ -9,6 +9,10 @@ export default function ApartmentLayout() {
       <Stack.Screen name="expenses/new" options={{ title: 'Add expense', presentation: 'modal' }} />
       <Stack.Screen name="expenses/[expenseId]/index" options={{ title: 'Expense' }} />
       <Stack.Screen
+        name="expenses/[expenseId]/edit"
+        options={{ title: 'Edit expense', presentation: 'modal' }}
+      />
+      <Stack.Screen
         name="expenses/[expenseId]/record-payment"
         options={{ title: 'Record payment', presentation: 'modal' }}
       />

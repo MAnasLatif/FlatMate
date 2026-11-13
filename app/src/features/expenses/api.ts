@@ -45,6 +45,7 @@ export type ExpenseDetail = {
   apartmentId: string;
   title: string;
   description: string | null;
+  categoryId: string | null;
   categoryName: string | null;
   amountMinor: number;
   currency: string;
@@ -79,15 +80,8 @@ export async function postExpense(
     p_amount_minor: expense.amountMinor,
     p_expense_date: expense.expenseDate,
     p_split_method: expense.splitMethod,
-    p_participants: expense.participants.map((participant) => ({
-      user_id: participant.userId,
-      ...(participant.basisPoints !== undefined ? { basis_points: participant.basisPoints } : {}),
-      ...(participant.amountMinor !== undefined ? { amount_minor: participant.amountMinor } : {}),
-    })),
-    p_payers: expense.payers.map((payer) => ({
-      user_id: payer.userId,
-      amount_minor: payer.amountMinor,
-    })),
+    p_participants: toRpcParticipants(expense),
+    p_payers: toRpcPayers(expense.payers),
     p_category_id: expense.categoryId ?? undefined,
     p_description: expense.description ?? undefined,
     p_due_date: expense.dueDate ?? undefined,
@@ -130,7 +124,7 @@ export async function fetchExpenseDetail(expenseId: string): Promise<ExpenseDeta
     supabase
       .from('expenses')
       .select(
-        `id, apartment_id, title, description, amount_minor, currency, expense_date, due_date,
+        `id, apartment_id, title, description, category_id, amount_minor, currency, expense_date, due_date,
          paid_status, status, revision, finalize_after, finalized_at, created_by, created_at,
          category:expense_categories(name),
          revisions:expense_revisions(revision, split_method,
@@ -161,6 +155,7 @@ export async function fetchExpenseDetail(expenseId: string): Promise<ExpenseDeta
     apartmentId: row.apartment_id,
     title: row.title,
     description: row.description,
+    categoryId: row.category_id,
     categoryName: row.category?.name ?? null,
     amountMinor: row.amount_minor,
     currency: row.currency,
@@ -198,9 +193,57 @@ export async function fetchExpenseDetail(expenseId: string): Promise<ExpenseDeta
 export async function recordBillPayment(expenseId: string, payers: Contribution[]): Promise<void> {
   const { error } = await supabase.rpc('record_bill_payment', {
     p_expense_id: expenseId,
-    p_payers: payers.map((payer) => ({ user_id: payer.userId, amount_minor: payer.amountMinor })),
+    p_payers: toRpcPayers(payers),
   });
   if (error) throw error;
+}
+
+/**
+ * Saves an edited expense. The server keeps descriptive changes on the expense
+ * and turns money changes into a new revision. `expectedRevision` is the
+ * revision the edit was based on, so a stale edit is refused rather than
+ * undoing someone else's.
+ */
+export async function editExpense(
+  expenseId: string,
+  expectedRevision: number,
+  expense: ValidExpense,
+  reason: string | null,
+): Promise<void> {
+  const { error } = await supabase.rpc('edit_expense', {
+    p_expense_id: expenseId,
+    p_expected_revision: expectedRevision,
+    p_title: expense.title,
+    // The function takes the whole expense; null clears an optional field.
+    p_category_id: expense.categoryId as string,
+    p_description: expense.description as string,
+    p_expense_date: expense.expenseDate,
+    p_due_date: expense.dueDate as string,
+    p_amount_minor: expense.amountMinor,
+    p_split_method: expense.splitMethod,
+    p_participants: toRpcParticipants(expense),
+    p_payers: toRpcPayers(expense.payers),
+    p_reason: reason ?? undefined,
+  });
+  if (error) throw error;
+}
+
+/** Cancels an expense: it stops counting toward balances but stays in the history. */
+export async function voidExpense(expenseId: string): Promise<void> {
+  const { error } = await supabase.rpc('void_expense', { p_expense_id: expenseId });
+  if (error) throw error;
+}
+
+function toRpcParticipants(expense: Pick<ValidExpense, 'participants'>) {
+  return expense.participants.map((participant) => ({
+    user_id: participant.userId,
+    ...(participant.basisPoints !== undefined ? { basis_points: participant.basisPoints } : {}),
+    ...(participant.amountMinor !== undefined ? { amount_minor: participant.amountMinor } : {}),
+  }));
+}
+
+function toRpcPayers(payers: readonly Contribution[]) {
+  return payers.map((payer) => ({ user_id: payer.userId, amount_minor: payer.amountMinor }));
 }
 
 export async function fetchMyBalances(apartmentId: string): Promise<Balance[]> {

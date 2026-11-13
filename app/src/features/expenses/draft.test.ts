@@ -1,4 +1,12 @@
-import { type ExpenseDraft, isValidDate, newDraft, validateDraft, validatePayers } from './draft';
+import {
+  draftFromExpense,
+  type ExpenseDraft,
+  isValidDate,
+  newDraft,
+  type PostedExpense,
+  validateDraft,
+  validatePayers,
+} from './draft';
 
 const A = '11111111-1111-1111-1111-111111111111';
 const Z = '22222222-2222-2222-2222-222222222222';
@@ -178,5 +186,72 @@ describe('validatePayers', () => {
     expect(
       validatePayers({ payerMode: 'multiple', payerId: A, payerAmounts: {} }, members, 9000).error,
     ).toBe('Enter how much each person paid.');
+  });
+});
+
+describe('draftFromExpense', () => {
+  const posted: PostedExpense = {
+    title: 'Groceries',
+    amountMinor: 30_000,
+    categoryId: 'food',
+    expenseDate: '2026-11-10',
+    description: null,
+    paidStatus: 'paid',
+    dueDate: null,
+    splitMethod: 'percentage',
+    splits: [
+      { userId: A, amountMinor: 15_000, basisPoints: 5000 },
+      { userId: Z, amountMinor: 15_000, basisPoints: 5000 },
+    ],
+    payers: [
+      { userId: A, amountMinor: 20_000 },
+      { userId: Z, amountMinor: 10_000 },
+    ],
+  };
+
+  it('fills the form from the current revision and excludes people outside the split', () => {
+    const draft = draftFromExpense(posted, members, A);
+    expect(draft).toMatchObject({
+      title: 'Groceries',
+      amount: '300.00',
+      categoryId: 'food',
+      description: '',
+      paidNow: true,
+      splitMethod: 'percentage',
+      excluded: [J],
+      percentages: { [A]: '50.00', [Z]: '50.00' },
+      payerMode: 'multiple',
+      payerAmounts: { [A]: '200.00', [Z]: '100.00' },
+    });
+  });
+
+  it('validates back to the same expense when nothing is changed', () => {
+    const result = validateDraft(draftFromExpense(posted, members, A), members);
+    expect(result.errors).toEqual({});
+    expect(result.value).toMatchObject({
+      amountMinor: 30_000,
+      participants: [
+        { userId: A, basisPoints: 5000 },
+        { userId: Z, basisPoints: 5000 },
+      ],
+      payers: [
+        { userId: A, amountMinor: 20_000 },
+        { userId: Z, amountMinor: 10_000 },
+      ],
+    });
+  });
+
+  it('keeps an unpaid bill unpaid, with the current user ready as payer', () => {
+    const draft = draftFromExpense(
+      { ...posted, paidStatus: 'unpaid', payers: [], splitMethod: 'equal', dueDate: '2026-11-20' },
+      members,
+      Z,
+    );
+    expect(draft).toMatchObject({
+      paidNow: false,
+      payerMode: 'single',
+      payerId: Z,
+      dueDate: '2026-11-20',
+    });
   });
 });

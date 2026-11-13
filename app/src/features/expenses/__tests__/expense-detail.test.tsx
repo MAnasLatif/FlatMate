@@ -58,6 +58,7 @@ const cleaning: ExpenseDetail = {
   apartmentId: APARTMENT,
   title: 'Cleaning',
   description: null,
+  categoryId: null,
   categoryName: 'Cleaning',
   amountMinor: 20_000,
   currency: 'PKR',

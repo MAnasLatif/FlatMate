@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Button, Card, Separator, Typography } from 'heroui-native';
 import type { ReactNode } from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { LoadError, LoadingRows } from '@/components/query-states';
@@ -14,8 +14,9 @@ import { formatMinorUnits } from '@/lib/money';
 import { formatDate } from '@/lib/time';
 
 import type { ExpenseDetail } from '../api';
-import { describeHistoryEvent, describeStatus } from '../detail';
-import { useExpenseDetail } from '../hooks';
+import { canEditExpense, describeHistoryEvent, describeStatus, historyReason } from '../detail';
+import { EXPENSE_ERROR_MESSAGES } from '../errors';
+import { useExpenseDetail, useVoidExpense } from '../hooks';
 import { memberLabel } from '../member-label';
 import { matchDebts, type SplitMethod } from '../split';
 import { ExpenseReceipts } from './expense-receipts';
@@ -38,6 +39,7 @@ export function ExpenseDetailView({
   const detail = useExpenseDetail(apartmentId, expenseId);
   const members = useMembers(apartmentId);
   const userId = useCurrentUserId();
+  const voidMutation = useVoidExpense(apartmentId, expenseId);
 
   if (detail.isPending || members.isPending) {
     return (
@@ -84,6 +86,19 @@ export function ExpenseDetailView({
     expense.paidStatus === 'unpaid' &&
     expense.status === 'provisional' &&
     isActiveMember(members.data, userId);
+  const canEdit = canEditExpense(
+    expense,
+    members.data.find((member) => member.userId === userId),
+  );
+  const confirmVoid = () =>
+    Alert.alert(
+      'Void this expense?',
+      'It stops counting toward anyone’s balance. It stays in the history, and this cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Void', style: 'destructive', onPress: () => voidMutation.mutate() },
+      ],
+    );
 
   return (
     <Screen
@@ -138,6 +153,45 @@ export function ExpenseDetailView({
         </Button>
       ) : null}
 
+      {canEdit ? (
+        <View className="gap-2">
+          <FormAlert
+            message={
+              voidMutation.error
+                ? userErrorMessage(
+                    voidMutation.error,
+                    'Could not void the expense. Please try again.',
+                    EXPENSE_ERROR_MESSAGES,
+                  )
+                : null
+            }
+          />
+          <View className="flex-row gap-2">
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onPress={() =>
+                router.push({
+                  pathname: '/apartments/[apartmentId]/expenses/[expenseId]/edit',
+                  params: { apartmentId, expenseId },
+                })
+              }
+              isDisabled={voidMutation.isPending}
+            >
+              Edit
+            </Button>
+            <Button
+              variant="danger-soft"
+              className="flex-1"
+              onPress={confirmVoid}
+              isDisabled={voidMutation.isPending}
+            >
+              {voidMutation.isPending ? 'Voiding…' : 'Void'}
+            </Button>
+          </View>
+        </View>
+      ) : null}
+
       <Section title="Paid by">
         {expense.payers.length === 0 ? (
           <Typography.Paragraph type="body-sm" color="muted">
@@ -189,8 +243,13 @@ export function ExpenseDetailView({
         {expense.history.map((event) => (
           <View key={event.id} className="gap-0.5">
             <Typography.Paragraph type="body-sm">
-              {describeHistoryEvent(event, nameOf(event.actorId))}
+              {describeHistoryEvent(event, nameOf(event.actorId), money)}
             </Typography.Paragraph>
+            {historyReason(event) ? (
+              <Typography.Paragraph type="body-xs" color="muted">
+                “{historyReason(event)}”
+              </Typography.Paragraph>
+            ) : null}
             <Typography.Paragraph type="body-xs" color="muted">
               {formatDate(event.createdAt)}
             </Typography.Paragraph>

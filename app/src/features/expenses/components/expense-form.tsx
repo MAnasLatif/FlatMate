@@ -34,6 +34,11 @@ type ExpenseFormProps = {
   currency: string;
   today: string;
   currentUserId: string;
+  /**
+   * Whether the expense is already paid is fixed, as when editing a posted
+   * expense: an unpaid bill is paid by recording who paid it.
+   */
+  isPaidStatusFixed?: boolean;
 };
 
 /** The fields of an expense: details, who paid, how it is split, and a preview. */
@@ -143,6 +148,7 @@ function PaidSection({
   members,
   currentUserId,
   currency,
+  isPaidStatusFixed = false,
 }: ExpenseFormProps) {
   const update = (patch: Partial<ExpenseDraft>) =>
     setDraft((current) => ({ ...current, ...patch }));
@@ -152,19 +158,27 @@ function PaidSection({
   return (
     <Card>
       <Card.Body className="gap-4">
-        <ControlField
-          isSelected={draft.paidNow}
-          onSelectedChange={(paidNow) => update({ paidNow })}
-        >
-          <View className="flex-1">
-            <Label>Already paid</Label>
+        {isPaidStatusFixed ? (
+          draft.paidNow ? null : (
             <Description>
-              Turn off for a bill that someone still has to pay, such as electricity. It creates no
-              debts until a flatmate pays it.
+              This bill is not paid yet. Record who paid it from the expense screen.
             </Description>
-          </View>
-          <ControlField.Indicator />
-        </ControlField>
+          )
+        ) : (
+          <ControlField
+            isSelected={draft.paidNow}
+            onSelectedChange={(paidNow) => update({ paidNow })}
+          >
+            <View className="flex-1">
+              <Label>Already paid</Label>
+              <Description>
+                Turn off for a bill that someone still has to pay, such as electricity. It creates
+                no debts until a flatmate pays it.
+              </Description>
+            </View>
+            <ControlField.Indicator />
+          </ControlField>
+        )}
 
         {draft.paidNow ? (
           <PayerFields

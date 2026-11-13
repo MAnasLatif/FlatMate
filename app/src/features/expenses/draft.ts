@@ -1,4 +1,4 @@
-import { formatMinorUnits, parseAmountToMinorUnits } from '@/lib/money';
+import { formatMinorUnits, minorUnitsToInput, parseAmountToMinorUnits } from '@/lib/money';
 
 import {
   computeShares,
@@ -84,6 +84,57 @@ export function newDraft(currentUserId: string, today: string): ExpenseDraft {
     payerMode: 'single',
     payerId: currentUserId,
     payerAmounts: {},
+  };
+}
+
+/** A posted expense as the edit form needs it: its current revision. */
+export type PostedExpense = {
+  title: string;
+  amountMinor: number;
+  categoryId: string | null;
+  expenseDate: string;
+  description: string | null;
+  paidStatus: 'paid' | 'unpaid';
+  dueDate: string | null;
+  splitMethod: SplitMethod;
+  splits: readonly { userId: string; amountMinor: number; basisPoints: number | null }[];
+  payers: readonly Contribution[];
+};
+
+/**
+ * The form draft for editing a posted expense, filled from its current
+ * revision. `memberIds` are the people the form lists; anyone listed but not
+ * in the split starts excluded.
+ */
+export function draftFromExpense(
+  expense: PostedExpense,
+  memberIds: readonly string[],
+  currentUserId: string,
+  minorUnitDigits = 2,
+): ExpenseDraft {
+  const inSplit = new Set(expense.splits.map((split) => split.userId));
+  const toInput = (amountMinor: number) => minorUnitsToInput(amountMinor, minorUnitDigits);
+  return {
+    title: expense.title,
+    amount: toInput(expense.amountMinor),
+    categoryId: expense.categoryId,
+    expenseDate: expense.expenseDate,
+    description: expense.description ?? '',
+    paidNow: expense.paidStatus === 'paid',
+    dueDate: expense.dueDate ?? '',
+    splitMethod: expense.splitMethod,
+    excluded: memberIds.filter((id) => !inSplit.has(id)),
+    percentages: Object.fromEntries(
+      expense.splits.map((split) => [split.userId, minorUnitsToInput(split.basisPoints ?? 0, 2)]),
+    ),
+    fixedAmounts: Object.fromEntries(
+      expense.splits.map((split) => [split.userId, toInput(split.amountMinor)]),
+    ),
+    payerMode: expense.payers.length > 1 ? 'multiple' : 'single',
+    payerId: expense.payers[0]?.userId ?? currentUserId,
+    payerAmounts: Object.fromEntries(
+      expense.payers.map((payer) => [payer.userId, toInput(payer.amountMinor)]),
+    ),
   };
 }
 

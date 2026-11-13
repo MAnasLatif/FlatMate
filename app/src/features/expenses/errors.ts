@@ -18,6 +18,11 @@ export const EXPENSE_ERROR_MESSAGES: Record<string, string> = {
   invalid_payer_amount: 'Enter valid amounts for the people who paid.',
   expense_disputed: 'This expense is disputed. Resolve the dispute first.',
   not_allowed_to_edit_expense: 'Only the person who added this expense or an admin can change it.',
+  expense_void: 'This expense has been voided and cannot be changed.',
+  expense_changed:
+    'Someone changed this expense while you were editing. Go back to see the latest version, then edit again.',
+  unpaid_bill_has_no_payers: 'Record who paid this bill from the expense screen.',
+  reason_too_long: 'Keep the reason under 500 characters.',
   immutable_record: 'This record cannot be changed.',
 };
 

@@ -4,6 +4,7 @@ import { addMonths } from '@/lib/time';
 
 import {
   createReceiptUrl,
+  editExpense,
   EXPENSES_PAGE_SIZE,
   fetchAttachments,
   fetchExpenseDetail,
@@ -15,6 +16,7 @@ import {
   RECEIPT_URL_STALE_TIME_MS,
   recordBillPayment,
   uploadReceipt,
+  voidExpense,
 } from './api';
 import type { ValidExpense } from './draft';
 import type { Contribution } from './split';
@@ -107,6 +109,26 @@ export function useRecordBillPayment(apartmentId: string, expenseId: string) {
   const refresh = useRefreshMoney(apartmentId);
   return useMutation({
     mutationFn: (payers: Contribution[]) => recordBillPayment(expenseId, payers),
+    onSuccess: refresh,
+  });
+}
+
+export function useEditExpense(apartmentId: string, expenseId: string) {
+  const refresh = useRefreshMoney(apartmentId);
+  return useMutation({
+    mutationFn: (input: {
+      expectedRevision: number;
+      expense: ValidExpense;
+      reason: string | null;
+    }) => editExpense(expenseId, input.expectedRevision, input.expense, input.reason),
+    onSuccess: refresh,
+  });
+}
+
+export function useVoidExpense(apartmentId: string, expenseId: string) {
+  const refresh = useRefreshMoney(apartmentId);
+  return useMutation({
+    mutationFn: () => voidExpense(expenseId),
     onSuccess: refresh,
   });
 }
