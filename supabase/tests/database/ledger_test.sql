@@ -87,9 +87,9 @@ select results_eq(
 );
 
 select ok(
-  (select finalize_after between now() + interval '7 days' - interval '1 minute' and now() + interval '7 days' + interval '1 minute'
+  (select finalize_after > now() + interval '7 days' and finalize_after <= now() + interval '8 days'
    from public.expenses where id = pg_temp.v('cleaning')),
-  'it becomes final after the apartment''s 7-day objection window'
+  'it becomes final after the apartment''s 7-day objection window, at the next local midnight'
 );
 
 -- Ajmal pays Rs 1,000 for a shared item ----------------------------------------------------
