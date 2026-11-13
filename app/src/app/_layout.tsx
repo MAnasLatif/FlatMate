@@ -11,11 +11,14 @@ import { StyleSheet, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { SessionProvider, useSession } from '@/features/auth/session-provider';
+import { connectQueryClientToDevice } from '@/lib/network';
 import { queryClient } from '@/lib/query-client';
 
 // Keep the splash screen up until the stored session has been read, so the
 // sign-in screen never flashes for someone who is already signed in.
 SplashScreen.preventAutoHideAsync();
+
+connectQueryClientToDevice();
 
 export default function RootLayout() {
   return (
