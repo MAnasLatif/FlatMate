@@ -94,6 +94,8 @@ Loaded data is saved on the device (`src/lib/saved-cache.ts`), so it stays reada
 
 The app is event-driven ([decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md)). `src/lib/realtime-topic.ts` joins a private Realtime topic; `src/features/sync/` holds the router: `changes.ts` maps each kind of change event to the cache keys it makes stale, and `hooks.ts` listens on the user's topic while signed in (`(app)/_layout.tsx`) and on the open apartment's topic while it is open (`apartments/[apartmentId]/_layout.tsx`). On (re)joining a topic it refreshes what may have missed an event; when a membership ends it stops listening and drops that apartment's unshown money data.
 
+Notifications live in `src/features/notifications/`: the inbox at `/notifications`, the bell with the unread count in the top bars, registering the device for push after sign-in, and opening the record a tapped push is about. Sign-out removes the device first. Android push needs a Firebase file at build time, through `GOOGLE_SERVICES_JSON`; the setup is in [docs/NOTIFICATIONS.md](../docs/NOTIFICATIONS.md).
+
 ## Rules specific to this folder
 
 - A screen calls hooks and renders components. Queries, split calculations and permission decisions live in a feature's logic or data-access code, or on the server.
@@ -133,7 +135,7 @@ The app is event-driven ([decision 0007](../docs/decisions/0007-offline-reading-
 | `expo-splash-screen`, `expo-status-bar`, `expo-system-ui`, `expo-constants`, `expo-font`                                                                                                              | App shell                                                                 |
 | `expo-dev-client`                                                                                                                                                                                     | The development build                                                     |
 
-`expo-notifications` is installed for task 1.43 and is not used by any screen yet.
+`expo-device` is installed and is not used by any screen yet.
 
 Development tools: TypeScript, ESLint with `eslint-config-expo`, Prettier, Jest with `jest-expo`, and React Native Testing Library.
 

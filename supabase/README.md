@@ -51,6 +51,10 @@ Open apps stay current through Realtime Broadcast ([decision 0007](../docs/decis
 
 In every hosted project, turn off **Allow public access** under Realtime settings in the dashboard, so clients can only join private channels. The events are sent as private messages either way; this closes public channels entirely.
 
+## Notifications
+
+A trigger on `audit_events` creates one `notifications` row per person to tell (`private.notification_recipients`), and pg_cron calls the `deliver-push` Edge Function in `functions/` while pushes are due. The function needs the `PUSH_DELIVERY_SECRET` secret, and the database needs the Vault secrets `project_url` and `push_delivery_secret`; until both are set nothing is pushed, and the inbox still works. Setup, local and hosted, and troubleshooting: [docs/NOTIFICATIONS.md](../docs/NOTIFICATIONS.md). Tests: `tests/database/notifications_test.sql`.
+
 ## Supabase CLI
 
 The project uses **Supabase CLI 3.1.0**, the same version CI installs. You also need Docker running. The CLI can be used without installing it, through npx:

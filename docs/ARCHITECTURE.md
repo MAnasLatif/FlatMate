@@ -19,7 +19,7 @@ flowchart LR
     STORE["Storage<br/>private buckets"]
     RT["Realtime<br/>private Broadcast"]
     CRON["pg_cron<br/>scheduled jobs"]
-    EDGE["Edge Functions<br/>(planned: push)"]
+    EDGE["Edge Function<br/>deliver-push"]
   end
 
   PUSH["Expo push service"]
@@ -31,7 +31,8 @@ flowchart LR
   DB -->|change signals| RT
   RT -->|apartment topic| APP
   CRON --> DB
-  DB --> EDGE
+  CRON -->|while pushes are due| EDGE
+  EDGE --> DB
   EDGE --> PUSH
   PUSH --> APP
   WEB -->|download links| STORES
@@ -50,7 +51,7 @@ flowchart LR
 | Scheduled work | pg_cron jobs calling Postgres functions | Objection-window deadlines and settlement periods today; recurring charges and reminders later. Idempotent and timezone-aware. |
 | Change events | Realtime Broadcast, sent by `private.emit_change` from database triggers | One event for every visible change, on an apartment or user topic, with no data in it. The app's event router refetches through RLS. |
 | Offline reading | Encrypted saved query cache on the phone (`app/src/lib/saved-cache.ts`) | A copy of what the user already loaded, never a source of truth. |
-| Push notifications | Edge Functions to the Expo push service | Notification text carries no account details. |
+| Notifications | A trigger on `audit_events` creates them; pg_cron calls the `deliver-push` Edge Function, which sends them through the Expo push service | Push text is generic and carries no names, amounts or account details; the inbox, behind sign-in, has the details. Setup: [NOTIFICATIONS.md](NOTIFICATIONS.md). |
 | Public marketing pages | `web/` | Static content and store links. No user data. |
 
 ## The trust boundary
