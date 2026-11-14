@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
-import { Button, Separator, Skeleton, Typography } from 'heroui-native';
+import { Button, LinkButton, Separator, Skeleton, Typography } from 'heroui-native';
 import { useEffect, useRef } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { View } from 'react-native';
@@ -65,11 +65,16 @@ export function ProfileContent() {
         avatarPath={profile.data.avatar_path}
       />
       <NameSection userId={userId} currentName={profile.data.display_name} />
-      <View className="gap-1">
-        <Typography.Paragraph type="body-sm" color="muted">
-          Email
-        </Typography.Paragraph>
-        <Typography.Paragraph>{session?.user.email}</Typography.Paragraph>
+      <View className="flex-row items-center gap-3">
+        <View className="flex-1 gap-1">
+          <Typography.Paragraph type="body-sm" color="muted">
+            Email
+          </Typography.Paragraph>
+          <Typography.Paragraph>{session?.user.email}</Typography.Paragraph>
+        </View>
+        <LinkButton onPress={() => router.push('/change-email')} accessibilityLabel="Change email">
+          <LinkButton.Label className="font-semibold text-accent">Change</LinkButton.Label>
+        </LinkButton>
       </View>
       <Button variant="secondary" onPress={() => router.push('/change-password')}>
         Change password

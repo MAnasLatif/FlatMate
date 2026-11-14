@@ -74,6 +74,34 @@ export async function updatePassword(password: string): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Starts changing the signed-in user's email. With secure email change on
+ * (supabase/config.toml, and the hosted default), both the current and the
+ * new address get their own code, and both must be confirmed.
+ */
+export async function requestEmailChange(newEmail: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ email: newEmail });
+  if (error) throw error;
+}
+
+/**
+ * Sends both email-change codes again, replacing the earlier ones. Asking for
+ * the change again does this: `auth.resend` with type "email_change" reports
+ * success but sends nothing (checked against the local stack).
+ */
+export async function resendEmailChangeCodes(newEmail: string): Promise<void> {
+  await requestEmailChange(newEmail);
+}
+
+/**
+ * Confirms one of the two email-change codes, with the address it was sent to.
+ * The change happens once both are confirmed, in either order.
+ */
+export async function confirmEmailChangeCode(email: string, code: string): Promise<void> {
+  const { error } = await supabase.auth.verifyOtp({ email, token: code, type: 'email_change' });
+  if (error) throw error;
+}
+
 export const AUTH_CALLBACK_PATH = 'auth/callback';
 
 /**

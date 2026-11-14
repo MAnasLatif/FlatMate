@@ -6,13 +6,20 @@ type EmailCodeFieldProps = {
   value: string;
   onChange: (code: string) => void;
   error?: string;
+  /** Which email the code came from, when a screen asks for more than one. */
+  label?: string;
 };
 
 /** The 6-digit code from a confirmation or password reset email. */
-export function EmailCodeField({ value, onChange, error }: EmailCodeFieldProps) {
+export function EmailCodeField({
+  value,
+  onChange,
+  error,
+  label = 'Code from the email',
+}: EmailCodeFieldProps) {
   return (
     <TextField isInvalid={error !== undefined}>
-      <Label>Code from the email</Label>
+      <Label>{label}</Label>
       {/* Centred under the label at their usual size, not left with a gap on the right. */}
       <InputOTP
         className="self-center"
@@ -24,7 +31,7 @@ export function EmailCodeField({ value, onChange, error }: EmailCodeFieldProps) 
         textInputProps={{
           textContentType: 'oneTimeCode',
           autoComplete: 'one-time-code',
-          accessibilityLabel: 'Code from the email',
+          accessibilityLabel: label,
         }}
       >
         <InputOTP.Group>

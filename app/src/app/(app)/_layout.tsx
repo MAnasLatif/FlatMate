@@ -17,6 +17,7 @@ export default function AppLayout() {
     <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', ...pushTransition }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="profile" options={{ title: 'Profile' }} />
+      <Stack.Screen name="change-email" options={{ title: 'Change email', ...modalTransition }} />
       <Stack.Screen
         name="change-password"
         options={{ title: 'Change password', ...modalTransition }}
