@@ -17,11 +17,15 @@ export default function AppLayout() {
     <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', ...pushTransition }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="profile" options={{ title: 'Profile' }} />
+      <Stack.Screen
+        name="change-password"
+        options={{ title: 'Change password', ...modalTransition }}
+      />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Stack.Screen name="apartments/new" options={{ title: 'New apartment' }} />
       <Stack.Screen
         name="accounts/edit"
-        options={{ title: 'Receiving account', ...modalTransition }}
+        options={{ title: 'Bank or wallet account', ...modalTransition }}
       />
       <Stack.Screen name="apartments/[apartmentId]" options={{ headerShown: false }} />
     </Stack>

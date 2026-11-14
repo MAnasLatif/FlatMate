@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Button, Card, Chip, Separator, Typography } from 'heroui-native';
+import { Button, Chip, Separator, Typography } from 'heroui-native';
 import { Alert, View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
@@ -34,73 +34,71 @@ export function MyAccountsSection() {
     );
 
   return (
-    <Card>
-      <Card.Body className="gap-3">
-        <Card.Title>Receiving accounts</Card.Title>
-        <Typography.Paragraph type="body-xs" color="muted">
-          Where flatmates can pay you. Each account is private until you share it with an apartment.
-          FlatMate never asks for passwords, PINs or codes.
-        </Typography.Paragraph>
-        <FormAlert message={error ? userErrorMessage(error, 'Could not save that.') : null} />
-        {accounts.isPending ? (
-          <LoadingRows count={1} />
-        ) : accounts.isLoadingError ? (
-          <LoadError
-            message={userErrorMessage(accounts.error, 'Could not load your accounts.')}
-            onRetry={() => void accounts.refetch()}
-          />
-        ) : (
-          accounts.data.map((account) => (
-            <View key={account.id} className="gap-2">
-              <Separator />
-              <View className="flex-row items-center gap-2">
-                <View className="flex-1 gap-0.5">
-                  <Typography.Paragraph>{account.provider}</Typography.Paragraph>
-                  <Typography.Paragraph type="body-xs" color="muted">
-                    {account.accountTitle} · {maskIdentifier(account.accountIdentifier)}
-                  </Typography.Paragraph>
-                  <Typography.Paragraph type="body-xs" color="muted">
-                    {account.sharedWith.length === 0
-                      ? 'Private'
-                      : `Shared with ${account.sharedWith.length} ${account.sharedWith.length === 1 ? 'apartment' : 'apartments'}`}
-                  </Typography.Paragraph>
-                </View>
-                {account.isPreferred ? (
-                  <Chip size="sm" variant="soft" color="accent">
-                    Preferred
-                  </Chip>
-                ) : null}
+    <View className="gap-3">
+      <Typography.Heading type="h6">Bank & wallet accounts</Typography.Heading>
+      <Typography.Paragraph type="body-xs" color="muted">
+        Where flatmates can pay you. Each account is private until you share it with an apartment.
+        FlatMate never asks for passwords, PINs or codes.
+      </Typography.Paragraph>
+      <FormAlert message={error ? userErrorMessage(error, 'Could not save that.') : null} />
+      {accounts.isPending ? (
+        <LoadingRows count={1} />
+      ) : accounts.isLoadingError ? (
+        <LoadError
+          message={userErrorMessage(accounts.error, 'Could not load your accounts.')}
+          onRetry={() => void accounts.refetch()}
+        />
+      ) : (
+        accounts.data.map((account) => (
+          <View key={account.id} className="gap-2">
+            <Separator />
+            <View className="flex-row items-center gap-2">
+              <View className="flex-1 gap-0.5">
+                <Typography.Paragraph>{account.provider}</Typography.Paragraph>
+                <Typography.Paragraph type="body-xs" color="muted">
+                  {account.accountTitle} · {maskIdentifier(account.accountIdentifier)}
+                </Typography.Paragraph>
+                <Typography.Paragraph type="body-xs" color="muted">
+                  {account.sharedWith.length === 0
+                    ? 'Private'
+                    : `Shared with ${account.sharedWith.length} ${account.sharedWith.length === 1 ? 'apartment' : 'apartments'}`}
+                </Typography.Paragraph>
               </View>
-              <View className="flex-row flex-wrap gap-2">
-                <Button size="sm" variant="secondary" onPress={() => edit(account.id)}>
-                  Edit
-                </Button>
-                {account.isPreferred ? null : (
-                  <OnlineButton
-                    size="sm"
-                    variant="ghost"
-                    isDisabled={mutations.prefer.isPending}
-                    onPress={() => mutations.prefer.mutate(account.id)}
-                  >
-                    Make preferred
-                  </OnlineButton>
-                )}
+              {account.isPreferred ? (
+                <Chip size="sm" variant="soft" color="accent">
+                  Preferred
+                </Chip>
+              ) : null}
+            </View>
+            <View className="flex-row flex-wrap gap-2">
+              <Button size="sm" variant="secondary" onPress={() => edit(account.id)}>
+                Edit
+              </Button>
+              {account.isPreferred ? null : (
                 <OnlineButton
                   size="sm"
                   variant="ghost"
-                  isDisabled={mutations.remove.isPending}
-                  onPress={() => confirmDelete(account)}
+                  isDisabled={mutations.prefer.isPending}
+                  onPress={() => mutations.prefer.mutate(account.id)}
                 >
-                  Delete
+                  Make preferred
                 </OnlineButton>
-              </View>
+              )}
+              <OnlineButton
+                size="sm"
+                variant="ghost"
+                isDisabled={mutations.remove.isPending}
+                onPress={() => confirmDelete(account)}
+              >
+                Delete
+              </OnlineButton>
             </View>
-          ))
-        )}
-        <Button variant="secondary" onPress={() => edit()}>
-          Add account
-        </Button>
-      </Card.Body>
-    </Card>
+          </View>
+        ))
+      )}
+      <Button variant="secondary" onPress={() => edit()}>
+        Add bank or wallet
+      </Button>
+    </View>
   );
 }

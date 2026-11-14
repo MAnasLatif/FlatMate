@@ -50,6 +50,9 @@ export function useUpdateDisplayName(userId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (displayName: string) => updateDisplayName(userId, displayName),
+    // Autosave can send a second name while the first is in flight; running
+    // them one after another means the last name typed is the one kept.
+    scope: { id: `display-name:${userId}` },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: profileKeys.profile(userId) }),
   });
 }

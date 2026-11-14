@@ -1,40 +1,27 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
-import * as ImagePicker from 'expo-image-picker';
-import { Button, Card, Skeleton, Typography } from 'heroui-native';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { Alert, View } from 'react-native';
+import { router } from 'expo-router';
+import { Button, Separator, Skeleton, Typography } from 'heroui-native';
+import { useEffect, useRef } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { View } from 'react-native';
 import { z } from 'zod';
 
 import { FormAlert } from '@/components/form/form-alert';
-import { PasswordField } from '@/components/form/password-field';
 import { TextInputField } from '@/components/form/text-input-field';
-import { OnlineButton } from '@/components/online-button';
+import { LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import { MyAccountsSection } from '@/features/accounts/components/my-accounts';
-import { updatePassword } from '@/features/auth/api';
-import { authErrorMessage } from '@/features/auth/errors';
-import {
-  changePasswordSchema,
-  displayNameSchema,
-  PASSWORD_MIN_LENGTH,
-} from '@/features/auth/schemas';
+import { displayNameSchema } from '@/features/auth/schemas';
 import { useCurrentUserId, useSession } from '@/features/auth/session-provider';
-import { ProfileAvatar } from '@/features/profile/components/profile-avatar';
-import { avatarUploadErrorMessage } from '@/features/profile/errors';
-import {
-  useProfile,
-  useRemoveAvatar,
-  useSignOut,
-  useUpdateDisplayName,
-  useUploadAvatar,
-} from '@/features/profile/hooks';
+import { ProfilePhoto } from '@/features/profile/components/profile-photo';
+import { useProfile, useUpdateDisplayName } from '@/features/profile/hooks';
 import { userErrorMessage } from '@/lib/errors';
 import { useIsOnline } from '@/lib/network';
-import { LoadingRows } from '@/components/query-states';
 
 const nameFormSchema = z.object({ displayName: displayNameSchema });
+
+/** How long after the last keystroke a changed name is saved. */
+export const NAME_AUTOSAVE_DELAY_MS = 1500;
 
 export function ProfileContent() {
   const userId = useCurrentUserId();
@@ -53,7 +40,7 @@ export function ProfileContent() {
     return (
       <Screen padTop={false}>
         <View className="items-center gap-4">
-          <Skeleton className="size-20 rounded-full" />
+          <Skeleton className="size-28 rounded-full" />
           <Skeleton className="h-5 w-40 rounded-md" />
         </View>
         <Skeleton className="h-40 rounded-xl" />
@@ -72,190 +59,111 @@ export function ProfileContent() {
 
   return (
     <Screen freshness={profile} padTop={false}>
-      <PhotoSection
+      <ProfilePhoto
         userId={userId}
         name={profile.data.display_name}
         avatarPath={profile.data.avatar_path}
       />
       <NameSection userId={userId} currentName={profile.data.display_name} />
+      <View className="gap-1">
+        <Typography.Paragraph type="body-sm" color="muted">
+          Email
+        </Typography.Paragraph>
+        <Typography.Paragraph>{session?.user.email}</Typography.Paragraph>
+      </View>
+      <Button variant="secondary" onPress={() => router.push('/change-password')}>
+        Change password
+      </Button>
+      <Separator />
       <MyAccountsSection />
-      <Card>
-        <Card.Body className="gap-1">
-          <Typography.Paragraph type="body-sm" color="muted">
-            Email
-          </Typography.Paragraph>
-          <Typography.Paragraph>{session?.user.email}</Typography.Paragraph>
-        </Card.Body>
-      </Card>
-      <PasswordSection />
-      <SignOutSection />
     </Screen>
   );
 }
 
-function PhotoSection({
-  userId,
-  name,
-  avatarPath,
-}: {
-  userId: string;
-  name: string | null;
-  avatarPath: string | null;
-}) {
-  const upload = useUploadAvatar(userId);
-  const remove = useRemoveAvatar(userId);
-
-  const pickPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    const asset = result.canceled ? undefined : result.assets[0];
-    if (asset) {
-      upload.mutate({ uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg' });
-    }
-  };
-
-  const confirmRemove = () => {
-    Alert.alert('Remove your photo?', 'Your flatmates will see your initials instead.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => remove.mutate() },
-    ]);
-  };
-
-  const error = upload.error
-    ? avatarUploadErrorMessage(upload.error)
-    : remove.error
-      ? userErrorMessage(remove.error, 'Could not remove your photo.')
-      : null;
-
-  return (
-    <View className="items-center gap-3">
-      <ProfileAvatar name={name} avatarPath={avatarPath} size="lg" />
-      <FormAlert message={error} />
-      <View className="flex-row gap-2">
-        <OnlineButton
-          size="sm"
-          variant="secondary"
-          onPress={() => void pickPhoto()}
-          isDisabled={upload.isPending || remove.isPending}
-        >
-          {upload.isPending ? 'Uploading…' : avatarPath ? 'Change photo' : 'Add photo'}
-        </OnlineButton>
-        {avatarPath ? (
-          <OnlineButton
-            size="sm"
-            variant="ghost"
-            onPress={confirmRemove}
-            isDisabled={upload.isPending || remove.isPending}
-          >
-            Remove
-          </OnlineButton>
-        ) : null}
-      </View>
-    </View>
-  );
-}
-
+/**
+ * The display name, saved without a button: shortly after typing stops, when
+ * the field loses focus, and when the screen closes with an unsaved change.
+ * Offline, the change waits and is saved once the device reconnects.
+ */
 function NameSection({ userId, currentName }: { userId: string; currentName: string | null }) {
   const update = useUpdateDisplayName(userId);
+  const isOnline = useIsOnline();
   const form = useForm<z.input<typeof nameFormSchema>, unknown, z.output<typeof nameFormSchema>>({
     resolver: zodResolver(nameFormSchema),
     values: { displayName: currentName ?? '' },
+    // A refreshed profile must not overwrite what is being typed.
+    resetOptions: { keepDirtyValues: true },
+  });
+  const typedName = useWatch({ control: form.control, name: 'displayName' });
+
+  // The last name sent to the server (or loaded from it), so the same name is
+  // never saved twice by the timer, the blur and the unmount together.
+  const lastSent = useRef(currentName ?? '');
+  useEffect(() => {
+    lastSent.current = currentName ?? '';
+  }, [currentName]);
+
+  const save = (showErrors: boolean) => {
+    if (!isOnline) return;
+    const parsed = nameFormSchema.safeParse(form.getValues());
+    if (!parsed.success) {
+      if (showErrors) void form.trigger('displayName');
+      return;
+    }
+    const name = parsed.data.displayName;
+    if (name === lastSent.current) return;
+    lastSent.current = name;
+    update.mutate(name, {
+      onError: () => {
+        // Let the next edit or blur try again.
+        lastSent.current = currentName ?? '';
+      },
+    });
+  };
+  // The timer and the unmount cleanup call the latest save through this ref.
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
   });
 
-  return (
-    <Card>
-      <Card.Body className="gap-4">
-        {currentName ? null : (
-          <FormAlert status="warning" message="Add your name so your flatmates recognise you." />
-        )}
-        <FormAlert
-          message={
-            update.error ? userErrorMessage(update.error, 'Could not save your name.') : null
-          }
-        />
-        <FormAlert
-          status="success"
-          message={update.isSuccess && !form.formState.isDirty ? 'Your name was saved.' : null}
-        />
-        <TextInputField
-          control={form.control}
-          name="displayName"
-          label="Your name"
-          description="Your flatmates see this name."
-          autoComplete="name"
-          textContentType="name"
-        />
-        <OnlineButton
-          onPress={() => void form.handleSubmit((values) => update.mutate(values.displayName))()}
-          isDisabled={update.isPending || !form.formState.isDirty}
-        >
-          {update.isPending ? 'Saving…' : 'Save name'}
-        </OnlineButton>
-      </Card.Body>
-    </Card>
-  );
-}
+  useEffect(() => {
+    const timer = setTimeout(() => saveRef.current(true), NAME_AUTOSAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [typedName, isOnline]);
 
-function PasswordSection() {
-  const form = useForm<
-    z.input<typeof changePasswordSchema>,
-    unknown,
-    z.output<typeof changePasswordSchema>
-  >({
-    resolver: zodResolver(changePasswordSchema),
-    defaultValues: { password: '' },
-  });
-  const [saved, setSaved] = useState(false);
-  const change = useMutation({
-    mutationFn: (password: string) => updatePassword(password),
-    onSuccess: () => {
-      setSaved(true);
-      form.reset();
-    },
-  });
+  // Leaving the screen saves a change the timer has not reached yet.
+  useEffect(() => {
+    const latestSave = saveRef;
+    return () => latestSave.current(false);
+  }, []);
 
-  return (
-    <Card>
-      <Card.Body className="gap-4">
-        <Card.Title>Change password</Card.Title>
-        <FormAlert message={change.error ? authErrorMessage(change.error) : null} />
-        <FormAlert status="success" message={saved ? 'Your password was changed.' : null} />
-        <PasswordField
-          control={form.control}
-          name="password"
-          label="New password"
-          description={`At least ${PASSWORD_MIN_LENGTH} characters.`}
-          purpose="new"
-          onFocus={() => setSaved(false)}
-        />
-        <OnlineButton
-          variant="secondary"
-          onPress={() => void form.handleSubmit((values) => change.mutate(values.password))()}
-          isDisabled={change.isPending}
-        >
-          {change.isPending ? 'Saving…' : 'Change password'}
-        </OnlineButton>
-      </Card.Body>
-    </Card>
-  );
-}
+  const isUnsaved = typedName.trim() !== (currentName ?? '');
+  const status = update.isPending
+    ? 'Saving…'
+    : !isOnline && isUnsaved
+      ? 'You are offline. Your name will be saved when you reconnect.'
+      : update.isSuccess && !isUnsaved
+        ? 'Saved. Your flatmates see this name.'
+        : 'Your flatmates see this name.';
 
-function SignOutSection() {
-  const signOutMutation = useSignOut();
   return (
     <View className="gap-3">
-      <FormAlert message={signOutMutation.error ? authErrorMessage(signOutMutation.error) : null} />
-      <OnlineButton
-        variant="danger-soft"
-        onPress={() => signOutMutation.mutate()}
-        isDisabled={signOutMutation.isPending}
-      >
-        Sign out
-      </OnlineButton>
+      {currentName ? null : (
+        <FormAlert status="warning" message="Add your name so your flatmates recognise you." />
+      )}
+      <FormAlert
+        message={update.error ? userErrorMessage(update.error, 'Could not save your name.') : null}
+      />
+      <TextInputField
+        control={form.control}
+        name="displayName"
+        label="Your name"
+        description={status}
+        autoComplete="name"
+        textContentType="name"
+        returnKeyType="done"
+        onEndEditing={() => save(true)}
+      />
     </View>
   );
 }

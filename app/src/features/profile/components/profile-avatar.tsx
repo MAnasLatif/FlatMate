@@ -5,7 +5,8 @@ import { useAvatarUrl } from '../hooks';
 type ProfileAvatarProps = {
   name: string | null | undefined;
   avatarPath: string | null | undefined;
-  size?: 'sm' | 'md' | 'lg';
+  /** "xl" is the large photo on the profile screen; HeroUI's sizes stop at "lg". */
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 };
 
 export function initialsOf(name: string | null | undefined): string {
@@ -21,9 +22,15 @@ export function ProfileAvatar({ name, avatarPath, size = 'md' }: ProfileAvatarPr
   const initials = initialsOf(name);
 
   return (
-    <Avatar size={size} alt={name ?? 'Profile photo'}>
+    <Avatar
+      size={size === 'xl' ? 'lg' : size}
+      className={size === 'xl' ? 'size-28' : undefined}
+      alt={name ?? 'Profile photo'}
+    >
       {avatarUrl.data ? <Avatar.Image source={{ uri: avatarUrl.data }} /> : null}
-      <Avatar.Fallback>{initials || undefined}</Avatar.Fallback>
+      <Avatar.Fallback classNames={size === 'xl' ? { text: 'text-3xl' } : undefined}>
+        {initials || undefined}
+      </Avatar.Fallback>
     </Avatar>
   );
 }
