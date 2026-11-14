@@ -29,13 +29,13 @@ export default function ApartmentTabsLayout() {
         tabBarInactiveTintColor: muted,
       }}
     >
-      {/* SRS section 3.2 and AC-13: Profile | Add | Expenses. */}
+      {/* SRS section 3.2 and AC-13: Expenses | Add | Profile. */}
       <Tabs.Screen
-        name="profile"
+        name="index"
         options={{
-          title: 'Profile',
+          title: 'Expenses',
           tabBarIcon: ({ focused, size }) => (
-            <TabIcon name="person-circle-outline" focused={focused} size={size} />
+            <TabIcon name="receipt-outline" focused={focused} size={size} />
           ),
         }}
       />
@@ -59,11 +59,11 @@ export default function ApartmentTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="index"
+        name="profile"
         options={{
-          title: 'Expenses',
+          title: 'Profile',
           tabBarIcon: ({ focused, size }) => (
-            <TabIcon name="receipt-outline" focused={focused} size={size} />
+            <TabIcon name="person-circle-outline" focused={focused} size={size} />
           ),
         }}
       />

@@ -53,7 +53,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - Top bar: apartment name + dropdown on one side; members icon and notification entry on the other. Location subtitle is optional and admin-controlled.
 - Summary: `You'll Receive`, `You Owe`, `Net Balance`, and the user's share of expenses for the selected month.
 - Expense feed with month selector, search/filter, status indicators, and detail navigation.
-- Bottom navigation **left Profile | center Add (+) | right Expenses List**. The apartment dashboard/list is the main content area.
+- Bottom navigation **left Expenses List | center Add (+) | right Profile**. The apartment dashboard/list is the main content area.
 - Member icon opens member directory; tapping a member opens a pairwise ledger.
 - Admin apartment settings accessible through a gear on an apartment in the selector and/or an appropriate admin entry.
 - Follow device light/dark appearance automatically.
@@ -277,7 +277,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 - AC-10: Settlement date changes apply to the apartment only; unresolved dues carry forward; historical close remains traceable.
 - AC-11: Removed/leaving member cannot access current private apartment data but historical obligations remain auditable under defined access rules.
 - AC-12: Private bank accounts and attachments are inaccessible to unauthorized users.
-- AC-13: UI follows device theme and uses Profile | Add | Expenses bottom-navigation order.
+- AC-13: UI follows device theme and uses Expenses | Add | Profile bottom-navigation order.
 - AC-14: PDF statement includes monthly expense share, payments, receivables, payables, disputed and carry-forward amounts.
 
 ## 11. Recommended Delivery Phases
