@@ -81,7 +81,6 @@ function DetailsSection({ apartment }: { apartment: Apartment }) {
     values: {
       name: apartment.name,
       location: apartment.location ?? '',
-      showLocation: apartment.show_location,
       currency: apartment.currency,
       timezone: apartment.timezone,
       settlementDay: String(apartment.settlement_day),
@@ -108,7 +107,7 @@ function DetailsSection({ apartment }: { apartment: Apartment }) {
           status="success"
           message={update.isSuccess && !form.formState.isDirty ? 'Settings saved.' : null}
         />
-        <ApartmentFormFields control={form.control} isCurrencyEditable={false} />
+        <ApartmentFormFields control={form.control} mode="settings" />
         <Typography.Paragraph type="body-xs" color="muted">
           A new settlement day applies from the next settlement period.
         </Typography.Paragraph>

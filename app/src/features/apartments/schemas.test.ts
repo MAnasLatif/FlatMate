@@ -3,7 +3,6 @@ import { categoryNameSchema, apartmentFormSchema, joinCodeSchema } from './schem
 const validApartment = {
   name: ' Flat 4B ',
   location: '  ',
-  showLocation: false,
   timezone: 'Asia/Karachi',
   settlementDay: '5',
   approvalDays: '7',
@@ -15,7 +14,6 @@ describe('apartmentFormSchema', () => {
     expect(apartmentFormSchema.parse(validApartment)).toEqual({
       name: 'Flat 4B',
       location: null,
-      showLocation: false,
       timezone: 'Asia/Karachi',
       settlementDay: 5,
       approvalDays: 7,

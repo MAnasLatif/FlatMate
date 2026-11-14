@@ -56,16 +56,14 @@ describe('asking to join', () => {
   });
 
   it('shows pending requests, which can be cancelled', async () => {
-    jest
-      .mocked(fetchMyJoinRequests)
-      .mockResolvedValue([
-        {
-          id: REQUEST,
-          apartmentId: FLAT,
-          apartmentName: 'Flat 4B',
-          createdAt: '2026-11-14T10:00:00Z',
-        },
-      ]);
+    jest.mocked(fetchMyJoinRequests).mockResolvedValue([
+      {
+        id: REQUEST,
+        apartmentId: FLAT,
+        apartmentName: 'Flat 4B',
+        createdAt: '2026-11-14T10:00:00Z',
+      },
+    ]);
     jest.mocked(cancelJoinRequest).mockResolvedValue();
     await renderWithProviders(<MyJoinRequests />);
 

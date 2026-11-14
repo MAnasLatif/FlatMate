@@ -2,21 +2,25 @@ import type { Control } from 'react-hook-form';
 import { View } from 'react-native';
 import type { z } from 'zod';
 
-import { SwitchField } from '@/components/form/switch-field';
 import { TextInputField } from '@/components/form/text-input-field';
 
 import type { apartmentFormSchema } from '../schemas';
+import { CurrencyField } from './currency-field';
 
 export type ApartmentFormInput = z.input<typeof apartmentFormSchema>;
 export type ApartmentFormOutput = z.output<typeof apartmentFormSchema>;
 
 type ApartmentFormFieldsProps = {
   control: Control<ApartmentFormInput, unknown, ApartmentFormOutput>;
-  /** The currency is chosen once, when the apartment is created. */
-  isCurrencyEditable: boolean;
+  /**
+   * Creating picks the currency from a list and takes the time zone from the
+   * phone. In settings the currency is locked and the time zone can be fixed.
+   */
+  mode: 'create' | 'settings';
 };
 
-export function ApartmentFormFields({ control, isCurrencyEditable }: ApartmentFormFieldsProps) {
+/** A location, when given, is shown to members; there is no separate switch. */
+export function ApartmentFormFields({ control, mode }: ApartmentFormFieldsProps) {
   return (
     <View className="gap-4">
       <TextInputField control={control} name="name" label="Apartment name" autoCapitalize="words" />
@@ -27,20 +31,17 @@ export function ApartmentFormFields({ control, isCurrencyEditable }: ApartmentFo
         description="Such as the area or building."
         autoCapitalize="words"
       />
-      <SwitchField control={control} name="showLocation" label="Show the location to members" />
-      <TextInputField
-        control={control}
-        name="currency"
-        label="Currency"
-        description={
-          isCurrencyEditable
-            ? 'All amounts in this apartment use this currency. It cannot be changed later.'
-            : 'The currency cannot be changed.'
-        }
-        autoCapitalize="characters"
-        maxLength={3}
-        editable={isCurrencyEditable}
-      />
+      {mode === 'create' ? (
+        <CurrencyField control={control} />
+      ) : (
+        <TextInputField
+          control={control}
+          name="currency"
+          label="Currency"
+          description="The currency cannot be changed."
+          editable={false}
+        />
+      )}
       <TextInputField
         control={control}
         name="settlementDay"
@@ -57,14 +58,16 @@ export function ApartmentFormFields({ control, isCurrencyEditable }: ApartmentFo
         keyboardType="number-pad"
         maxLength={2}
       />
-      <TextInputField
-        control={control}
-        name="timezone"
-        label="Time zone"
-        description="Settlement days and deadlines follow this time zone."
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
+      {mode === 'settings' ? (
+        <TextInputField
+          control={control}
+          name="timezone"
+          label="Time zone"
+          description="Settlement days and deadlines follow this time zone."
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+      ) : null}
     </View>
   );
 }

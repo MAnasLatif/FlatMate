@@ -26,7 +26,6 @@ const apartmentDetailsSchema = z.object({
     .trim()
     .max(LOCATION_MAX_LENGTH, `Use at most ${LOCATION_MAX_LENGTH} characters.`)
     .transform((value) => (value === '' ? null : value)),
-  showLocation: z.boolean(),
   timezone: z.string().trim().min(1, 'Enter a time zone, such as Asia/Karachi.'),
   settlementDay: wholeNumberBetween(1, 31, 'Enter a day of the month from 1 to 31.'),
   approvalDays: wholeNumberBetween(1, 30, 'Enter a number of days from 1 to 30.'),

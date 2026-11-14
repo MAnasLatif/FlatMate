@@ -33,7 +33,6 @@ function CreateSection() {
     defaultValues: {
       name: '',
       location: '',
-      showLocation: false,
       currency: 'PKR',
       timezone: deviceTimeZone(),
       settlementDay: '1',
@@ -57,7 +56,7 @@ function CreateSection() {
             : null
         }
       />
-      <ApartmentFormFields control={form.control} isCurrencyEditable />
+      <ApartmentFormFields control={form.control} mode="create" />
       <OnlineButton
         onPress={() =>
           void form.handleSubmit((values) =>

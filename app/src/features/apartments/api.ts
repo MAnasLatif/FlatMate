@@ -93,7 +93,6 @@ export async function fetchMembers(apartmentId: string): Promise<Member[]> {
 export type CreateApartmentInput = {
   name: string;
   location: string | null;
-  showLocation: boolean;
   currency: string;
   timezone: string;
   settlementDay: number;
@@ -104,7 +103,8 @@ export async function createApartment(input: CreateApartmentInput): Promise<stri
   const { data, error } = await supabase.rpc('create_apartment', {
     p_name: input.name,
     p_location: input.location ?? undefined,
-    p_show_location: input.showLocation,
+    // A location, when given, is shown to members (no separate switch).
+    p_show_location: input.location !== null,
     p_currency: input.currency,
     p_timezone: input.timezone,
     p_settlement_day: input.settlementDay,
@@ -205,7 +205,7 @@ export async function updateApartmentSettings(
     p_apartment_id: apartmentId,
     p_name: input.name,
     p_location: input.location ?? '',
-    p_show_location: input.showLocation,
+    p_show_location: input.location !== null,
     p_timezone: input.timezone,
     p_settlement_day: input.settlementDay,
     p_approval_days: input.approvalDays,
