@@ -688,6 +688,7 @@ export type Database = {
           apartment_id: string;
           category_id: string | null;
           client_request_id: string | null;
+          collector_id: string | null;
           created_at: string;
           created_by: string;
           currency: string;
@@ -709,6 +710,7 @@ export type Database = {
           apartment_id: string;
           category_id?: string | null;
           client_request_id?: string | null;
+          collector_id?: string | null;
           created_at?: string;
           created_by: string;
           currency: string;
@@ -729,6 +731,7 @@ export type Database = {
           apartment_id?: string;
           category_id?: string | null;
           client_request_id?: string | null;
+          collector_id?: string | null;
           created_at?: string;
           created_by?: string;
           currency?: string;
@@ -757,6 +760,13 @@ export type Database = {
             columns: ['category_id'];
             isOneToOne: false;
             referencedRelation: 'expense_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'expenses_collector_id_fkey';
+            columns: ['collector_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
           {
@@ -1869,6 +1879,7 @@ export type Database = {
           p_apartment_id: string;
           p_category_id?: string;
           p_client_request_id?: string;
+          p_collector_id?: string;
           p_description?: string;
           p_due_date?: string;
           p_expense_date: string;
@@ -1925,6 +1936,10 @@ export type Database = {
         Returns: undefined;
       };
       revoke_invite: { Args: { p_invite_id: string }; Returns: undefined };
+      set_bill_collector: {
+        Args: { p_collector_id: string; p_expense_id: string };
+        Returns: undefined;
+      };
       set_member_can_add_expense: {
         Args: { p_allowed: boolean; p_apartment_id: string; p_user_id: string };
         Returns: undefined;
