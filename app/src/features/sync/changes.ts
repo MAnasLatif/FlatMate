@@ -22,6 +22,7 @@ export const APARTMENT_CHANGE_KINDS = [
   'category',
   'expense',
   'invite',
+  'join_request',
   'member',
   'offset',
   'payment',
@@ -62,6 +63,12 @@ const apartmentChanges: Record<ApartmentChangeKind, (scope: ApartmentScope) => Q
     expenseKeys.apartment(apartmentId),
   ],
   invite: ({ apartmentId }) => [apartmentKeys.invites(apartmentId)],
+  // Someone asked to join, or a request was answered or cancelled; approving
+  // also changes the members.
+  join_request: ({ apartmentId }) => [
+    apartmentKeys.joinRequests(apartmentId),
+    apartmentKeys.members(apartmentId),
+  ],
   // Joining, leaving, roles and permissions; balances follow who is a member.
   member: ({ apartmentId }) => [
     apartmentKeys.members(apartmentId),
@@ -74,7 +81,13 @@ const apartmentChanges: Record<ApartmentChangeKind, (scope: ApartmentScope) => Q
 const userChanges: Record<UserChangeKind, (userId: string) => QueryKey[]> = {
   // Added to or removed from an apartment, or a role changed: the apartment
   // list, exits, and the member lists that decide what each screen offers.
-  membership: (userId) => [ALL_MY_APARTMENTS_ROOT, ['apartments'], settlementKeys.exits(userId)],
+  // Also the user's own join requests, which an admin answers.
+  membership: (userId) => [
+    ALL_MY_APARTMENTS_ROOT,
+    ['apartments'],
+    settlementKeys.exits(userId),
+    apartmentKeys.myJoinRequests(userId),
+  ],
   profile: (userId) => [profileKeys.profile(userId)],
   account: (userId) => [accountKeys.mine(userId)],
   // A new notification, or one read on another device.

@@ -115,6 +115,20 @@ export async function createApartment(input: CreateApartmentInput): Promise<stri
 }
 
 const joinResultSchema = z.discriminatedUnion('status', [
+  // Joining needs an admin's approval: a new request, or one already waiting.
+  z.object({
+    status: z.literal('requested'),
+    request_id: z.uuid(),
+    apartment_id: z.uuid(),
+    apartment_name: z.string(),
+  }),
+  z.object({
+    status: z.literal('pending'),
+    request_id: z.uuid(),
+    apartment_id: z.uuid(),
+    apartment_name: z.string(),
+  }),
+  // Kept for an older server that still joined straight away.
   z.object({ status: z.literal('joined'), apartment_id: z.uuid() }),
   z.object({ status: z.literal('already_member'), apartment_id: z.uuid() }),
   z.object({ status: z.literal('invalid_code') }),
@@ -127,6 +141,58 @@ export async function joinApartment(code: string): Promise<JoinResult> {
   const { data, error } = await supabase.rpc('join_apartment', { p_code: code });
   if (error) throw error;
   return joinResultSchema.parse(data);
+}
+
+/** A request the signed-in user made to join an apartment, still waiting. */
+export type MyJoinRequest = {
+  id: string;
+  apartmentId: string;
+  apartmentName: string;
+  createdAt: string;
+};
+
+export async function fetchMyJoinRequests(): Promise<MyJoinRequest[]> {
+  const { data, error } = await supabase.rpc('get_my_join_requests');
+  if (error) throw error;
+  return data.map((row) => ({
+    id: row.id,
+    apartmentId: row.apartment_id,
+    apartmentName: row.apartment_name,
+    createdAt: row.created_at,
+  }));
+}
+
+export async function cancelJoinRequest(requestId: string): Promise<void> {
+  const { error } = await supabase.rpc('cancel_join_request', { p_request_id: requestId });
+  if (error) throw error;
+}
+
+/** Someone asking to join an apartment, for its admins. */
+export type JoinRequest = {
+  id: string;
+  userId: string;
+  displayName: string | null;
+  avatarPath: string | null;
+  createdAt: string;
+};
+
+export async function fetchJoinRequests(apartmentId: string): Promise<JoinRequest[]> {
+  const { data, error } = await supabase.rpc('get_join_requests', { p_apartment_id: apartmentId });
+  if (error) throw error;
+  return data.map((row) => ({
+    id: row.id,
+    userId: row.user_id,
+    displayName: row.display_name,
+    avatarPath: row.avatar_path,
+    createdAt: row.created_at,
+  }));
+}
+
+export async function decideJoinRequest(requestId: string, approve: boolean): Promise<void> {
+  const { error } = await supabase.rpc(approve ? 'approve_join_request' : 'decline_join_request', {
+    p_request_id: requestId,
+  });
+  if (error) throw error;
 }
 
 export type ApartmentSettingsInput = Omit<CreateApartmentInput, 'currency'>;

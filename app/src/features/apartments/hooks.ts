@@ -9,11 +9,15 @@ import {
   archiveCategory,
   createApartment,
   createInvite,
+  cancelJoinRequest,
+  decideJoinRequest,
   fetchActiveInvites,
   fetchApartment,
   fetchCategories,
+  fetchJoinRequests,
   fetchMembers,
   fetchMyApartments,
+  fetchMyJoinRequests,
   joinApartment,
   leaveApartment,
   type Member,
@@ -32,6 +36,8 @@ export const apartmentKeys = {
   members: (apartmentId: string) => ['apartments', apartmentId, 'members'] as const,
   invites: (apartmentId: string) => ['apartments', apartmentId, 'invites'] as const,
   categories: (apartmentId: string) => ['apartments', apartmentId, 'categories'] as const,
+  joinRequests: (apartmentId: string) => ['apartments', apartmentId, 'join-requests'] as const,
+  myJoinRequests: (userId: string) => ['apartments', 'join-requests', userId] as const,
 };
 
 /** The apartment id from the route, for screens inside an apartment. */
@@ -85,8 +91,53 @@ export function useJoinApartment() {
   const queryClient = useQueryClient();
   const userId = useCurrentUserId();
   return useMutation({
-    mutationFn: joinApartment,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: apartmentKeys.mine(userId) }),
+    mutationFn: (code: string) => joinApartment(code),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: apartmentKeys.mine(userId) }),
+        queryClient.invalidateQueries({ queryKey: apartmentKeys.myJoinRequests(userId) }),
+      ]),
+  });
+}
+
+/** The user's requests to join apartments that an admin has not decided yet. */
+export function useMyJoinRequests() {
+  const userId = useCurrentUserId();
+  return useQuery({
+    queryKey: apartmentKeys.myJoinRequests(userId),
+    queryFn: fetchMyJoinRequests,
+  });
+}
+
+export function useCancelJoinRequest() {
+  const queryClient = useQueryClient();
+  const userId = useCurrentUserId();
+  return useMutation({
+    mutationFn: (requestId: string) => cancelJoinRequest(requestId),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: apartmentKeys.myJoinRequests(userId) }),
+  });
+}
+
+/** People asking to join, for an apartment's admins. */
+export function useJoinRequests(apartmentId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: apartmentKeys.joinRequests(apartmentId),
+    queryFn: () => fetchJoinRequests(apartmentId),
+    enabled,
+  });
+}
+
+export function useDecideJoinRequest(apartmentId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { requestId: string; approve: boolean }) =>
+      decideJoinRequest(input.requestId, input.approve),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: apartmentKeys.joinRequests(apartmentId) }),
+        queryClient.invalidateQueries({ queryKey: apartmentKeys.members(apartmentId) }),
+      ]),
   });
 }
 

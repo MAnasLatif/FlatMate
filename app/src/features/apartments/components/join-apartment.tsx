@@ -50,9 +50,17 @@ export function JoinApartment() {
   const onResult = (result: JoinResult) => {
     if (result.status === 'joined' || result.status === 'already_member') {
       openApartment(result.apartment_id);
+    } else if (result.status === 'requested' || result.status === 'pending') {
+      form.reset();
     }
   };
 
+  const sentMessage =
+    join.data?.status === 'requested'
+      ? `Request sent. An admin of ${join.data.apartment_name} will let you in.`
+      : join.data?.status === 'pending'
+        ? `You already asked to join ${join.data.apartment_name}. An admin will let you in.`
+        : null;
   const resultMessage =
     join.data && (join.data.status === 'invalid_code' || join.data.status === 'rate_limited')
       ? JOIN_MESSAGES[join.data.status]
@@ -60,6 +68,7 @@ export function JoinApartment() {
 
   return (
     <View className="gap-4">
+      <FormAlert status="success" message={sentMessage} />
       <FormAlert
         message={
           join.error

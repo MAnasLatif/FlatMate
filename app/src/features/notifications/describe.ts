@@ -58,6 +58,13 @@ export function describeNotification(item: Pick<NotificationItem, 'type' | 'acto
       return `${who} changed whether you can add expenses.`;
     case 'settlement_period.closed':
       return 'A settlement period closed. See the summary.';
+    case 'join_request.requested':
+      return `${who} asked to join the apartment.`;
+    case 'join_request.approved':
+      return `${who} let you into the apartment.`;
+    case 'join_request.declined':
+      // The apartment is not theirs to see, so its name is not shown either.
+      return 'Your request to join an apartment was declined.';
     default:
       return 'Something changed in the apartment.';
   }
@@ -108,6 +115,9 @@ export function notificationHref(
       return { pathname: '/apartments/[apartmentId]/settlement', params: { apartmentId } };
     case 'apartment':
       break;
+    // A declined request: the apartment is not open to them, so go home.
+    case 'join_request':
+      return '/';
   }
   return { pathname: '/apartments/[apartmentId]', params: { apartmentId } };
 }

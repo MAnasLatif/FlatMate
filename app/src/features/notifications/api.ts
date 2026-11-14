@@ -2,7 +2,14 @@ import { supabase } from '@/lib/supabase';
 
 /** Where opening a notification goes; the screen there checks access again (FR-09.3). */
 export type NotificationRecordType =
-  'expense' | 'dispute' | 'payment' | 'ledger' | 'members' | 'settlement' | 'apartment';
+  | 'expense'
+  | 'dispute'
+  | 'payment'
+  | 'ledger'
+  | 'members'
+  | 'settlement'
+  | 'apartment'
+  | 'join_request';
 
 export type NotificationItem = {
   id: string;

@@ -16,6 +16,7 @@ import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { MyApartment } from '@/features/apartments/api';
 import { JoinApartment } from '@/features/apartments/components/join-apartment';
+import { MyJoinRequests } from '@/features/apartments/components/my-join-requests';
 import { useMyApartments } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { NotificationBell } from '@/features/notifications/components/notification-bell';
@@ -57,6 +58,8 @@ export default function MyApartmentsScreen() {
           </PressableFeedback>
         </View>
       </View>
+
+      <MyJoinRequests />
 
       {apartments.isPending ? (
         <LoadingRows />

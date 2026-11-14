@@ -17,6 +17,7 @@ import { FormAlert } from '@/components/form/form-alert';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { Member } from '@/features/apartments/api';
+import { JoinRequests } from '@/features/apartments/components/join-requests';
 import { APARTMENT_ERROR_MESSAGES } from '@/features/apartments/errors';
 import {
   useApartment,
@@ -107,6 +108,8 @@ export default function MembersScreen() {
             : null
         }
       />
+
+      {viewerIsAdmin ? <JoinRequests apartmentId={apartmentId} /> : null}
 
       <View className="gap-3">
         {current.map((member) => (

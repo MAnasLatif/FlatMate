@@ -22,6 +22,7 @@ describe('apartment change events', () => {
       'category',
       'expense',
       'invite',
+      'join_request',
       'member',
       'offset',
       'payment',
