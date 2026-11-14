@@ -1,43 +1,48 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import Stack from 'expo-router/stack';
-import { Button, Chip, Separator, Typography } from 'heroui-native';
-import { useState } from 'react';
+import { Button, Chip, Separator, Typography, useThemeColor } from 'heroui-native';
+import { type ReactNode, useState } from 'react';
 import { View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
-import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
+import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
-import { useMyApartments } from '@/features/apartments/hooks';
 import { userErrorMessage } from '@/lib/errors';
 
 import type { MyAccount } from '../api';
 import { useAccountMutations, useMyAccounts } from '../hooks';
 import { DeleteAccountSheet } from './delete-account-sheet';
 
-/** One of the user's bank or wallet accounts, with everything they can do to it. */
-export function AccountDetails({ accountId }: { accountId: string }) {
+/**
+ * One of the user's bank or wallet accounts, with Edit and Delete in the
+ * header and Make preferred beside its type. `children` is shown under the
+ * details; the route passes the payments made into the account.
+ */
+export function AccountDetails({
+  accountId,
+  children,
+}: {
+  accountId: string;
+  children?: ReactNode;
+}) {
   const accounts = useMyAccounts();
-  const apartments = useMyApartments();
 
-  if (accounts.isPending || apartments.isPending) {
+  if (accounts.isPending) {
     return (
       <Screen freshness={accounts} padTop={false}>
         <LoadingRows count={3} />
       </Screen>
     );
   }
-  const loadError = loadingError(accounts, apartments);
-  if (loadError || !accounts.data || !apartments.data) {
+  if (accounts.isLoadingError) {
     return (
       <Screen padTop={false}>
         <LoadError
-          message={userErrorMessage(loadError, 'Could not load this account.')}
-          onRetry={() => {
-            void accounts.refetch();
-            void apartments.refetch();
-          }}
+          message={userErrorMessage(accounts.error, 'Could not load this account.')}
+          onRetry={() => void accounts.refetch()}
         />
       </Screen>
     );
@@ -55,25 +60,26 @@ export function AccountDetails({ accountId }: { accountId: string }) {
     );
   }
 
-  const sharedNames = apartments.data
-    .filter(({ apartment }) => account.sharedWith.includes(apartment.id))
-    .map(({ apartment }) => apartment.name);
-
-  return <Details account={account} sharedNames={sharedNames} freshness={accounts} />;
+  return (
+    <Details account={account} freshness={accounts}>
+      {children}
+    </Details>
+  );
 }
 
 function Details({
   account,
-  sharedNames,
   freshness,
+  children,
 }: {
   account: MyAccount;
-  sharedNames: string[];
   freshness: Parameters<typeof Screen>[0]['freshness'];
+  children?: ReactNode;
 }) {
   const { prefer } = useAccountMutations();
   const [copied, setCopied] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [accent, danger] = useThemeColor(['accent', 'danger']);
   const isBank = account.kind === 'bank';
 
   const copy = async () => {
@@ -83,20 +89,59 @@ function Details({
 
   return (
     <Screen freshness={freshness} padTop={false}>
-      <Stack.Screen options={{ title: account.provider }} />
+      <Stack.Screen
+        options={{
+          title: account.provider,
+          headerRight: () => (
+            <View className="flex-row">
+              <Button
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                onPress={() =>
+                  router.push({ pathname: '/accounts/edit', params: { accountId: account.id } })
+                }
+                accessibilityLabel="Edit account"
+              >
+                <Ionicons name="create-outline" size={22} color={accent} />
+              </Button>
+              <Button
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                onPress={() => setIsDeleting(true)}
+                accessibilityLabel="Delete account"
+              >
+                <Ionicons name="trash-outline" size={22} color={danger} />
+              </Button>
+            </View>
+          ),
+        }}
+      />
 
-      <View className="flex-row items-center gap-2">
-        <Typography.Paragraph color="muted" className="flex-1">
-          {isBank ? 'Bank account' : 'Mobile wallet'}
-        </Typography.Paragraph>
-        {account.isPreferred ? (
-          <Chip size="sm" variant="soft" color="accent">
-            Preferred
-          </Chip>
-        ) : null}
-      </View>
-
-      <Detail label={isBank ? 'Bank' : 'Wallet'} value={account.provider} />
+      <Detail
+        label={isBank ? 'Bank' : 'Wallet'}
+        value={account.provider}
+        end={
+          account.isPreferred ? (
+            <Chip size="sm" variant="soft" color="accent">
+              Preferred
+            </Chip>
+          ) : (
+            <OnlineButton
+              size="sm"
+              variant="secondary"
+              isDisabled={prefer.isPending}
+              onPress={() => prefer.mutate(account.id)}
+            >
+              {prefer.isPending ? 'Saving…' : 'Make preferred'}
+            </OnlineButton>
+          )
+        }
+      />
+      <FormAlert
+        message={prefer.error ? userErrorMessage(prefer.error, 'Could not save that.') : null}
+      />
       <Detail label="Name on the account" value={account.accountTitle} />
       <View className="gap-2">
         <Detail
@@ -110,42 +155,13 @@ function Details({
           </Button>
         </View>
       </View>
-      <Detail
-        label="Who can see it"
-        value={
-          sharedNames.length === 0
-            ? 'Private. No apartment can see it.'
-            : `Members of ${sharedNames.join(', ')}`
-        }
-      />
 
-      <Separator />
-
-      <FormAlert
-        message={prefer.error ? userErrorMessage(prefer.error, 'Could not save that.') : null}
-      />
-      <View className="gap-3">
-        <Button
-          variant="secondary"
-          onPress={() =>
-            router.push({ pathname: '/accounts/edit', params: { accountId: account.id } })
-          }
-        >
-          Edit
-        </Button>
-        {account.isPreferred ? null : (
-          <OnlineButton
-            variant="secondary"
-            onPress={() => prefer.mutate(account.id)}
-            isDisabled={prefer.isPending}
-          >
-            {prefer.isPending ? 'Saving…' : 'Make preferred'}
-          </OnlineButton>
-        )}
-        <Button variant="danger-soft" onPress={() => setIsDeleting(true)}>
-          Delete account
-        </Button>
-      </View>
+      {children ? (
+        <>
+          <Separator />
+          {children}
+        </>
+      ) : null}
 
       <DeleteAccountSheet
         account={isDeleting ? account : null}
@@ -160,17 +176,23 @@ function Detail({
   label,
   value,
   selectable,
+  end,
 }: {
   label: string;
   value: string;
   selectable?: boolean;
+  /** Shown at the end of the row, such as the Preferred tag. */
+  end?: ReactNode;
 }) {
   return (
-    <View className="gap-1">
-      <Typography.Paragraph type="body-sm" color="muted">
-        {label}
-      </Typography.Paragraph>
-      <Typography.Paragraph selectable={selectable}>{value}</Typography.Paragraph>
+    <View className="flex-row items-center gap-2">
+      <View className="flex-1 gap-1">
+        <Typography.Paragraph type="body-sm" color="muted">
+          {label}
+        </Typography.Paragraph>
+        <Typography.Paragraph selectable={selectable}>{value}</Typography.Paragraph>
+      </View>
+      {end}
     </View>
   );
 }

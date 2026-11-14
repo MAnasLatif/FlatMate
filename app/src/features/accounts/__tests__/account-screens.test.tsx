@@ -1,6 +1,7 @@
 import { fireEvent, screen, userEvent } from '@testing-library/react-native';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
+import { Text } from 'react-native';
 
 import { fetchMyApartments } from '@/features/apartments/api';
 import { renderWithProviders } from '@/test/render';
@@ -28,7 +29,14 @@ const OTHER = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 jest.mock('@/lib/supabase', () => ({ supabase: {} }));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn() } }));
-jest.mock('expo-router/stack', () => ({ __esModule: true, default: { Screen: () => null } }));
+// The header's buttons are rendered in place, so tests can press them.
+jest.mock('expo-router/stack', () => ({
+  __esModule: true,
+  default: {
+    Screen: ({ options }: { options?: { headerRight?: () => unknown } }) =>
+      options?.headerRight?.() ?? null,
+  },
+}));
 jest.mock('@/features/auth/session-provider', () => ({
   useCurrentUserId: () => '11111111-1111-1111-1111-111111111111',
 }));
@@ -160,9 +168,9 @@ describe('AccountDetails', () => {
   it('shows the owner the details with the full number, and copies it', async () => {
     await renderWithProviders(<AccountDetails accountId="acc-1" />);
 
-    expect(await screen.findByText('Bank account')).toBeOnTheScreen();
-    expect(screen.getByText('Anas Latif')).toBeOnTheScreen();
-    expect(screen.getByText('Members of Flat 4B')).toBeOnTheScreen();
+    expect(await screen.findByText('Anas Latif')).toBeOnTheScreen();
+    expect(screen.getByText('Preferred')).toBeOnTheScreen();
+    expect(screen.queryByText(/Who can see it|Private/)).not.toBeOnTheScreen();
     expect(screen.getByText('PK36MEZN0001234567890123')).toBeOnTheScreen();
 
     await userEvent.setup().press(screen.getByRole('button', { name: 'Copy number' }));
@@ -179,15 +187,36 @@ describe('AccountDetails', () => {
     expect(setPreferredAccount).toHaveBeenCalledWith(ANAS, 'acc-1');
   });
 
-  it('opens the edit form', async () => {
+  it('opens the edit form from the header', async () => {
     await renderWithProviders(<AccountDetails accountId="acc-1" />);
 
-    await userEvent.setup().press(await screen.findByRole('button', { name: 'Edit' }));
+    await userEvent.setup().press(await screen.findByRole('button', { name: 'Edit account' }));
 
     expect(router.push).toHaveBeenCalledWith({
       pathname: '/accounts/edit',
       params: { accountId: 'acc-1' },
     });
+  });
+
+  it('asks before deleting from the header', async () => {
+    jest.mocked(deleteAccount).mockResolvedValue();
+    await renderWithProviders(<AccountDetails accountId="acc-1" />);
+    const user = userEvent.setup();
+
+    const [headerDelete] = await screen.findAllByRole('button', { name: 'Delete account' });
+    await user.press(headerDelete);
+    expect(await screen.findByText('Delete Meezan Bank?')).toBeOnTheScreen();
+    expect(deleteAccount).not.toHaveBeenCalled();
+  });
+
+  it('shows the payments passed to it under the details', async () => {
+    await renderWithProviders(
+      <AccountDetails accountId="acc-1">
+        <Text>Payments into this account</Text>
+      </AccountDetails>,
+    );
+
+    expect(await screen.findByText('Payments into this account')).toBeOnTheScreen();
   });
 
   it('says when the account no longer exists', async () => {
