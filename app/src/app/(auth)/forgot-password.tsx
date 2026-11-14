@@ -55,7 +55,6 @@ export default function ForgotPasswordScreen() {
         />
 
         <OnlineButton
-          size="lg"
           onPress={() => void form.handleSubmit((values) => request.mutate(values))()}
           isDisabled={request.isPending}
         >

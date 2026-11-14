@@ -32,7 +32,8 @@ export default function SignUpScreen() {
       // Without email confirmation the user is already signed in, and the
       // navigator switches to the app on its own.
       if (needsEmailConfirmation) {
-        router.push({ pathname: '/verify-email', params: { email: values.email } });
+        // A code was just sent, so the resend countdown starts at once.
+        router.push({ pathname: '/verify-email', params: { email: values.email, codeSent: '1' } });
       }
     },
   });
@@ -83,7 +84,6 @@ export default function SignUpScreen() {
         </View>
 
         <OnlineButton
-          size="lg"
           onPress={() => void form.handleSubmit((values) => signUp.mutate(values))()}
           isDisabled={signUp.isPending}
         >

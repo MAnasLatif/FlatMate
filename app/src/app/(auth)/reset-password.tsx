@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Button } from 'heroui-native';
 import { useEffect, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { View } from 'react-native';
 import type { z } from 'zod';
 
 import { FormAlert } from '@/components/form/form-alert';
@@ -15,6 +16,7 @@ import { AuthFooterLink } from '@/features/auth/components/auth-footer-link';
 import { AuthHeader } from '@/features/auth/components/auth-header';
 import { EmailCodeField } from '@/features/auth/components/email-code-field';
 import { authErrorMessage } from '@/features/auth/errors';
+import { formatCountdown, useResendCountdown } from '@/features/auth/resend-countdown';
 import { PASSWORD_MIN_LENGTH, resetPasswordSchema } from '@/features/auth/schemas';
 import { useSession } from '@/features/auth/session-provider';
 
@@ -28,6 +30,8 @@ export default function ResetPasswordScreen() {
   // sets the password again.
   const codeAccepted = useRef(false);
 
+  // The previous screen has just sent a code.
+  const countdown = useResendCountdown(true);
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: { code: '', password: '' },
@@ -66,46 +70,52 @@ export default function ResetPasswordScreen() {
 
   return (
     <Screen>
-      <AuthHeader
-        title="Choose a new password"
-        subtitle={`If an account exists for ${email}, we sent it a 6-digit code.`}
-      />
+      <View className="flex-1 gap-8">
+        <AuthHeader
+          title="Choose a new password"
+          subtitle={`If an account exists for ${email}, we sent it a 6-digit code.`}
+        />
 
-      <FormAlert message={reset.error ? authErrorMessage(reset.error) : null} />
+        <FormAlert message={reset.error ? authErrorMessage(reset.error) : null} />
 
-      <Controller
-        control={form.control}
-        name="code"
-        render={({ field, fieldState }) => (
-          <EmailCodeField
-            value={field.value}
-            onChange={field.onChange}
-            error={fieldState.error?.message}
-          />
-        )}
-      />
+        <Controller
+          control={form.control}
+          name="code"
+          render={({ field, fieldState }) => (
+            <EmailCodeField
+              value={field.value}
+              onChange={field.onChange}
+              error={fieldState.error?.message}
+            />
+          )}
+        />
 
-      <PasswordField
-        control={form.control}
-        name="password"
-        label="New password"
-        placeholder="Create a password"
-        description={`At least ${PASSWORD_MIN_LENGTH} characters.`}
-        purpose="new"
-      />
+        <PasswordField
+          control={form.control}
+          name="password"
+          label="New password"
+          placeholder="Create a password"
+          description={`At least ${PASSWORD_MIN_LENGTH} characters.`}
+          purpose="new"
+        />
 
-      <OnlineButton
-        size="lg"
-        onPress={() => void form.handleSubmit((values) => reset.mutate(values))()}
-        isDisabled={reset.isPending}
-      >
-        {reset.isPending ? 'Saving…' : 'Save new password'}
-      </OnlineButton>
+        <OnlineButton
+          onPress={() => void form.handleSubmit((values) => reset.mutate(values))()}
+          isDisabled={reset.isPending}
+        >
+          {reset.isPending ? 'Saving…' : 'Save new password'}
+        </OnlineButton>
+      </View>
 
       <AuthFooterLink
         prompt="No code?"
-        action="Send a new one"
+        action={
+          countdown.remaining > 0
+            ? `Send a new one in ${formatCountdown(countdown.remaining)}`
+            : 'Send a new one'
+        }
         onPress={() => router.replace('/forgot-password')}
+        isDisabled={countdown.remaining > 0}
       />
     </Screen>
   );

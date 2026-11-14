@@ -32,7 +32,6 @@ export function GoogleSignInButton() {
       <FormAlert message={signIn.error ? authErrorMessage(signIn.error) : null} />
       <OnlineButton
         variant="secondary"
-        size="lg"
         onPress={() => signIn.mutate()}
         isDisabled={signIn.isPending}
       >

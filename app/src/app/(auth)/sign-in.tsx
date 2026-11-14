@@ -78,7 +78,6 @@ export default function SignInScreen() {
         </View>
 
         <OnlineButton
-          size="lg"
           onPress={() => void form.handleSubmit((values) => signIn.mutate(values))()}
           isDisabled={signIn.isPending}
         >

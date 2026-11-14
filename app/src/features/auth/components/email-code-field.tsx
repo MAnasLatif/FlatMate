@@ -13,7 +13,9 @@ export function EmailCodeField({ value, onChange, error }: EmailCodeFieldProps) 
   return (
     <TextField isInvalid={error !== undefined}>
       <Label>Code from the email</Label>
+      {/* Centred under the label at their usual size, not left with a gap on the right. */}
       <InputOTP
+        className="self-center"
         maxLength={EMAIL_CODE_LENGTH}
         value={value}
         onChange={onChange}
