@@ -7,6 +7,9 @@ import type { Database } from '@/types/database';
 
 import { EncryptedStorage } from './encrypted-storage';
 import { getEnv } from './env';
+import { installSubtleDigest } from './web-crypto';
+
+installSubtleDigest();
 
 const env = getEnv();
 
