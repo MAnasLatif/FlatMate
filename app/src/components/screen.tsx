@@ -1,5 +1,13 @@
-import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, View } from 'react-native';
+import { type ReactNode, type RefObject, useEffect, useRef } from 'react';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  RefreshControl,
+  ScrollView,
+  type ScrollViewInstance,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Freshness, FreshnessBanner } from './freshness-banner';
@@ -31,6 +39,8 @@ export function Screen({
   freshness,
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  useScrollFocusedInputIntoView(scrollRef);
   const padding = {
     paddingTop: padTop ? insets.top + 16 : 16,
     paddingBottom: insets.bottom + 16,
@@ -39,10 +49,13 @@ export function Screen({
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-background"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      // Android draws edge to edge, so the window no longer shrinks for the
+      // keyboard; padding makes the room on both platforms.
+      behavior="padding"
     >
       {scroll ? (
         <ScrollView
+          ref={scrollRef}
           className="flex-1"
           contentContainerClassName="grow gap-6 px-5"
           contentContainerStyle={padding}
@@ -62,4 +75,28 @@ export function Screen({
       )}
     </KeyboardAvoidingView>
   );
+}
+
+/** Space kept between the field being typed in and the top of the keyboard. */
+const FOCUSED_INPUT_MARGIN = 96;
+
+/**
+ * When the keyboard opens, scrolls the field being typed in up so it sits above
+ * the keyboard instead of behind it. Fields already in view stay where they are.
+ */
+function useScrollFocusedInputIntoView(scrollRef: RefObject<ScrollViewInstance | null>) {
+  useEffect(() => {
+    const subscription = Keyboard.addListener('keyboardDidShow', (event) => {
+      const input = TextInput.State.currentlyFocusedInput();
+      const scroll = scrollRef.current;
+      if (!input || !scroll) return;
+      input.measureInWindow((_x, inputY, _width, inputHeight) => {
+        const keyboardTop = event.endCoordinates.screenY;
+        const overlap = inputY + inputHeight + FOCUSED_INPUT_MARGIN - keyboardTop;
+        if (overlap <= 0) return;
+        scroll.scrollResponderScrollNativeHandleToKeyboard(input, FOCUSED_INPUT_MARGIN, true);
+      });
+    });
+    return () => subscription.remove();
+  }, [scrollRef]);
 }
