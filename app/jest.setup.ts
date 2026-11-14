@@ -44,6 +44,10 @@ jest.mock('@react-native-community/netinfo', () =>
 jest.mock('react-native-worklets', () => jest.requireActual('react-native-worklets/src/mock'));
 jest.mock('react-native-reanimated', () => jest.requireActual('react-native-reanimated/mock'));
 
+// HeroUI's BottomSheet is built on @gorhom/bottom-sheet, whose gesture and
+// layout code needs a device. The package ships a mock that renders plain views.
+jest.mock('@gorhom/bottom-sheet', () => jest.requireActual('@gorhom/bottom-sheet/mock'));
+
 // Reanimated 4.7's native initializer registers a CSS animation event handler,
 // which its JavaScript fallback used under Jest does not implement.
 jest.mock('react-native-reanimated/src/css/native', () => ({
