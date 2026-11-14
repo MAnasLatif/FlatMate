@@ -124,10 +124,16 @@ describe('validateDraft', () => {
     expect(result.debts).toBeUndefined();
   });
 
+  it('keeps no due date on an expense that is already paid', () => {
+    const result = validateDraft(draft({ paidNow: true, dueDate: '2026-11-20' }), members);
+    expect(result.errors.dueDate).toBeUndefined();
+    expect(result.value?.dueDate).toBeNull();
+  });
+
   it('refuses a due date before the expense date', () => {
-    expect(validateDraft(draft({ dueDate: '2026-11-12' }), members).errors.dueDate).toMatch(
-      /before/,
-    );
+    expect(
+      validateDraft(draft({ paidNow: false, dueDate: '2026-11-12' }), members).errors.dueDate,
+    ).toMatch(/before/);
   });
 
   it('refuses a payer who is not a member', () => {

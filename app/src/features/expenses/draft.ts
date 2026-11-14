@@ -180,10 +180,11 @@ export function validateDraft(
     errors.amount = 'This amount is too large.';
   }
 
-  if (!isValidDate(draft.expenseDate)) errors.expenseDate = 'Enter the date as YYYY-MM-DD.';
-  const dueDate = draft.dueDate.trim();
+  if (!isValidDate(draft.expenseDate)) errors.expenseDate = 'Choose a date.';
+  // A due date is for a bill someone still has to pay; a paid expense has none.
+  const dueDate = draft.paidNow ? '' : draft.dueDate.trim();
   if (dueDate !== '') {
-    if (!isValidDate(dueDate)) errors.dueDate = 'Enter the date as YYYY-MM-DD, or leave it empty.';
+    if (!isValidDate(dueDate)) errors.dueDate = 'Choose a due date, or leave it empty.';
     else if (isValidDate(draft.expenseDate) && dueDate < draft.expenseDate) {
       errors.dueDate = 'The due date cannot be before the expense date.';
     }

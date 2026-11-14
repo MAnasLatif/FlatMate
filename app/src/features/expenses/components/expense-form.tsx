@@ -14,9 +14,9 @@ import type { Dispatch, SetStateAction } from 'react';
 import { View } from 'react-native';
 
 import { ChoiceChips } from '@/components/choice-chips';
+import { DateField } from '@/components/form/date-field';
 import type { Category, Member } from '@/features/apartments/api';
 import { formatMinorUnits } from '@/lib/money';
-import { addDays } from '@/lib/time';
 
 import type { DraftResult, ExpenseDraft } from '../draft';
 import { memberLabel } from '../member-label';
@@ -41,7 +41,7 @@ type ExpenseFormProps = {
   isPaidStatusFixed?: boolean;
 };
 
-/** The fields of an expense: details, who paid, how it is split, and a preview. */
+/** The fields of an expense: details, who paid, how it is split, a preview, then notes. */
 export function ExpenseForm(props: ExpenseFormProps) {
   return (
     <View className="gap-6">
@@ -49,6 +49,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
       <PaidSection {...props} />
       <SplitSection {...props} />
       <PreviewSection {...props} />
+      <NotesSection {...props} />
     </View>
   );
 }
@@ -92,25 +93,13 @@ function DetailsSection({
         <FieldError>{error('amount')}</FieldError>
       </TextField>
 
-      <TextField isRequired isInvalid={error('expenseDate') !== undefined}>
-        <Label>Date</Label>
-        <Input
-          value={draft.expenseDate}
-          onChangeText={(expenseDate) => update({ expenseDate })}
-          placeholder="YYYY-MM-DD"
-          keyboardType="numbers-and-punctuation"
-          accessibilityLabel="Date, as year-month-day"
-        />
-        <FieldError>{error('expenseDate')}</FieldError>
-      </TextField>
-      <ChoiceChips
-        accessibilityLabel="Quick date"
-        choices={[
-          { value: today, label: 'Today' },
-          { value: addDays(today, -1), label: 'Yesterday' },
-        ]}
-        selected={draft.expenseDate}
-        onSelect={(expenseDate) => update({ expenseDate })}
+      <DateField
+        label="Date"
+        isRequired
+        value={draft.expenseDate}
+        onChange={(expenseDate) => update({ expenseDate })}
+        today={today}
+        error={error('expenseDate')}
       />
 
       {categories.length > 0 ? (
@@ -126,17 +115,23 @@ function DetailsSection({
           />
         </View>
       ) : null}
-
-      <TextField isInvalid={error('description') !== undefined}>
-        <Label>Notes (optional)</Label>
-        <TextArea
-          value={draft.description}
-          onChangeText={(description) => update({ description })}
-          accessibilityLabel="Notes"
-        />
-        <FieldError>{error('description')}</FieldError>
-      </TextField>
     </View>
+  );
+}
+
+/** Optional notes, last: most expenses need none. */
+function NotesSection({ draft, setDraft, result, showErrors }: ExpenseFormProps) {
+  const error = showErrors ? result.errors.description : undefined;
+  return (
+    <TextField isInvalid={error !== undefined}>
+      <Label>Notes (optional)</Label>
+      <TextArea
+        value={draft.description}
+        onChangeText={(description) => setDraft((current) => ({ ...current, description }))}
+        accessibilityLabel="Notes"
+      />
+      <FieldError>{error}</FieldError>
+    </TextField>
   );
 }
 
@@ -148,6 +143,7 @@ function PaidSection({
   members,
   currentUserId,
   currency,
+  today,
   isPaidStatusFixed = false,
 }: ExpenseFormProps) {
   const update = (patch: Partial<ExpenseDraft>) =>
@@ -191,17 +187,18 @@ function PaidSection({
           />
         ) : null}
 
-        <TextField isInvalid={dueDateError !== undefined}>
-          <Label>{draft.paidNow ? 'Due date (optional)' : 'Due date'}</Label>
-          <Input
+        {draft.paidNow ? null : (
+          <DateField
+            label="Due date"
             value={draft.dueDate}
-            onChangeText={(dueDate) => update({ dueDate })}
-            placeholder="YYYY-MM-DD"
-            keyboardType="numbers-and-punctuation"
-            accessibilityLabel="Due date, as year-month-day"
+            onChange={(dueDate) => update({ dueDate })}
+            today={today}
+            // A bill is not due before the day it is for.
+            minDate={draft.expenseDate || undefined}
+            isClearable
+            error={dueDateError}
           />
-          <FieldError>{dueDateError}</FieldError>
-        </TextField>
+        )}
       </Card.Body>
     </Card>
   );
