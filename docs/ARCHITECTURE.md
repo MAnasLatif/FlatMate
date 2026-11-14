@@ -1,6 +1,6 @@
 # Architecture
 
-This is an overview of how FlatMate is put together. The data model is built (decision records 0003 to 0006), and the product decisions it depends on are recorded in [SRS section 12](SRS.md#12-product-decisions). Parts marked *planned* follow [decision 0007](decisions/0007-offline-reading-and-live-sync.md) and are not built yet. Update this document as they are.
+This is an overview of how FlatMate is put together. The data model is built (decision records 0003 to 0006), and the product decisions it depends on are recorded in [SRS section 12](SRS.md#12-product-decisions). The offline reading and event-driven sync of [decision 0007](decisions/0007-offline-reading-and-live-sync.md) are built; parts marked *planned* are not yet. Update this document as they are.
 
 ## System overview
 
@@ -17,7 +17,7 @@ flowchart LR
     AUTH["Auth"]
     DB[("PostgreSQL<br/>RLS + functions")]
     STORE["Storage<br/>private buckets"]
-    RT["Realtime<br/>private Broadcast (planned)"]
+    RT["Realtime<br/>private Broadcast"]
     CRON["pg_cron<br/>scheduled jobs"]
     EDGE["Edge Functions<br/>(planned: push)"]
   end
@@ -48,7 +48,7 @@ flowchart LR
 | Split validation and rounding | Database | The app previews. The server decides. |
 | Receipts and payment proofs | Supabase Storage | Private buckets, accessed with signed URLs. |
 | Scheduled work | pg_cron jobs calling Postgres functions | Objection-window deadlines and settlement periods today; recurring charges and reminders later. Idempotent and timezone-aware. |
-| Change events (planned) | Realtime Broadcast, sent by `private.emit_change` from database triggers | One event for every visible change, on an apartment or user topic, with no data in it. The app's event router refetches through RLS. |
+| Change events | Realtime Broadcast, sent by `private.emit_change` from database triggers | One event for every visible change, on an apartment or user topic, with no data in it. The app's event router refetches through RLS. |
 | Offline reading | Encrypted saved query cache on the phone (`app/src/lib/saved-cache.ts`) | A copy of what the user already loaded, never a source of truth. |
 | Push notifications | Edge Functions to the Expo push service | Notification text carries no account details. |
 | Public marketing pages | `web/` | Static content and store links. No user data. |
@@ -89,11 +89,11 @@ The app has four layers, and data only moves through them in this order:
 
 **Cache keys** group everything about one apartment's money under `['money', apartmentId]`, so a single invalidation after any financial change refreshes balances, lists and detail screens together. Apartment, member and settings data sit under `['apartments', apartmentId]`.
 
-**Event-driven sync (planned, decision 0007).** Every write that changes data another member, or the same user on another device, can see sends a change event. The app never polls.
+**Event-driven sync (decision 0007).** Every write that changes data another member, or the same user on another device, can see sends a change event. The app never polls.
 
 - Events go out as private Realtime Broadcast messages through one database function, `private.emit_change`, on two kinds of topic: `apartment:<id>` for an apartment's active members, and `user:<id>` for one person's own changes across apartments, such as being removed or editing their receiving accounts.
 - Apartment changes already write an `audit_events` row in the same transaction, including changes made by scheduled jobs; a trigger on that table emits the event. Personal tables that clients write directly have their own triggers.
-- An event names only the kind of record that changed. The app's event router (`src/lib/sync/`) maps each kind to the cache keys it invalidates, and the data is refetched through RLS.
+- An event names only the kind of record that changed. The app's event router (`app/src/features/sync/`) maps each kind to the cache keys it invalidates, and the data is refetched through RLS.
 - A failed send never rolls back the write. After a reconnect, or when the app returns to the foreground, the router refreshes everything under its topics instead of trusting that no event was missed.
 - A database test fails if a function writes client-visible data without emitting an event, so new features stay covered.
 
