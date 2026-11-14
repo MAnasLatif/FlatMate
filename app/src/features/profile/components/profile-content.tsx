@@ -8,6 +8,7 @@ import { Alert, View } from 'react-native';
 import { z } from 'zod';
 
 import { FormAlert } from '@/components/form/form-alert';
+import { PasswordField } from '@/components/form/password-field';
 import { TextInputField } from '@/components/form/text-input-field';
 import { OnlineButton } from '@/components/online-button';
 import { Screen } from '@/components/screen';
@@ -223,14 +224,12 @@ function PasswordSection() {
         <Card.Title>Change password</Card.Title>
         <FormAlert message={change.error ? authErrorMessage(change.error) : null} />
         <FormAlert status="success" message={saved ? 'Your password was changed.' : null} />
-        <TextInputField
+        <PasswordField
           control={form.control}
           name="password"
           label="New password"
           description={`At least ${PASSWORD_MIN_LENGTH} characters.`}
-          secureTextEntry
-          autoComplete="new-password"
-          textContentType="newPassword"
+          purpose="new"
           onFocus={() => setSaved(false)}
         />
         <OnlineButton

@@ -1,16 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Button, Separator, Typography } from 'heroui-native';
+import { LinkButton } from 'heroui-native';
 import { useForm } from 'react-hook-form';
 import { View } from 'react-native';
 import type { z } from 'zod';
 
 import { FormAlert } from '@/components/form/form-alert';
+import { PasswordField } from '@/components/form/password-field';
 import { TextInputField } from '@/components/form/text-input-field';
 import { OnlineButton } from '@/components/online-button';
 import { Screen } from '@/components/screen';
 import { signInWithEmail } from '@/features/auth/api';
+import { AuthFooterLink } from '@/features/auth/components/auth-footer-link';
 import { AuthHeader } from '@/features/auth/components/auth-header';
 import { GoogleSignInButton } from '@/features/auth/components/google-sign-in-button';
 import { authErrorMessage, isEmailNotConfirmed } from '@/features/auth/errors';
@@ -40,52 +42,57 @@ export default function SignInScreen() {
 
   return (
     <Screen>
-      <AuthHeader title="Welcome back" subtitle="Sign in to see your apartments." />
+      <View className="flex-1 gap-8">
+        <AuthHeader title="Welcome back" subtitle="Sign in to see your apartments and balances." />
 
-      <FormAlert message={errorMessage} />
+        <FormAlert message={errorMessage} />
 
-      <View className="gap-4">
-        <TextInputField
-          control={form.control}
-          name="email"
-          label="Email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          textContentType="emailAddress"
-        />
-        <TextInputField
-          control={form.control}
-          name="password"
-          label="Password"
-          secureTextEntry
-          autoComplete="current-password"
-          textContentType="password"
-        />
-      </View>
+        <View className="gap-4">
+          <TextInputField
+            control={form.control}
+            name="email"
+            label="Email"
+            icon="mail-outline"
+            placeholder="you@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="email"
+            // The account's identifier, so a password manager saves it with the password.
+            textContentType="username"
+          />
+          <View className="gap-1">
+            <PasswordField
+              control={form.control}
+              name="password"
+              label="Password"
+              placeholder="Your password"
+              purpose="current"
+            />
+            <View className="items-end">
+              <LinkButton size="sm" onPress={() => router.push('/forgot-password')}>
+                <LinkButton.Label className="text-accent">Forgot password?</LinkButton.Label>
+              </LinkButton>
+            </View>
+          </View>
+        </View>
 
-      <View className="gap-3">
         <OnlineButton
+          size="lg"
           onPress={() => void form.handleSubmit((values) => signIn.mutate(values))()}
           isDisabled={signIn.isPending}
         >
           {signIn.isPending ? 'Signing in…' : 'Sign in'}
         </OnlineButton>
-        <Button variant="ghost" onPress={() => router.push('/forgot-password')}>
-          Forgot your password?
-        </Button>
+
+        <GoogleSignInButton />
       </View>
 
-      <GoogleSignInButton />
-
-      <Separator />
-
-      <View className="items-center gap-2">
-        <Typography.Paragraph color="muted">New to FlatMate?</Typography.Paragraph>
-        <Button variant="secondary" onPress={() => router.push('/sign-up')}>
-          Create an account
-        </Button>
-      </View>
+      <AuthFooterLink
+        prompt="New to FlatMate?"
+        action="Create an account"
+        onPress={() => router.push('/sign-up')}
+      />
     </Screen>
   );
 }

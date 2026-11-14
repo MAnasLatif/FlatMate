@@ -7,10 +7,11 @@ import { Controller, useForm } from 'react-hook-form';
 import type { z } from 'zod';
 
 import { FormAlert } from '@/components/form/form-alert';
-import { TextInputField } from '@/components/form/text-input-field';
+import { PasswordField } from '@/components/form/password-field';
 import { OnlineButton } from '@/components/online-button';
 import { Screen } from '@/components/screen';
 import { updatePassword, verifyPasswordResetCode } from '@/features/auth/api';
+import { AuthFooterLink } from '@/features/auth/components/auth-footer-link';
 import { AuthHeader } from '@/features/auth/components/auth-header';
 import { EmailCodeField } from '@/features/auth/components/email-code-field';
 import { authErrorMessage } from '@/features/auth/errors';
@@ -84,26 +85,28 @@ export default function ResetPasswordScreen() {
         )}
       />
 
-      <TextInputField
+      <PasswordField
         control={form.control}
         name="password"
         label="New password"
+        placeholder="Create a password"
         description={`At least ${PASSWORD_MIN_LENGTH} characters.`}
-        secureTextEntry
-        autoComplete="new-password"
-        textContentType="newPassword"
+        purpose="new"
       />
 
       <OnlineButton
+        size="lg"
         onPress={() => void form.handleSubmit((values) => reset.mutate(values))()}
         isDisabled={reset.isPending}
       >
         {reset.isPending ? 'Saving…' : 'Save new password'}
       </OnlineButton>
 
-      <Button variant="ghost" onPress={() => router.replace('/forgot-password')}>
-        Send a new code
-      </Button>
+      <AuthFooterLink
+        prompt="No code?"
+        action="Send a new one"
+        onPress={() => router.replace('/forgot-password')}
+      />
     </Screen>
   );
 }
