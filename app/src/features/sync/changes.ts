@@ -1,0 +1,117 @@
+import type { QueryKey } from '@tanstack/react-query';
+
+import { accountKeys } from '@/features/accounts/hooks';
+import { apartmentKeys } from '@/features/apartments/hooks';
+import { expenseKeys } from '@/features/expenses/hooks';
+import { profileKeys } from '@/features/profile/hooks';
+import { settlementKeys } from '@/features/settlement/hooks';
+
+/**
+ * Which cached data each change event makes stale (decision 0007). The kinds
+ * are the ones the database sends: the entity types of `audit_events` on an
+ * apartment topic, plus the triggers on profiles and receiving accounts. A
+ * new kind added on the server must be added here; until it is, an unknown
+ * kind refreshes everything under its topic.
+ */
+
+export const APARTMENT_CHANGE_KINDS = [
+  'adjustment',
+  'apartment',
+  'category',
+  'expense',
+  'invite',
+  'member',
+  'offset',
+  'payment',
+  'settlement_period',
+  'profile',
+  'account',
+] as const;
+export type ApartmentChangeKind = (typeof APARTMENT_CHANGE_KINDS)[number];
+
+export const USER_CHANGE_KINDS = ['membership', 'profile', 'account'] as const;
+export type UserChangeKind = (typeof USER_CHANGE_KINDS)[number];
+
+/** Everything shown about the people in an apartment: names, photos, roles. */
+const PROFILE_NAMES_ROOT = ['profile-names'] as const;
+/** Every user's list of apartments, whatever the user. */
+const ALL_MY_APARTMENTS_ROOT = ['apartments', 'mine'] as const;
+
+type ApartmentScope = { apartmentId: string };
+
+const apartmentChanges: Record<ApartmentChangeKind, (scope: ApartmentScope) => QueryKey[]> = {
+  // Money: expenses, disputes (recorded as expense changes), payments, offsets,
+  // adjustments and settlement periods all live under the apartment's money key.
+  adjustment: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
+  expense: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
+  offset: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
+  payment: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
+  settlement_period: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
+  // Settings change names in lists, and the settlement day and objection window.
+  apartment: ({ apartmentId }) => [
+    apartmentKeys.detail(apartmentId),
+    ALL_MY_APARTMENTS_ROOT,
+    expenseKeys.apartment(apartmentId),
+  ],
+  // Categories are named in expense lists too.
+  category: ({ apartmentId }) => [
+    apartmentKeys.categories(apartmentId),
+    expenseKeys.apartment(apartmentId),
+  ],
+  invite: ({ apartmentId }) => [apartmentKeys.invites(apartmentId)],
+  // Joining, leaving, roles and permissions; balances follow who is a member.
+  member: ({ apartmentId }) => [
+    apartmentKeys.members(apartmentId),
+    expenseKeys.apartment(apartmentId),
+  ],
+  profile: ({ apartmentId }) => [apartmentKeys.members(apartmentId), PROFILE_NAMES_ROOT],
+  account: ({ apartmentId }) => [['accounts', 'shared', apartmentId]],
+};
+
+const userChanges: Record<UserChangeKind, (userId: string) => QueryKey[]> = {
+  // Added to or removed from an apartment, or a role changed: the apartment
+  // list, exits, and the member lists that decide what each screen offers.
+  membership: (userId) => [ALL_MY_APARTMENTS_ROOT, ['apartments'], settlementKeys.exits(userId)],
+  profile: (userId) => [profileKeys.profile(userId)],
+  account: (userId) => [accountKeys.mine(userId)],
+};
+
+function isApartmentKind(kind: string | null): kind is ApartmentChangeKind {
+  return APARTMENT_CHANGE_KINDS.some((known) => known === kind);
+}
+
+function isUserKind(kind: string | null): kind is UserChangeKind {
+  return USER_CHANGE_KINDS.some((known) => known === kind);
+}
+
+/** Everything cached about one apartment, for catching up and for unknown kinds. */
+export function apartmentTopicKeys(apartmentId: string): QueryKey[] {
+  return uniqueKeys(
+    APARTMENT_CHANGE_KINDS.flatMap((kind) => apartmentChanges[kind]({ apartmentId })),
+  );
+}
+
+/** Everything cached about the user across apartments. */
+export function userTopicKeys(userId: string): QueryKey[] {
+  return uniqueKeys(USER_CHANGE_KINDS.flatMap((kind) => userChanges[kind](userId)));
+}
+
+export function keysForApartmentChange(kind: string | null, apartmentId: string): QueryKey[] {
+  return isApartmentKind(kind)
+    ? apartmentChanges[kind]({ apartmentId })
+    : apartmentTopicKeys(apartmentId);
+}
+
+export function keysForUserChange(kind: string | null, userId: string): QueryKey[] {
+  return isUserKind(kind) ? userChanges[kind](userId) : userTopicKeys(userId);
+}
+
+function uniqueKeys(keys: QueryKey[]): QueryKey[] {
+  const seen = new Set<string>();
+  return keys.filter((key) => {
+    const id = JSON.stringify(key);
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
