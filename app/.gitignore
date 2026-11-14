@@ -33,6 +33,12 @@ yarn-error.*
 # local env files
 .env*.local
 
+# Firebase configuration and keys (docs/NOTIFICATIONS.md). The service account
+# key is a secret; google-services.json belongs to one Firebase project, so
+# each fork or environment supplies its own.
+google-services*.json
+*firebase-adminsdk*.json
+
 # typescript
 *.tsbuildinfo
 
