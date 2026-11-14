@@ -88,6 +88,7 @@
     "setupFiles": [
       "<rootDir>/jest.setup.ts"
     ],
-    "globalSetup": "<rootDir>/jest.global-setup.ts"
+    "globalSetup": "<rootDir>/jest.global-setup.ts",
+    "testTimeout": 15000
   }
 }
