@@ -1,11 +1,12 @@
 import { CURRENCIES, matchesCurrency } from './currencies';
 
 describe('CURRENCIES', () => {
-  it('lists each currency in circulation once, with Pakistan first', () => {
+  it('lists each currency in circulation once, sorted by name', () => {
     const codes = CURRENCIES.map((currency) => currency.code);
     expect(new Set(codes).size).toBe(codes.length);
     expect(codes.length).toBeGreaterThan(150);
-    expect(codes[0]).toBe('PKR');
+    const names = CURRENCIES.map((currency) => currency.name.toLowerCase());
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
     // The database accepts any 3-letter code; the list must too.
     expect(codes.every((code) => /^[A-Z]{3}$/.test(code))).toBe(true);
   });

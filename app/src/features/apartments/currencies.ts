@@ -2,12 +2,11 @@
  * Currencies in circulation (ISO 4217), with their English name and the
  * symbol people write. Generated once from ICU's data, since phones may not
  * include it; where a currency has no symbol of its own, its code stands in.
- * Pakistan comes first as the app's home market, then by name.
+ * Sorted by name.
  */
 export type Currency = { code: string; name: string; symbol: string };
 
 export const CURRENCIES: readonly Currency[] = [
-  { code: 'PKR', name: 'Pakistani Rupee', symbol: 'Rs' },
   { code: 'AFN', name: 'Afghan Afghani', symbol: '؋' },
   { code: 'ALL', name: 'Albanian Lek', symbol: 'ALL' },
   { code: 'DZD', name: 'Algerian Dinar', symbol: 'DZD' },
@@ -110,6 +109,7 @@ export const CURRENCIES: readonly Currency[] = [
   { code: 'KPW', name: 'North Korean Won', symbol: '₩' },
   { code: 'NOK', name: 'Norwegian Krone', symbol: 'kr' },
   { code: 'OMR', name: 'Omani Rial', symbol: 'OMR' },
+  { code: 'PKR', name: 'Pakistani Rupee', symbol: 'Rs' },
   { code: 'PAB', name: 'Panamanian Balboa', symbol: 'PAB' },
   { code: 'PGK', name: 'Papua New Guinean Kina', symbol: 'PGK' },
   { code: 'PYG', name: 'Paraguayan Guarani', symbol: '₲' },
@@ -158,7 +158,7 @@ export const CURRENCIES: readonly Currency[] = [
   { code: 'VUV', name: 'Vanuatu Vatu', symbol: 'VUV' },
   { code: 'VES', name: 'Venezuelan Bolívar', symbol: 'VES' },
   { code: 'VND', name: 'Vietnamese Dong', symbol: '₫' },
-  { code: 'XOF', name: 'West African CFA Franc', symbol: 'F CFA' },
+  { code: 'XOF', name: 'West African CFA Franc', symbol: 'F CFA' },
   { code: 'YER', name: 'Yemeni Rial', symbol: 'YER' },
   { code: 'ZMW', name: 'Zambian Kwacha', symbol: 'ZK' },
   { code: 'ZWG', name: 'Zimbabwean Gold', symbol: 'ZWG' },
