@@ -128,7 +128,8 @@ These follow [decision 0007](decisions/0007-offline-reading-and-live-sync.md). T
 
 ### Notifications and sign-off
 
-- [ ] **1.43 Notification foundation.** `notifications` table, in-app inbox, push token registration, and push delivery for expenses, payments, disputes and membership changes. Opening a notification goes to the record and rechecks permission. *(FR-09.1, FR-09.3)*
+- [x] **1.43 Notification foundation.** `notifications` table, in-app inbox, push token registration, and push delivery for expenses, payments, disputes and membership changes. Opening a notification goes to the record and rechecks permission. *(FR-09.1, FR-09.3)* Built: notifications from audit events (who is told is in `private.notification_recipients`), generic lock-screen text, the inbox and bell, device registration, and push through the `deliver-push` Edge Function, tested end to end locally up to Expo's answer. Setup in `docs/NOTIFICATIONS.md`.
+- [ ] **1.43.1 Push on a device.** Set up Firebase, the FCM key in EAS, the `GOOGLE_SERVICES_JSON` file variable, the Edge Function secret and the Vault secrets as in `docs/NOTIFICATIONS.md`, rebuild, and check that a flatmate's new expense arrives as a push that opens the expense. *(Owner: Firebase and Expo accounts, a device.)*
 - [ ] **1.44 MVP acceptance pass.** Walk through AC-01 to AC-13 on an Android device, review every RLS policy and the Realtime topic policy, and check loading, empty, error and offline states on every screen. Fix what fails.
 
 ## Phase 2: Automation and reporting
@@ -138,6 +139,7 @@ These follow [decision 0007](decisions/0007-offline-reading-and-live-sync.md). T
 - [ ] **2.3 Variable recurring bills.** On the expected day, prompt admins for the real amount, optional proof and due date. No charge exists until an admin enters it. *(FR-04.3, AC-05)*
 - [ ] **2.4 Recurring screens.** Manage templates, override the split for one month, and apply template changes to future months only. *(FR-04.4, FR-04.5)*
 - [ ] **2.5 Reminders and notification preferences.** Due-date and settlement reminders on a configurable schedule, per-user preferences, and no duplicate reminders. *(FR-09.2, FR-09.4, FR-01.2)*
+- [ ] **2.5.1 Push receipts.** Store Expo's ticket ids and check their receipts about 15 minutes later, deleting tokens Expo reports as `DeviceNotRegistered` there and making credential errors (`InvalidCredentials`, `MismatchSenderId`) visible to maintainers. Expo says tickets alone do not confirm delivery. *(FR-09)*
 - [ ] **2.6 Search, filters and comparison.** Filter expenses by month, member, category, amount and status, and compare spending between months. *(FR-10.1)*
 - [ ] **2.7 PDF statements.** Monthly per-user statements and apartment reports with gross, net, outstanding, disputed and carried-forward amounts. *(FR-10.2, AC-14)*
 - [ ] **2.8 Quick-add and budgets.** Templates for common expenses, and budget caps with alerts. *(FR-10.3)*
