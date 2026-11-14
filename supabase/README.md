@@ -45,6 +45,12 @@ The proposed data model is in [section 6 of the SRS](../docs/SRS.md#6-supabase-d
 - Database functions raise stable, lower-case error keys such as `not_admin` or `last_admin`. The app maps them to sentences and never shows server messages.
 - Check a new migration with `npx supabase@3.1.0 db advisors` before committing it.
 
+## Change events
+
+Open apps stay current through Realtime Broadcast ([decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md)). `private.emit_change(topic, kind)` sends `{ "kind": ... }` as a private message; a failure only raises a warning and never undoes the write. A statement-level trigger on `audit_events` sends one event per apartment and kind per statement to `apartment:<id>`, and membership changes also to the member's `user:<id>`. The policy on `realtime.messages` lets only an apartment's active members receive its topic and only the user receive their own, through `private.can_receive_topic`; there is no insert policy, so only the database sends. Tests: `tests/database/change_events_test.sql`.
+
+In every hosted project, turn off **Allow public access** under Realtime settings in the dashboard, so clients can only join private channels. The events are sent as private messages either way; this closes public channels entirely.
+
 ## Supabase CLI
 
 The project uses **Supabase CLI 3.1.0**, the same version CI installs. You also need Docker running. The CLI can be used without installing it, through npx:
