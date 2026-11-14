@@ -6,6 +6,7 @@ import { addMonths } from '@/lib/time';
 import {
   editExpense,
   setBillCollector,
+  setExpenseCategoryDetail,
   EXPENSES_PAGE_SIZE,
   fetchAttachments,
   fetchExpenseDetail,
@@ -120,10 +121,15 @@ export function useEditExpense(apartmentId: string, expenseId: string) {
       reason: string | null;
       /** A new collector for an unpaid bill, or undefined to leave it as it is. */
       collector?: string | null;
+      /** A new label for what Other was, or undefined to leave it as it is. */
+      categoryDetail?: string | null;
     }) => {
       await editExpense(expenseId, input.expectedRevision, input.expense, input.reason);
-      // Who will pay is not part of the bill's money, so it is saved on its own.
+      // Who will pay and what Other was are not part of the money, so they are saved on their own.
       if (input.collector !== undefined) await setBillCollector(expenseId, input.collector);
+      if (input.categoryDetail !== undefined) {
+        await setExpenseCategoryDetail(expenseId, input.categoryDetail);
+      }
     },
     onSuccess: refresh,
   });

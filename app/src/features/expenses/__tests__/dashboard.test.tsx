@@ -48,6 +48,7 @@ function expense(overrides: Partial<ExpenseListItem>): ExpenseListItem {
     title: 'Cleaning',
     amount_minor: 20_000,
     currency: 'PKR',
+    category_detail: null,
     expense_date: thisMonth,
     due_date: null,
     status: 'provisional',

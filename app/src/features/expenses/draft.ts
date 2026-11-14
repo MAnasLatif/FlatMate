@@ -22,6 +22,8 @@ export type ExpenseDraft = {
   title: string;
   amount: string;
   categoryId: string | null;
+  /** What a catch-all category such as Other was, typed by the user. */
+  categoryDetail: string;
   /** YYYY-MM-DD */
   expenseDate: string;
   description: string;
@@ -45,12 +47,20 @@ export type ExpenseDraft = {
 export type PayerInput = Pick<ExpenseDraft, 'payerMode' | 'payerId' | 'payerAmounts'>;
 
 export type DraftField =
-  'title' | 'amount' | 'expenseDate' | 'dueDate' | 'description' | 'split' | 'payers';
+  | 'title'
+  | 'amount'
+  | 'categoryDetail'
+  | 'expenseDate'
+  | 'dueDate'
+  | 'description'
+  | 'split'
+  | 'payers';
 
 export type ValidExpense = {
   title: string;
   amountMinor: number;
   categoryId: string | null;
+  categoryDetail: string | null;
   expenseDate: string;
   dueDate: string | null;
   description: string | null;
@@ -61,6 +71,9 @@ export type ValidExpense = {
   /** Empty for an unpaid bill. */
   payers: Contribution[];
 };
+
+/** The database keeps what Other was short. */
+export const CATEGORY_DETAIL_MAX_LENGTH = 60;
 
 export type DraftResult = {
   errors: Partial<Record<DraftField, string>>;
@@ -77,6 +90,7 @@ export function newDraft(currentUserId: string, today: string): ExpenseDraft {
     title: '',
     amount: '',
     categoryId: null,
+    categoryDetail: '',
     expenseDate: today,
     description: '',
     paidNow: true,
@@ -97,6 +111,7 @@ export type PostedExpense = {
   title: string;
   amountMinor: number;
   categoryId: string | null;
+  categoryDetail: string | null;
   expenseDate: string;
   description: string | null;
   paidStatus: 'paid' | 'unpaid';
@@ -124,6 +139,7 @@ export function draftFromExpense(
     title: expense.title,
     amount: toInput(expense.amountMinor),
     categoryId: expense.categoryId,
+    categoryDetail: expense.categoryDetail ?? '',
     expenseDate: expense.expenseDate,
     description: expense.description ?? '',
     paidNow: expense.paidStatus === 'paid',
@@ -198,6 +214,11 @@ export function validateDraft(
   }
 
   const description = draft.description.trim();
+  // Only kept with a category; the form offers it for Other.
+  const categoryDetail = draft.categoryId === null ? '' : draft.categoryDetail.trim();
+  if (categoryDetail.length > CATEGORY_DETAIL_MAX_LENGTH) {
+    errors.categoryDetail = `Use at most ${CATEGORY_DETAIL_MAX_LENGTH} characters.`;
+  }
   if (description.length > DESCRIPTION_MAX_LENGTH) {
     errors.description = `Use at most ${DESCRIPTION_MAX_LENGTH} characters.`;
   }
@@ -279,6 +300,7 @@ export function validateDraft(
             title,
             amountMinor,
             categoryId: draft.categoryId,
+            categoryDetail: categoryDetail === '' ? null : categoryDetail,
             expenseDate: draft.expenseDate,
             dueDate: dueDate === '' ? null : dueDate,
             description: description === '' ? null : description,

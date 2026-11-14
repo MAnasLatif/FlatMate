@@ -17,7 +17,7 @@ export function ExpenseRow({
 }) {
   const details = [
     formatDate(expense.expense_date),
-    expense.category?.name,
+    [expense.category?.name, expense.category_detail].filter(Boolean).join(' · '),
     expense.paid_status === 'unpaid' && expense.due_date
       ? `due ${formatDate(expense.due_date)}`
       : undefined,

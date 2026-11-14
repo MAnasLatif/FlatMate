@@ -84,6 +84,7 @@ const snacks: ExpenseDetail = {
   description: null,
   categoryId: null,
   categoryName: null,
+  categoryDetail: null,
   amountMinor: 10_000,
   currency: 'PKR',
   expenseDate: '2026-11-12',

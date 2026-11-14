@@ -67,6 +67,7 @@ const cleaning: ExpenseDetail = {
   description: null,
   categoryId: null,
   categoryName: 'Cleaning',
+  categoryDetail: null,
   amountMinor: 20_000,
   currency: 'PKR',
   expenseDate: '2026-11-13',

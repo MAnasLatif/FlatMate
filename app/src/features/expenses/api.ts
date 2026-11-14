@@ -15,6 +15,7 @@ export type ExpenseListItem = Pick<
   | 'currency'
   | 'expense_date'
   | 'due_date'
+  | 'category_detail'
   | 'status'
   | 'paid_status'
   | 'created_at'
@@ -69,6 +70,8 @@ export type ExpenseDetail = {
   description: string | null;
   categoryId: string | null;
   categoryName: string | null;
+  /** What a catch-all category such as Other was. */
+  categoryDetail: string | null;
   amountMinor: number;
   currency: string;
   expenseDate: string;
@@ -111,9 +114,23 @@ export async function postExpense(
     p_due_date: expense.dueDate ?? undefined,
     p_client_request_id: requestId,
     p_collector_id: expense.collectorId ?? undefined,
+    p_category_detail: expense.categoryDetail ?? undefined,
   });
   if (error) throw error;
   return data;
+}
+
+/** Changes what a catch-all category such as Other was, or clears it with null. */
+export async function setExpenseCategoryDetail(
+  expenseId: string,
+  detail: string | null,
+): Promise<void> {
+  const { error } = await supabase.rpc('set_expense_category_detail', {
+    p_expense_id: expenseId,
+    // The database takes null to clear it.
+    p_detail: detail as string,
+  });
+  if (error) throw error;
 }
 
 /** Names who will pay a bill that is not paid yet, or clears it with null. */
@@ -140,7 +157,7 @@ export async function fetchExpensesPage(
   const { data, error } = await supabase
     .from('expenses')
     .select(
-      'id, title, amount_minor, currency, expense_date, due_date, status, paid_status, created_at, category:expense_categories(name)',
+      'id, title, amount_minor, currency, expense_date, due_date, category_detail, status, paid_status, created_at, category:expense_categories(name)',
     )
     .eq('apartment_id', apartmentId)
     .gte('expense_date', monthStartDate)
@@ -162,7 +179,7 @@ export async function fetchExpenseDetail(expenseId: string): Promise<ExpenseDeta
     supabase
       .from('expenses')
       .select(
-        `id, apartment_id, title, description, category_id, amount_minor, currency, expense_date, due_date,
+        `id, apartment_id, title, description, category_id, category_detail, amount_minor, currency, expense_date, due_date,
          paid_status, collector_id, status, revision, finalize_after, finalized_at, created_by, created_at,
          category:expense_categories(name),
          revisions:expense_revisions(revision, split_method,
@@ -195,6 +212,7 @@ export async function fetchExpenseDetail(expenseId: string): Promise<ExpenseDeta
     description: row.description,
     categoryId: row.category_id,
     categoryName: row.category?.name ?? null,
+    categoryDetail: row.category_detail,
     amountMinor: row.amount_minor,
     currency: row.currency,
     expenseDate: row.expense_date,

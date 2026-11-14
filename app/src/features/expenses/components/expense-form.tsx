@@ -17,7 +17,7 @@ import { DateField } from '@/components/form/date-field';
 import type { Category, Member } from '@/features/apartments/api';
 import { formatMinorUnits } from '@/lib/money';
 
-import type { DraftResult, ExpenseDraft } from '../draft';
+import { CATEGORY_DETAIL_MAX_LENGTH, type DraftResult, type ExpenseDraft } from '../draft';
 import { memberLabel } from '../member-label';
 import type { SplitMethod } from '../split';
 import { PayerFields } from './payer-fields';
@@ -112,13 +112,36 @@ function DetailsSection({
             choices={categories.map((category) => ({ value: category.id, label: category.name }))}
             selected={draft.categoryId}
             onSelect={(categoryId) =>
-              update({ categoryId: categoryId === draft.categoryId ? null : categoryId })
+              update({
+                categoryId: categoryId === draft.categoryId ? null : categoryId,
+                // What Other was belongs to Other only.
+                categoryDetail: '',
+              })
             }
           />
+          {isOtherCategory(categories, draft.categoryId) ? (
+            <TextField isInvalid={error('categoryDetail') !== undefined}>
+              <Label>What was it?</Label>
+              <Input
+                value={draft.categoryDetail}
+                onChangeText={(categoryDetail) => update({ categoryDetail })}
+                placeholder="Gas cylinder, repairs, a gift…"
+                maxLength={CATEGORY_DETAIL_MAX_LENGTH}
+                accessibilityLabel="What the other expense was"
+              />
+              <FieldError>{error('categoryDetail')}</FieldError>
+            </TextField>
+          ) : null}
         </View>
       ) : null}
     </View>
   );
+}
+
+/** Whether the chosen category is the catch-all Other, which asks what it was. */
+function isOtherCategory(categories: readonly Category[], categoryId: string | null): boolean {
+  const name = categories.find((category) => category.id === categoryId)?.name;
+  return name?.trim().toLowerCase() === 'other';
 }
 
 /** Optional notes, last: most expenses need none. */

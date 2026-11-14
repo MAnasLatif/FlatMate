@@ -25,6 +25,7 @@ describe('validateDraft', () => {
       title: 'Cleaning',
       amountMinor: 20_000,
       categoryId: null,
+      categoryDetail: null,
       expenseDate: '2026-11-13',
       dueDate: null,
       description: null,
@@ -125,6 +126,21 @@ describe('validateDraft', () => {
     expect(result.debts).toBeUndefined();
   });
 
+  it('keeps what Other was, trimmed, only with a category', () => {
+    expect(
+      validateDraft(draft({ categoryId: 'other', categoryDetail: ' Gas cylinder ' }), members).value
+        ?.categoryDetail,
+    ).toBe('Gas cylinder');
+    expect(
+      validateDraft(draft({ categoryId: null, categoryDetail: 'Gas' }), members).value
+        ?.categoryDetail,
+    ).toBeNull();
+    expect(
+      validateDraft(draft({ categoryId: 'other', categoryDetail: 'x'.repeat(61) }), members).errors
+        .categoryDetail,
+    ).toMatch(/at most 60/);
+  });
+
   it('keeps who will pay only for a bill not paid yet', () => {
     expect(
       validateDraft(draft({ paidNow: false, collectorId: 'z' }), members).value?.collectorId,
@@ -210,6 +226,7 @@ describe('draftFromExpense', () => {
     title: 'Groceries',
     amountMinor: 30_000,
     categoryId: 'food',
+    categoryDetail: null,
     expenseDate: '2026-11-10',
     description: null,
     paidStatus: 'paid',

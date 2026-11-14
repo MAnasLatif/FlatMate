@@ -139,6 +139,10 @@ function EditExpenseForm({
           expense.paidStatus === 'unpaid' && result.value.collectorId !== expense.collectorId
             ? result.value.collectorId
             : undefined,
+        categoryDetail:
+          result.value.categoryDetail !== expense.categoryDetail
+            ? result.value.categoryDetail
+            : undefined,
       },
       { onSuccess: () => router.back() },
     );

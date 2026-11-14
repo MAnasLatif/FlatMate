@@ -122,7 +122,9 @@ export function ExpenseDetailView({
       <Card>
         <Card.Body className="gap-2">
           <Typography.Paragraph type="body-xs" color="muted">
-            {[formatDate(expense.expenseDate), expense.categoryName].filter(Boolean).join(' · ')}
+            {[formatDate(expense.expenseDate), expense.categoryName, expense.categoryDetail]
+              .filter(Boolean)
+              .join(' · ')}
           </Typography.Paragraph>
           <Typography.Heading type="h4">{expense.title}</Typography.Heading>
           <Typography.Heading
