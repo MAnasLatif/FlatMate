@@ -1,12 +1,27 @@
 import type { Session } from '@supabase/supabase-js';
-import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { queryClient } from '@/lib/query-client';
+import { deleteSavedCache, type SavedCache, startSavedCache } from '@/lib/saved-cache';
 import { supabase } from '@/lib/supabase';
 
 type SessionContextValue = {
   session: Session | null;
   isLoading: boolean;
+  /**
+   * True while the signed-in user's saved data is being restored. The app
+   * keeps the splash screen up and shows no signed-in screen until it is done,
+   * so screens start from the saved data instead of from nothing.
+   */
+  isRestoring: boolean;
   /**
    * True while a flow that creates a session must finish before the app
    * switches to the signed-in screens, such as setting a new password after
@@ -22,6 +37,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isNavigationHeld, setNavigationHeld] = useState(false);
+  const [restoredFor, setRestoredFor] = useState<string | null>(null);
+  const savedCache = useRef<{ userId: string; cache: SavedCache } | null>(null);
+  const userId = session?.user.id ?? null;
 
   useEffect(() => {
     let active = true;
@@ -35,11 +53,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     });
 
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      setSession(nextSession);
       if (event === 'SIGNED_OUT') {
-        // Never show one person's cached data to the next.
+        // Never show one person's data to the next. Saving stops before the
+        // cache is cleared, and the saved copy is deleted once no write to it
+        // is still under way.
+        const ended = savedCache.current;
+        savedCache.current = null;
+        const stopped = ended?.cache.stop();
         queryClient.clear();
+        if (ended && stopped) {
+          void stopped
+            .then(() => deleteSavedCache(ended.userId))
+            .catch(() => console.warn('The saved data could not be deleted at sign-out.'));
+        }
       }
+      setSession(nextSession);
     });
 
     return () => {
@@ -48,9 +76,26 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!userId) return;
+    const cache = startSavedCache(queryClient, userId);
+    savedCache.current = { userId, cache };
+    let active = true;
+    void cache.restored.then(() => {
+      if (active) setRestoredFor(userId);
+    });
+    return () => {
+      active = false;
+      void cache.stop();
+      if (savedCache.current?.cache === cache) savedCache.current = null;
+    };
+  }, [userId]);
+
+  const isRestoring = userId !== null && restoredFor !== userId;
+
   const value = useMemo(
-    () => ({ session, isLoading, isNavigationHeld, setNavigationHeld }),
-    [session, isLoading, isNavigationHeld],
+    () => ({ session, isLoading, isRestoring, isNavigationHeld, setNavigationHeld }),
+    [session, isLoading, isRestoring, isNavigationHeld],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

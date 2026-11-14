@@ -39,19 +39,24 @@ export default function RootLayout() {
 }
 
 function RootNavigator() {
-  const { session, isLoading, isNavigationHeld } = useSession();
+  const { session, isLoading, isRestoring, isNavigationHeld } = useSession();
 
+  // The splash stays up until the session is read and, for a signed-in user,
+  // their saved data is restored. The navigator renders under it meanwhile.
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !isRestoring) {
       SplashScreen.hideAsync();
     }
-  }, [isLoading]);
+  }, [isLoading, isRestoring]);
 
   if (isLoading) {
     return null;
   }
 
-  const isSignedIn = session !== null && !isNavigationHeld;
+  // Signed-in screens wait for the restore, so they start from the saved data.
+  // The navigator itself stays mounted, so a flow such as a password reset that
+  // creates a session is not interrupted.
+  const isSignedIn = session !== null && !isNavigationHeld && !isRestoring;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
