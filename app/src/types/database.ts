@@ -1277,7 +1277,11 @@ export type Database = {
           finalized_at: string | null;
           id: string;
           paid_at: string;
+          paid_to_identifier_masked: string | null;
+          paid_to_provider: string | null;
+          paid_to_title: string | null;
           payer_id: string;
+          receiving_account_id: string | null;
           recipient_id: string;
           reference: string | null;
           status: string;
@@ -1294,7 +1298,11 @@ export type Database = {
           finalized_at?: string | null;
           id?: string;
           paid_at: string;
+          paid_to_identifier_masked?: string | null;
+          paid_to_provider?: string | null;
+          paid_to_title?: string | null;
           payer_id: string;
+          receiving_account_id?: string | null;
           recipient_id: string;
           reference?: string | null;
           status?: string;
@@ -1310,7 +1318,11 @@ export type Database = {
           finalized_at?: string | null;
           id?: string;
           paid_at?: string;
+          paid_to_identifier_masked?: string | null;
+          paid_to_provider?: string | null;
+          paid_to_title?: string | null;
           payer_id?: string;
+          receiving_account_id?: string | null;
           recipient_id?: string;
           reference?: string | null;
           status?: string;
@@ -1335,6 +1347,13 @@ export type Database = {
             columns: ['payer_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payments_receiving_account_id_fkey';
+            columns: ['receiving_account_id'];
+            isOneToOne: false;
+            referencedRelation: 'receiving_accounts';
             referencedColumns: ['id'];
           },
           {
@@ -1806,6 +1825,7 @@ export type Database = {
           p_client_request_id?: string;
           p_expense_id?: string;
           p_paid_at?: string;
+          p_receiving_account_id?: string;
           p_recipient_id: string;
           p_reference?: string;
         };
