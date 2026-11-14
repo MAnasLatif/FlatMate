@@ -125,7 +125,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 ### FR-07 Payment Recording and Objections
 - FR-07.1 Start payment from a specific expense or a member ledger, for gross dues or a net amount after eligible offsets.
 - FR-07.2 Display only receiving accounts explicitly shared by the recipient; allow copy and optional external app/deep link when supported. The user performs the actual transfer outside FlatMate.
-- FR-07.3 User marks paid with amount, time, optional transaction reference, and optional proof; partial payments are supported.
+- FR-07.3 User marks paid with amount, time, optional transaction reference, optional proof, and optionally which of the recipient's shared accounts it went into; partial payments are supported. The payment keeps a snapshot of that account (provider, title, masked number), so later edits or deletion of the account do not change it. The account owner sees the payments made into each account.
 - FR-07.4 On marking paid, set `provisionally_confirmed` and immediately adjust **provisional** displayed balances. Notify recipient.
 - FR-07.5 Recipient may decline within default 7 days, with mandatory reason (e.g. not received). Mark payment `disputed`; reverse the provisional credit in outstanding balance while preserving the original evidence and transaction history.
 - FR-07.6 No objection by deadline: finalize as `confirmed_by_app_policy` (not bank-verified). Late objections become separate adjustment cases.
