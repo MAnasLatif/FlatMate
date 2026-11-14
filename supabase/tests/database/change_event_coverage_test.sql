@@ -40,6 +40,10 @@ insert into allowed values
   ('record_exit', 'helper', 'records an exit balance for leave and remove, which record the change'),
   ('handle_new_user', 'standalone', 'creates the profile at sign-up, before anyone else can see it'),
   ('add_default_categories', 'standalone', 'runs as an apartment is created, which create_apartment records'),
+  ('register_push_token', 'standalone', 'stores a device''s push token, which no one is ever shown'),
+  ('unregister_push_token', 'standalone', 'removes a device''s push token, which no one is ever shown'),
+  ('claim_pushes', 'standalone', 'updates push delivery columns, which clients cannot read'),
+  ('report_pushes', 'standalone', 'updates push delivery columns and drops dead tokens, neither visible to clients'),
   ('ensure_open_period', 'standalone',
    'opens the current settlement period on demand; it follows from the settlement day, so nobody learns anything new');
 
