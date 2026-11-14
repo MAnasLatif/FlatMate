@@ -1,4 +1,5 @@
-import { screen, userEvent } from '@testing-library/react-native';
+import { fireEvent, screen, userEvent, waitFor } from '@testing-library/react-native';
+import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 
 import { renderWithProviders } from '@/test/render';
@@ -9,6 +10,7 @@ import { JoinApartment } from '../components/join-apartment';
 const FLAT = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 jest.mock('@/lib/supabase', () => ({ supabase: {} }));
+jest.mock('expo-clipboard', () => ({ getStringAsync: jest.fn() }));
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), replace: jest.fn() } }));
 jest.mock('@/features/auth/session-provider', () => ({
   useCurrentUserId: () => '11111111-1111-1111-1111-111111111111',
@@ -54,5 +56,39 @@ describe('JoinApartment', () => {
 
     expect(await screen.findByText(/A join code has 8 letters and digits/)).toBeOnTheScreen();
     expect(joinApartment).not.toHaveBeenCalled();
+  });
+});
+
+describe('JoinApartment errors', () => {
+  it('turns red only after Join is pressed, and clears when the field is left', async () => {
+    await renderWithProviders(<JoinApartment />);
+    const user = userEvent.setup();
+    const field = screen.getByLabelText('Join code');
+
+    await user.type(field, '7K');
+    expect(screen.queryByText(/A join code has 8 letters/)).not.toBeOnTheScreen();
+
+    await user.press(screen.getByRole('button', { name: 'Join' }));
+    expect(await screen.findByText(/A join code has 8 letters/)).toBeOnTheScreen();
+
+    fireEvent(field, 'endEditing');
+    await waitFor(() =>
+      expect(screen.queryByText(/A join code has 8 letters/)).not.toBeOnTheScreen(),
+    );
+  });
+});
+
+describe('JoinApartment paste', () => {
+  it('pastes the code from the clipboard and joins with it', async () => {
+    jest.mocked(Clipboard.getStringAsync).mockResolvedValue('  7kq2-m9xd \n');
+    jest.mocked(joinApartment).mockResolvedValue({ status: 'joined', apartment_id: FLAT });
+    await renderWithProviders(<JoinApartment />);
+    const user = userEvent.setup();
+
+    await user.press(screen.getByRole('button', { name: 'Paste join code' }));
+    expect(screen.getByLabelText('Join code')).toHaveDisplayValue('7kq2-m9xd');
+
+    await user.press(screen.getByRole('button', { name: 'Join' }));
+    expect(jest.mocked(joinApartment).mock.calls[0][0]).toBe('7KQ2M9XD');
   });
 });

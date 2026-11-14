@@ -1,5 +1,8 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { zodResolver } from '@hookform/resolvers/zod';
+import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
+import { Button, useThemeColor } from 'heroui-native';
 import { View } from 'react-native';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
@@ -30,7 +33,19 @@ export function JoinApartment() {
   const form = useForm<z.input<typeof joinCodeSchema>, unknown, z.output<typeof joinCodeSchema>>({
     resolver: zodResolver(joinCodeSchema),
     defaultValues: { code: '' },
+    // Only pressing Join checks the code; typing does not turn it red.
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit',
   });
+
+  const accent = useThemeColor('accent');
+
+  const paste = async () => {
+    const text = (await Clipboard.getStringAsync()).trim();
+    if (!text) return;
+    form.setValue('code', text.slice(0, 9), { shouldDirty: true });
+    form.clearErrors('code');
+  };
 
   const onResult = (result: JoinResult) => {
     if (result.status === 'joined' || result.status === 'already_member') {
@@ -61,6 +76,19 @@ export function JoinApartment() {
         autoCapitalize="characters"
         autoCorrect={false}
         maxLength={9}
+        // Leaving the field clears the error until Join is pressed again.
+        onEndEditing={() => form.clearErrors('code')}
+        endContent={
+          <Button
+            size="sm"
+            variant="ghost"
+            onPress={() => void paste()}
+            accessibilityLabel="Paste join code"
+          >
+            <Ionicons name="clipboard-outline" size={16} color={accent} />
+            <Button.Label>Paste</Button.Label>
+          </Button>
+        }
       />
       <OnlineButton
         onPress={() =>
