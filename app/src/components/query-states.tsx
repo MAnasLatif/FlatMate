@@ -1,3 +1,4 @@
+import type { UseQueryResult } from '@tanstack/react-query';
 import { Button, Skeleton, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
@@ -38,4 +39,39 @@ export function LoadError({ message, onRetry }: { message: string; onRetry: () =
       </Button>
     </View>
   );
+}
+
+/**
+ * A small placeholder for one figure or image while it loads. Offline, a load
+ * with nothing saved waits for the connection, so it says so instead.
+ */
+export function PendingSkeleton({
+  className,
+  accessibilityLabel,
+  offlineText = 'Loads when online',
+}: {
+  className: string;
+  accessibilityLabel: string;
+  offlineText?: string;
+}) {
+  const isOnline = useIsOnline();
+  if (!isOnline) {
+    return (
+      <Typography.Paragraph type="body-sm" color="muted">
+        {offlineText}
+      </Typography.Paragraph>
+    );
+  }
+  return <Skeleton className={className} accessibilityLabel={accessibilityLabel} />;
+}
+
+/**
+ * The error of the first query that has never loaded. A query whose refresh
+ * failed still has its data, and the screen keeps showing it with
+ * `FreshnessBanner` instead of replacing it with an error.
+ */
+export function loadingError(
+  ...queries: Pick<UseQueryResult, 'isLoadingError' | 'error'>[]
+): unknown {
+  return queries.find((query) => query.isLoadingError)?.error ?? null;
 }

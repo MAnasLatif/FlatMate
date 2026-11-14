@@ -1,10 +1,10 @@
 import { router } from 'expo-router';
-import { Button, Skeleton, Spinner, Typography } from 'heroui-native';
+import { Button, Spinner, Typography } from 'heroui-native';
 import { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 
-import { OfflineBanner } from '@/components/offline-banner';
-import { LoadError, LoadingRows } from '@/components/query-states';
+import { FreshnessBanner } from '@/components/freshness-banner';
+import { LoadError, LoadingRows, PendingSkeleton } from '@/components/query-states';
 import type { Apartment } from '@/features/apartments/api';
 import { useApartment } from '@/features/apartments/hooks';
 import { userErrorMessage } from '@/lib/errors';
@@ -63,7 +63,7 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
       )}
       ListHeaderComponent={
         <View className="gap-4 pb-1">
-          <OfflineBanner updatedAt={expenses.dataUpdatedAt} />
+          <FreshnessBanner freshness={expenses} />
           <BalanceSummary
             apartmentId={apartment.id}
             currency={apartment.currency}
@@ -87,7 +87,7 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
       ListEmptyComponent={
         expenses.isPending ? (
           <LoadingRows count={3} />
-        ) : expenses.isError ? (
+        ) : expenses.isLoadingError ? (
           <LoadError
             message={userErrorMessage(expenses.error, 'Could not load the expenses.')}
             onRetry={() => void expenses.refetch()}
@@ -131,9 +131,11 @@ function MonthlyShare({
   const share = useMyMonthlyShare(apartmentId, month);
 
   if (share.isPending) {
-    return <Skeleton className="h-5 w-48 rounded-md" accessibilityLabel="Loading your share" />;
+    return (
+      <PendingSkeleton className="h-5 w-48 rounded-md" accessibilityLabel="Loading your share" />
+    );
   }
-  if (share.isError) {
+  if (share.isLoadingError) {
     return (
       <Typography.Paragraph type="body-sm" color="muted">
         Could not load your share for this month. Pull down to try again.
