@@ -55,7 +55,14 @@ export function LeaveApartment({ apartmentId }: { apartmentId: string }) {
       {
         text: 'Leave',
         style: 'destructive',
-        onPress: () => leave.mutate(undefined, { onSuccess: () => router.dismissTo('/') }),
+        onPress: () =>
+          leave.mutate(undefined, {
+            // Start over from the top, which opens another apartment or the join page.
+            onSuccess: () => {
+              router.dismissAll();
+              router.replace('/');
+            },
+          }),
       },
     ]);
 

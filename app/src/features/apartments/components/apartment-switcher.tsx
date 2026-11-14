@@ -53,7 +53,7 @@ export function ApartmentSwitcher({ apartmentId }: { apartmentId: string }) {
               ) : null}
             </Menu.Item>
           ))}
-          <Menu.Item onPress={() => router.dismissTo('/')}>
+          <Menu.Item onPress={() => router.push('/apartments')}>
             <Menu.ItemTitle>All apartments</Menu.ItemTitle>
           </Menu.Item>
         </Menu.Content>

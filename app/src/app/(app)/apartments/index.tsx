@@ -1,33 +1,19 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import {
-  Button,
-  Card,
-  Chip,
-  PressableFeedback,
-  Separator,
-  Typography,
-  useThemeColor,
-} from 'heroui-native';
+import { Button, Card, Chip, PressableFeedback, useThemeColor } from 'heroui-native';
 import { View } from 'react-native';
 
-import { AppLogo } from '@/components/app-logo';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { MyApartment } from '@/features/apartments/api';
-import { JoinApartment } from '@/features/apartments/components/join-apartment';
+import { JoinOrCreate } from '@/features/apartments/components/join-or-create';
 import { MyJoinRequests } from '@/features/apartments/components/my-join-requests';
 import { useMyApartments } from '@/features/apartments/hooks';
-import { useCurrentUserId } from '@/features/auth/session-provider';
-import { NotificationBell } from '@/features/notifications/components/notification-bell';
-import { ProfileAvatar } from '@/features/profile/components/profile-avatar';
-import { useProfile } from '@/features/profile/hooks';
 import { PastApartments } from '@/features/settlement/components/past-apartments';
 import { userErrorMessage } from '@/lib/errors';
 
+/** Every apartment the user is in, reached from the apartment switcher. */
 export default function MyApartmentsScreen() {
-  const userId = useCurrentUserId();
-  const profile = useProfile(userId);
   const apartments = useMyApartments();
 
   return (
@@ -36,29 +22,6 @@ export default function MyApartmentsScreen() {
       refreshing={apartments.isRefetching}
       onRefresh={() => void apartments.refetch()}
     >
-      <View className="flex-row items-center justify-between">
-        <View className="flex-row items-center gap-2">
-          <AppLogo size={44} />
-          <Typography.Heading type="h3" accessibilityRole="header">
-            FlatMate
-          </Typography.Heading>
-        </View>
-        <View className="flex-row items-center gap-5">
-          <NotificationBell userId={userId} />
-          <PressableFeedback
-            onPress={() => router.push('/profile')}
-            accessibilityRole="button"
-            accessibilityLabel="Your profile"
-          >
-            <ProfileAvatar
-              name={profile.data?.display_name}
-              avatarPath={profile.data?.avatar_path}
-              size="sm"
-            />
-          </PressableFeedback>
-        </View>
-      </View>
-
       <MyJoinRequests />
 
       {apartments.isPending ? (
@@ -69,7 +32,7 @@ export default function MyApartmentsScreen() {
           onRetry={() => void apartments.refetch()}
         />
       ) : apartments.data.length === 0 ? (
-        <EmptyState />
+        <JoinOrCreate />
       ) : (
         <View className="gap-3">
           {apartments.data.map((item) => (
@@ -109,7 +72,7 @@ function ApartmentCard({ item }: { item: MyApartment }) {
   return (
     <PressableFeedback
       onPress={() =>
-        router.push({
+        router.replace({
           pathname: '/apartments/[apartmentId]',
           params: { apartmentId: apartment.id },
         })
@@ -134,30 +97,5 @@ function ApartmentCard({ item }: { item: MyApartment }) {
         </Card.Body>
       </Card>
     </PressableFeedback>
-  );
-}
-
-/** No apartment yet: join with a code right here, or go create one. */
-function EmptyState() {
-  return (
-    <View className="gap-6 py-6">
-      <View className="gap-2">
-        <Typography.Heading type="h4">Join your flat</Typography.Heading>
-        <Typography.Paragraph color="muted">
-          Enter the code a flatmate shared with you.
-        </Typography.Paragraph>
-      </View>
-      <JoinApartment />
-      <View className="flex-row items-center gap-3">
-        <Separator className="flex-1" />
-        <Typography.Paragraph type="body-sm" color="muted">
-          or
-        </Typography.Paragraph>
-        <Separator className="flex-1" />
-      </View>
-      <Button variant="secondary" onPress={() => router.push('/apartments/new')}>
-        Create new apartment
-      </Button>
-    </View>
   );
 }

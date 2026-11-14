@@ -1,12 +1,21 @@
 import Stack from 'expo-router/stack';
+import { useEffect } from 'react';
 
 import { modalTransition, pushTransition } from '@/components/screen-transitions';
 import { useApartmentId } from '@/features/apartments/hooks';
+import { rememberLastApartment } from '@/features/apartments/last-apartment';
+import { useCurrentUserId } from '@/features/auth/session-provider';
 import { useApartmentChanges } from '@/features/sync/hooks';
 
 export default function ApartmentLayout() {
+  const apartmentId = useApartmentId();
+  const userId = useCurrentUserId();
   // Every screen of an open apartment stays current through its change events.
-  useApartmentChanges(useApartmentId());
+  useApartmentChanges(apartmentId);
+  // The app opens here next time.
+  useEffect(() => {
+    void rememberLastApartment(userId, apartmentId);
+  }, [userId, apartmentId]);
 
   return (
     <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', ...pushTransition }}>

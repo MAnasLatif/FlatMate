@@ -22,7 +22,7 @@ const APARTMENT = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
 jest.mock('@/lib/supabase', () => ({ supabase: {} }));
 jest.mock('expo-router', () => ({
-  router: { push: jest.fn(), dismissTo: jest.fn() },
+  router: { push: jest.fn(), dismissAll: jest.fn(), replace: jest.fn() },
   useLocalSearchParams: jest.fn(),
 }));
 jest.mock('@/features/auth/session-provider', () => ({
@@ -98,7 +98,8 @@ describe('LeaveApartment', () => {
     await user.press(screen.getByRole('button', { name: 'Leave apartment' }));
 
     expect(leaveApartment).toHaveBeenCalledWith(APARTMENT);
-    expect(router.dismissTo).toHaveBeenCalledWith('/');
+    expect(router.dismissAll).toHaveBeenCalled();
+    expect(router.replace).toHaveBeenCalledWith('/');
   });
 });
 
