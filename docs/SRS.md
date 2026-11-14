@@ -44,7 +44,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 1. Splash/session check.
 2. Unauthenticated: Login / Sign Up via email/password or Google (Supabase Auth); password recovery and verification as appropriate.
 3. Authenticated: **My Apartments** list of joined flats; `New Apartment` action.
-4. New Apartment screen: `Join by Code` (code input, Join) and `Create Apartment` (create flow).
+4. With no apartment, the home screen shows `Join by Code` (code input with paste, Join) and a `Create new apartment` button that opens the create flow. Creating takes the time zone from the phone and the currency from a list; a location, when given, is shown to members.
 5. Create: apartment name, optional location and visibility, settlement day, default approval window (7 days), reminders, other settings; creator becomes admin.
 6. Select an apartment to enter its dashboard. The user can switch apartments from the top-bar apartment-name dropdown.
 7. Subsequent launches: show apartment list/selector as agreed, not a forced auto-entry to one apartment.
@@ -81,7 +81,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 
 ### FR-02 Apartment Lifecycle
 - FR-02.1 Create apartment with unique identifier and join code; creator becomes admin.
-- FR-02.2 Join with valid code; invalid/revoked/expired codes fail safely. Admin can rotate/revoke codes.
+- FR-02.2 A valid code sends a request to join; invalid/revoked/expired codes fail safely. Any current admin approves or declines the request, and the first to act decides; the person joins only when approved. The person sees their pending requests and can cancel them, and may ask again after a decline (join-code rate limits still apply). Admins are notified of requests, and the person of the decision. Admin can rotate/revoke codes.
 - FR-02.3 Multiple memberships per user; all apartment balances and settings remain isolated.
 - FR-02.4 Member may leave; admin may remove member. Historical transactions remain immutable/auditable; outstanding dues and disputes remain attached to the former member.
 - FR-02.5 Track join/leave effective dates. Do not automatically include a member in expenses outside their eligible occupancy interval; explicit overrides require permission and history.
