@@ -5,7 +5,6 @@ import { PressableFeedback, useThemeColor } from 'heroui-native';
 import { View } from 'react-native';
 
 import {
-  ADD_ICON_SIZE,
   HEADER_ICON_SIZE,
   TAB_ICON_BOX,
   TAB_ICON_SIZE,
@@ -59,9 +58,8 @@ export default function ApartmentTabsLayout() {
         options={{
           title: 'Add',
           tabBarAccessibilityLabel: 'Add an expense',
-          tabBarIconStyle: { width: ADD_ICON_SIZE + 4, height: ADD_ICON_SIZE + 4 },
           // Grey like the other icons: blue marks only the open tab.
-          tabBarIcon: () => <Ionicons name="add-circle" size={ADD_ICON_SIZE} color={muted} />,
+          tabBarIcon: () => <Ionicons name="add-circle" size={TAB_ICON_SIZE} color={muted} />,
         }}
         listeners={{
           tabPress: (event) => {

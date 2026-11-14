@@ -21,5 +21,3 @@ export const TAB_ICON_SIZE = 28;
 export const TAB_ICON_BOX = 32;
 /** Icons in the top bars, such as the bell and members. */
 export const HEADER_ICON_SIZE = 26;
-/** The Add button stands out a little from the other bottom bar icons. */
-export const ADD_ICON_SIZE = 34;
