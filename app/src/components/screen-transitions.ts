@@ -14,3 +14,8 @@ export const switchTransition = { animation: 'fade' } as const;
 
 /** Switching bottom tabs: the screens shift slightly toward the tab chosen. */
 export const tabTransition = { animation: 'shift' } as const;
+
+/** One size for every bottom bar icon, the Add button and the profile photo alike. */
+export const TAB_ICON_SIZE = 28;
+/** The box each bottom bar icon sits in, a little larger so nothing is cut off. */
+export const TAB_ICON_BOX = 32;

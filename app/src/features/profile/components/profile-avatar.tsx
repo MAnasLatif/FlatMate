@@ -13,7 +13,7 @@ type ProfileAvatarProps = {
 };
 
 const EXTRA_SIZES = {
-  xs: { base: 'sm', root: 'size-7', text: 'text-[10px]' },
+  xs: { base: 'sm', root: 'size-6', text: 'text-[9px]' },
   xl: { base: 'lg', root: 'size-28', text: 'text-3xl' },
 } as const;
 

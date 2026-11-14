@@ -4,7 +4,7 @@ import { Tabs } from 'expo-router/tabs';
 import { PressableFeedback, useThemeColor } from 'heroui-native';
 import { View } from 'react-native';
 
-import { tabTransition } from '@/components/screen-transitions';
+import { TAB_ICON_BOX, TAB_ICON_SIZE, tabTransition } from '@/components/screen-transitions';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { NotificationBell } from '@/features/notifications/components/notification-bell';
 import { ApartmentSwitcher } from '@/features/apartments/components/apartment-switcher';
@@ -28,6 +28,10 @@ export default function ApartmentTabsLayout() {
         headerTitleAlign: 'left',
         headerRight: () => <HeaderActions apartmentId={apartmentId} />,
         tabBarShowLabel: false,
+        // No line above the bar.
+        tabBarStyle: { borderTopWidth: 0, elevation: 0 },
+        // Room for the icons, so none is cut off.
+        tabBarIconStyle: { width: TAB_ICON_BOX, height: TAB_ICON_BOX },
         tabBarActiveTintColor: accent,
         tabBarInactiveTintColor: muted,
       }}
@@ -38,8 +42,8 @@ export default function ApartmentTabsLayout() {
         options={{
           title: 'Expenses',
           tabBarAccessibilityLabel: 'Expenses',
-          tabBarIcon: ({ focused, size }) => (
-            <TabIcon name="receipt-outline" focused={focused} size={size} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="receipt-outline" focused={focused} size={TAB_ICON_SIZE} />
           ),
         }}
       />
@@ -48,9 +52,8 @@ export default function ApartmentTabsLayout() {
         options={{
           title: 'Add',
           tabBarAccessibilityLabel: 'Add an expense',
-          // The default icon box is smaller than the button and would cut it off.
-          tabBarIconStyle: { width: ADD_BUTTON_SIZE, height: ADD_BUTTON_SIZE },
-          tabBarIcon: () => <AddButton />,
+          // The same size as the other icons, in the accent colour as the main action.
+          tabBarIcon: () => <Ionicons name="add-circle" size={TAB_ICON_SIZE} color={accent} />,
         }}
         listeners={{
           tabPress: (event) => {
@@ -78,21 +81,6 @@ export default function ApartmentTabsLayout() {
   );
 }
 
-const ADD_BUTTON_SIZE = 44;
-
-/** The Add tab: a filled circle with a plus, larger than the other icons. */
-function AddButton() {
-  const foreground = useThemeColor('accent-foreground');
-  return (
-    <View
-      className="items-center justify-center rounded-full bg-accent"
-      style={{ width: ADD_BUTTON_SIZE, height: ADD_BUTTON_SIZE }}
-    >
-      <Ionicons name="add" size={28} color={foreground} />
-    </View>
-  );
-}
-
 function TabIcon({
   name,
   focused,
@@ -103,7 +91,7 @@ function TabIcon({
   size: number;
 }) {
   const [accent, muted] = useThemeColor(['accent', 'muted']);
-  return <Ionicons name={name} size={size} color={focused ? accent : muted} />;
+  return <Ionicons name={name} size={TAB_ICON_SIZE} color={focused ? accent : muted} />;
 }
 
 function HeaderActions({ apartmentId }: { apartmentId: string }) {
