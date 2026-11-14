@@ -49,7 +49,7 @@ flowchart LR
 | Receipts and payment proofs | Supabase Storage | Private buckets, accessed with signed URLs. |
 | Scheduled work | pg_cron jobs calling Postgres functions | Objection-window deadlines and settlement periods today; recurring charges and reminders later. Idempotent and timezone-aware. |
 | Change events (planned) | Realtime Broadcast, sent by `private.emit_change` from database triggers | One event for every visible change, on an apartment or user topic, with no data in it. The app's event router refetches through RLS. |
-| Offline reading (planned) | Encrypted saved query cache on the phone | A copy of what the user already loaded, never a source of truth. |
+| Offline reading | Encrypted saved query cache on the phone (`app/src/lib/saved-cache.ts`) | A copy of what the user already loaded, never a source of truth. |
 | Push notifications | Edge Functions to the Expo push service | Notification text carries no account details. |
 | Public marketing pages | `web/` | Static content and store links. No user data. |
 
@@ -97,7 +97,7 @@ The app has four layers, and data only moves through them in this order:
 - A failed send never rolls back the write. After a reconnect, or when the app returns to the foreground, the router refreshes everything under its topics instead of trusting that no event was missed.
 - A database test fails if a function writes client-visible data without emitting an event, so new features stay covered.
 
-**Offline reading (planned, decision 0007).** The query cache is saved on the phone, encrypted with a key held in the device keychain, per user, for up to 7 days, and deleted at sign-out. Without a connection, screens show the saved data with the time it was last updated. Anything that writes needs a connection.
+**Offline reading (decision 0007).** The query cache is saved on the phone, encrypted with a key held in the device keychain, per user, for up to 7 days, and deleted at sign-out. Without a connection, screens show the saved data with the time it was last updated. Anything that writes needs a connection.
 
 ```mermaid
 sequenceDiagram
