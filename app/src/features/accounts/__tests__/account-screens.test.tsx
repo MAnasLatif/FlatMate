@@ -122,6 +122,19 @@ describe('MyAccountsSection', () => {
     expect(screen.queryByRole('button', { name: 'Make preferred' })).not.toBeOnTheScreen();
   });
 
+  it('offers to add another account once there is one', async () => {
+    await renderWithProviders(<MyAccountsSection />);
+
+    expect(await screen.findByRole('button', { name: 'Add another account' })).toBeOnTheScreen();
+  });
+
+  it('offers to add a bank or wallet when there are none', async () => {
+    jest.mocked(fetchMyAccounts).mockResolvedValue([]);
+    await renderWithProviders(<MyAccountsSection />);
+
+    expect(await screen.findByRole('button', { name: 'Add bank or wallet' })).toBeOnTheScreen();
+  });
+
   it('opens the account details when an account is tapped', async () => {
     await renderWithProviders(<MyAccountsSection />);
     const row = await screen.findByRole('button', { name: /^Meezan Bank/ });
