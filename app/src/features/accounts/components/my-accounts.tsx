@@ -59,7 +59,9 @@ export function MyAccountsSection() {
         </View>
       )}
       <Button variant="secondary" onPress={() => editAccount()}>
-        {accounts.data && accounts.data.length > 0 ? 'Add another account' : 'Add bank or wallet'}
+        {accounts.data && accounts.data.length > 0
+          ? 'Add another bank or wallet'
+          : 'Add bank or wallet'}
       </Button>
       <DeleteAccountSheet account={deleting} onClose={() => setDeleting(null)} />
     </View>

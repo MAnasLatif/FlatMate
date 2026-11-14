@@ -125,7 +125,9 @@ describe('MyAccountsSection', () => {
   it('offers to add another account once there is one', async () => {
     await renderWithProviders(<MyAccountsSection />);
 
-    expect(await screen.findByRole('button', { name: 'Add another account' })).toBeOnTheScreen();
+    expect(
+      await screen.findByRole('button', { name: 'Add another bank or wallet' }),
+    ).toBeOnTheScreen();
   });
 
   it('offers to add a bank or wallet when there are none', async () => {
