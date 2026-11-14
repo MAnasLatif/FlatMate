@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Card, Typography } from 'heroui-native';
+import { Typography } from 'heroui-native';
+import { View } from 'react-native';
 import { useForm } from 'react-hook-form';
 
 import { FormAlert } from '@/components/form/form-alert';
@@ -41,35 +42,32 @@ function CreateSection() {
   });
 
   return (
-    <Card>
-      <Card.Body className="gap-4">
-        <Card.Title>Create an apartment</Card.Title>
-        <Typography.Paragraph type="body-sm" color="muted">
-          You become its admin and can invite your flatmates.
-        </Typography.Paragraph>
-        <FormAlert
-          message={
-            create.error
-              ? userErrorMessage(
-                  create.error,
-                  'Could not create the apartment. Please try again.',
-                  APARTMENT_ERROR_MESSAGES,
-                )
-              : null
-          }
-        />
-        <ApartmentFormFields control={form.control} isCurrencyEditable />
-        <OnlineButton
-          onPress={() =>
-            void form.handleSubmit((values) =>
-              create.mutate(values, { onSuccess: (apartmentId) => openApartment(apartmentId) }),
-            )()
-          }
-          isDisabled={create.isPending}
-        >
-          {create.isPending ? 'Creating…' : 'Create apartment'}
-        </OnlineButton>
-      </Card.Body>
-    </Card>
+    <View className="gap-4">
+      <Typography.Paragraph type="body-sm" color="muted">
+        You become its admin and can invite your flatmates.
+      </Typography.Paragraph>
+      <FormAlert
+        message={
+          create.error
+            ? userErrorMessage(
+                create.error,
+                'Could not create the apartment. Please try again.',
+                APARTMENT_ERROR_MESSAGES,
+              )
+            : null
+        }
+      />
+      <ApartmentFormFields control={form.control} isCurrencyEditable />
+      <OnlineButton
+        onPress={() =>
+          void form.handleSubmit((values) =>
+            create.mutate(values, { onSuccess: (apartmentId) => openApartment(apartmentId) }),
+          )()
+        }
+        isDisabled={create.isPending}
+      >
+        {create.isPending ? 'Creating…' : 'Create apartment'}
+      </OnlineButton>
+    </View>
   );
 }
