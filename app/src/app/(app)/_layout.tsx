@@ -1,5 +1,6 @@
 import Stack from 'expo-router/stack';
 
+import { modalTransition, pushTransition } from '@/components/screen-transitions';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { useOpenTappedNotification, usePushRegistration } from '@/features/notifications/hooks';
 import { useUserChanges } from '@/features/sync/hooks';
@@ -13,14 +14,14 @@ export default function AppLayout() {
   useOpenTappedNotification(userId);
 
   return (
-    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal' }}>
+    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', ...pushTransition }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="profile" options={{ title: 'Profile' }} />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Stack.Screen name="apartments/new" options={{ title: 'New apartment' }} />
       <Stack.Screen
         name="accounts/edit"
-        options={{ title: 'Receiving account', presentation: 'modal' }}
+        options={{ title: 'Receiving account', ...modalTransition }}
       />
       <Stack.Screen name="apartments/[apartmentId]" options={{ headerShown: false }} />
     </Stack>

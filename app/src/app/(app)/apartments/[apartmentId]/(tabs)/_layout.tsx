@@ -4,6 +4,7 @@ import { Tabs } from 'expo-router/tabs';
 import { PressableFeedback, useThemeColor } from 'heroui-native';
 import { View } from 'react-native';
 
+import { tabTransition } from '@/components/screen-transitions';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { NotificationBell } from '@/features/notifications/components/notification-bell';
 import { ApartmentSwitcher } from '@/features/apartments/components/apartment-switcher';
@@ -20,6 +21,7 @@ export default function ApartmentTabsLayout() {
   return (
     <Tabs
       screenOptions={{
+        ...tabTransition,
         headerTitle: () => <ApartmentSwitcher apartmentId={apartmentId} />,
         headerTitleAlign: 'left',
         headerRight: () => <HeaderActions apartmentId={apartmentId} />,

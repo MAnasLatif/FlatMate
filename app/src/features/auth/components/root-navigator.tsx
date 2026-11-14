@@ -2,6 +2,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import Stack from 'expo-router/stack';
 import { useEffect } from 'react';
 
+import { switchTransition } from '@/components/screen-transitions';
+
 import { useSession } from '../session-provider';
 
 /**
@@ -32,7 +34,7 @@ export function RootNavigator() {
     // Each guard names where it sends someone. Without that, the router falls
     // back to the root navigator's anchor, which this app does not declare,
     // and shows "not found" instead of the sign-in or home screen.
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, ...switchTransition }}>
       <Stack.Protected guard={isSignedIn} redirectTo="/sign-in">
         <Stack.Screen name="(app)" />
       </Stack.Protected>
