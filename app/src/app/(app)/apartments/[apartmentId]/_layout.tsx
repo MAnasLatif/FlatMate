@@ -1,6 +1,12 @@
 import Stack from 'expo-router/stack';
 
+import { useApartmentId } from '@/features/apartments/hooks';
+import { useApartmentChanges } from '@/features/sync/hooks';
+
 export default function ApartmentLayout() {
+  // Every screen of an open apartment stays current through its change events.
+  useApartmentChanges(useApartmentId());
+
   return (
     <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal' }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
