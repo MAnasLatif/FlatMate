@@ -1,9 +1,7 @@
-import { Image } from 'expo-image';
 import { Typography } from 'heroui-native';
-import { StyleSheet, useColorScheme, View } from 'react-native';
+import { View } from 'react-native';
 
-const logoMark = require('@/assets/images/logo-mark.png');
-const logoMarkDark = require('@/assets/images/logo-mark-dark.png');
+import { AppLogo } from '@/components/app-logo';
 
 type AuthHeaderProps = {
   title: string;
@@ -12,16 +10,9 @@ type AuthHeaderProps = {
 
 /** The brand mark, then the screen's title and a short line under it. */
 export function AuthHeader({ title, subtitle }: AuthHeaderProps) {
-  const isDark = useColorScheme() === 'dark';
-
   return (
     <View className="items-center gap-4 pt-4">
-      <Image
-        source={isDark ? logoMarkDark : logoMark}
-        style={styles.logo}
-        contentFit="contain"
-        accessibilityLabel="FlatMate"
-      />
+      <AppLogo size={96} />
       <View className="items-center gap-2">
         <Typography.Heading type="h2" accessibilityRole="header" className="text-center">
           {title}
@@ -35,7 +26,3 @@ export function AuthHeader({ title, subtitle }: AuthHeaderProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  logo: { width: 96, height: 96 },
-});

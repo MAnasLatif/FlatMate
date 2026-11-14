@@ -11,6 +11,7 @@ import {
 } from 'heroui-native';
 import { View } from 'react-native';
 
+import { AppLogo } from '@/components/app-logo';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { MyApartment } from '@/features/apartments/api';
@@ -35,9 +36,12 @@ export default function MyApartmentsScreen() {
       onRefresh={() => void apartments.refetch()}
     >
       <View className="flex-row items-center justify-between">
-        <Typography.Heading type="h2" accessibilityRole="header">
-          Your apartments
-        </Typography.Heading>
+        <View className="flex-row items-center gap-2">
+          <AppLogo size={44} />
+          <Typography.Heading type="h3" accessibilityRole="header">
+            FlatMate
+          </Typography.Heading>
+        </View>
         <View className="flex-row items-center gap-5">
           <NotificationBell userId={userId} />
           <PressableFeedback
