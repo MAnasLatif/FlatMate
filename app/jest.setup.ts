@@ -48,6 +48,33 @@ jest.mock('react-native-reanimated', () => jest.requireActual('react-native-rean
 // layout code needs a device. The package ships a mock that renders plain views.
 jest.mock('@gorhom/bottom-sheet', () => jest.requireActual('@gorhom/bottom-sheet/mock'));
 
+// Gesture Handler's swipeable row needs Reanimated shared values that its mock
+// does not provide. This stand-in renders the row and its actions, and passes
+// onSwipeableOpen through, so a test can fire fireEvent(row, 'swipeableOpen', 'right').
+jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
+  const { createElement, forwardRef, useImperativeHandle } = jest.requireActual('react');
+  const { View } = jest.requireActual('react-native');
+  const SwipeDirection = { LEFT: 'left', RIGHT: 'right' };
+  const ReanimatedSwipeable = forwardRef(
+    (
+      props: {
+        children?: unknown;
+        testID?: string;
+        onSwipeableOpen?: (direction: string) => void;
+      },
+      ref: unknown,
+    ) => {
+      useImperativeHandle(ref, () => ({ close: () => undefined, reset: () => undefined }));
+      return createElement(
+        View,
+        { testID: props.testID ?? 'swipeable-row', onSwipeableOpen: props.onSwipeableOpen },
+        props.children,
+      );
+    },
+  );
+  return { __esModule: true, default: ReanimatedSwipeable, SwipeDirection };
+});
+
 // Reanimated 4.7's native initializer registers a CSS animation event handler,
 // which its JavaScript fallback used under Jest does not implement.
 jest.mock('react-native-reanimated/src/css/native', () => ({
