@@ -53,7 +53,7 @@ export function PairPayments({
         ) : null}
         {payments.isPending ? (
           <LoadingRows count={2} />
-        ) : payments.isError ? (
+        ) : payments.isLoadingError ? (
           <LoadError
             message={userErrorMessage(payments.error, 'Could not load your payments.')}
             onRetry={() => void payments.refetch()}

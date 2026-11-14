@@ -3,7 +3,8 @@ import { Button, Card, Typography } from 'heroui-native';
 import { useMemo, useState } from 'react';
 
 import { FormAlert } from '@/components/form/form-alert';
-import { LoadError, LoadingRows } from '@/components/query-states';
+import { OnlineButton } from '@/components/online-button';
+import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { Member } from '@/features/apartments/api';
 import { useMembers } from '@/features/apartments/hooks';
@@ -37,7 +38,7 @@ export function RecordPayment({
       </Screen>
     );
   }
-  const loadError = detail.error ?? members.error;
+  const loadError = loadingError(detail, members);
   if (loadError || !members.data) {
     return (
       <Screen padTop={false}>
@@ -168,9 +169,9 @@ function RecordPaymentForm({
             : null
         }
       />
-      <Button onPress={save} isDisabled={record.isPending}>
+      <OnlineButton onPress={save} isDisabled={record.isPending}>
         {record.isPending ? 'Saving…' : 'Record payment'}
-      </Button>
+      </OnlineButton>
     </Screen>
   );
 }

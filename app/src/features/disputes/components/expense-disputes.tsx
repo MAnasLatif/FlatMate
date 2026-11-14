@@ -39,7 +39,7 @@ export function ExpenseDisputes({
       viewer,
       list.some((dispute) => dispute.state !== 'resolved'),
     );
-  if (!disputes.isError && list.length === 0 && !canRaise) return null;
+  if (!disputes.isLoadingError && list.length === 0 && !canRaise) return null;
 
   const nameOf = (id: string) => {
     const member = members.data.find((item) => item.userId === id);
@@ -56,7 +56,7 @@ export function ExpenseDisputes({
       <Card.Body className="gap-3">
         <Card.Title>Disputes</Card.Title>
         <Separator />
-        {disputes.isError ? (
+        {disputes.isLoadingError ? (
           <LoadError
             message={userErrorMessage(disputes.error, 'Could not load the disputes.')}
             onRetry={() => void disputes.refetch()}

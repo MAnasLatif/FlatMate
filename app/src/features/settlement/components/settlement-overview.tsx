@@ -61,7 +61,12 @@ export function SettlementOverview({ apartmentId }: { apartmentId: string }) {
   const { period, rows } = preview.data;
 
   return (
-    <Screen padTop={false} refreshing={preview.isRefetching} onRefresh={() => void refreshMoney()}>
+    <Screen
+      freshness={preview}
+      padTop={false}
+      refreshing={preview.isRefetching}
+      onRefresh={() => void refreshMoney()}
+    >
       <Card>
         <Card.Body className="gap-2">
           <Typography.Paragraph type="body-xs" color="muted">
@@ -109,7 +114,7 @@ export function SettlementOverview({ apartmentId }: { apartmentId: string }) {
           <Card.Title>Past periods</Card.Title>
           {history.isPending ? (
             <LoadingRows count={1} />
-          ) : history.isError ? (
+          ) : history.isLoadingError ? (
             <LoadError
               message={userErrorMessage(history.error, 'Could not load past periods.')}
               onRetry={() => void history.refetch()}

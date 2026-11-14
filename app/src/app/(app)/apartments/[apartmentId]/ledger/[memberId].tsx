@@ -22,7 +22,7 @@ export default function PairLedgerScreen() {
       </Screen>
     );
   }
-  if (apartment.isError || members.isError) {
+  if (apartment.isLoadingError || members.isLoadingError) {
     return (
       <Screen padTop={false}>
         <LoadError

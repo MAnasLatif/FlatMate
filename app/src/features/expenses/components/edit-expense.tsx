@@ -3,7 +3,8 @@ import { Button, Label, TextArea, TextField, Typography } from 'heroui-native';
 import { useMemo, useState } from 'react';
 
 import { FormAlert } from '@/components/form/form-alert';
-import { LoadError, LoadingRows } from '@/components/query-states';
+import { OnlineButton } from '@/components/online-button';
+import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { Apartment, Category, Member } from '@/features/apartments/api';
 import { useApartment, useCategories, useMembers } from '@/features/apartments/hooks';
@@ -41,7 +42,7 @@ export function EditExpense({
       </Screen>
     );
   }
-  const loadError = detail.error ?? apartment.error ?? members.error ?? categories.error;
+  const loadError = loadingError(detail, apartment, members, categories);
   if (loadError || !apartment.data || !members.data || !categories.data) {
     return (
       <Screen padTop={false}>
@@ -174,9 +175,9 @@ function EditExpenseForm({
               (showErrors && !result.value ? 'Check the highlighted fields.' : null))
         }
       />
-      <Button onPress={save} isDisabled={edit.isPending}>
+      <OnlineButton onPress={save} isDisabled={edit.isPending}>
         {edit.isPending ? 'Saving…' : 'Save changes'}
-      </Button>
+      </OnlineButton>
     </Screen>
   );
 }

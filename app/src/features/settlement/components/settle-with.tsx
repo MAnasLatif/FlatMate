@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { Button, Card, Chip, PressableFeedback, Separator, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
-import { LoadError, LoadingRows } from '@/components/query-states';
+import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import { useApartment } from '@/features/apartments/hooks';
 import { useRefreshMoney } from '@/features/expenses/hooks';
@@ -46,7 +46,7 @@ export function SettleWith({
       </Screen>
     );
   }
-  const loadError = apartment.error ?? obligations.error;
+  const loadError = loadingError(apartment, obligations);
   if (loadError || !apartment.data || !obligations.data) {
     return (
       <Screen padTop={false}>
@@ -70,6 +70,7 @@ export function SettleWith({
 
   return (
     <Screen
+      freshness={obligations}
       padTop={false}
       refreshing={obligations.isRefetching}
       onRefresh={() => void refreshMoney()}

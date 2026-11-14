@@ -3,7 +3,8 @@ import { Button } from 'heroui-native';
 import { useMemo, useState } from 'react';
 
 import { FormAlert } from '@/components/form/form-alert';
-import { LoadError, LoadingRows } from '@/components/query-states';
+import { OnlineButton } from '@/components/online-button';
+import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { PhotoPicker } from '@/components/photo-picker';
 import { Screen } from '@/components/screen';
 import type { Apartment, Category, Member } from '@/features/apartments/api';
@@ -36,7 +37,7 @@ export default function AddExpenseScreen() {
       </Screen>
     );
   }
-  const loadError = apartment.error ?? members.error ?? categories.error;
+  const loadError = loadingError(apartment, members, categories);
   if (loadError || !apartment.data || !members.data || !categories.data) {
     return (
       <Screen padTop={false}>
@@ -115,12 +116,12 @@ function AddExpenseForm({
           }
         />
         <ReceiptField receipt={receipt} onChange={setReceipt} isDisabled={upload.isPending} />
-        <Button
+        <OnlineButton
           onPress={() => receipt && attach(savedExpenseId, receipt)}
           isDisabled={upload.isPending || !receipt}
         >
           {upload.isPending ? 'Uploading receipt…' : 'Upload receipt'}
-        </Button>
+        </OnlineButton>
         <Button variant="ghost" onPress={() => router.back()} isDisabled={upload.isPending}>
           Finish without a receipt
         </Button>
@@ -174,9 +175,9 @@ function AddExpenseForm({
               : null
         }
       />
-      <Button onPress={save} isDisabled={isSaving}>
+      <OnlineButton onPress={save} isDisabled={isSaving}>
         {post.isPending ? 'Saving…' : 'Save expense'}
-      </Button>
+      </OnlineButton>
     </Screen>
   );
 }

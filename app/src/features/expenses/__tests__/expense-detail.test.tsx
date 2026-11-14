@@ -1,4 +1,5 @@
-import { screen, userEvent } from '@testing-library/react-native';
+import { focusManager, onlineManager } from '@tanstack/react-query';
+import { act, screen, userEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
 import {
@@ -184,6 +185,42 @@ describe('ExpenseDetailView', () => {
 
     expect(await screen.findByText('Electricity')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Record payment' })).not.toBeOnTheScreen();
+  });
+
+  it('keeps the expense on screen offline, says so, and does not let it be voided', async () => {
+    detail.mockResolvedValue(cleaning);
+    await renderWithProviders(<ExpenseDetailView apartmentId={APARTMENT} expenseId={EXPENSE} />);
+    expect(await screen.findByRole('header', { name: '200.00 PKR' })).toBeOnTheScreen();
+
+    await act(async () => onlineManager.setOnline(false));
+
+    expect(screen.getByRole('header', { name: '200.00 PKR' })).toBeOnTheScreen();
+    expect(
+      screen.getByText(/^You're offline\. Last updated .+\. Saving needs a connection\.$/),
+    ).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Void' })).toBeDisabled();
+
+    await act(async () => onlineManager.setOnline(true));
+    expect(screen.getByRole('button', { name: 'Void' })).toBeEnabled();
+  });
+
+  it('keeps the expense on screen when a refresh fails', async () => {
+    detail.mockResolvedValue(cleaning);
+    await renderWithProviders(<ExpenseDetailView apartmentId={APARTMENT} expenseId={EXPENSE} />);
+    expect(await screen.findByRole('header', { name: '200.00 PKR' })).toBeOnTheScreen();
+
+    detail.mockRejectedValue({ message: 'server error', code: 'XX000' });
+    await act(async () => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+
+    expect(
+      await screen.findByText(/^Could not refresh\. Showing what was loaded/),
+    ).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: '200.00 PKR' })).toBeOnTheScreen();
+    expect(screen.queryByText('Could not load this expense.')).not.toBeOnTheScreen();
+    focusManager.setFocused(undefined);
   });
 
   it('explains when the expense cannot be seen', async () => {

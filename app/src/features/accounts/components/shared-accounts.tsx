@@ -32,7 +32,7 @@ export function SharedAccounts({
         <Card.Title>{`How to pay ${name}`}</Card.Title>
         {accounts.isPending ? (
           <LoadingRows count={1} />
-        ) : accounts.isError ? (
+        ) : accounts.isLoadingError ? (
           <LoadError
             message={userErrorMessage(accounts.error, 'Could not load the accounts.')}
             onRetry={() => void accounts.refetch()}

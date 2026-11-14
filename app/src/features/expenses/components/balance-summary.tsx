@@ -1,8 +1,8 @@
-import { Card, Chip, Separator, Skeleton, Typography } from 'heroui-native';
+import { Card, Chip, Separator, Typography } from 'heroui-native';
 import { useMemo } from 'react';
 import { View } from 'react-native';
 
-import { LoadError } from '@/components/query-states';
+import { LoadError, PendingSkeleton } from '@/components/query-states';
 import { userErrorMessage } from '@/lib/errors';
 import { formatMinorUnits } from '@/lib/money';
 import { ordinal } from '@/lib/time';
@@ -27,7 +27,7 @@ export function BalanceSummary({
   );
 
   if (balances.isPending) {
-    return <Skeleton className="h-44 rounded-2xl" accessibilityLabel="Loading balances" />;
+    return <PendingSkeleton className="h-44 rounded-2xl" accessibilityLabel="Loading balances" />;
   }
   if (!summary) {
     return (

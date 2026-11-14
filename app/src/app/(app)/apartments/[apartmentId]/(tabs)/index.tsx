@@ -16,7 +16,7 @@ export default function ApartmentDashboard() {
     );
   }
 
-  if (apartment.isError) {
+  if (apartment.isLoadingError) {
     return (
       <Screen padTop={false}>
         <LoadError

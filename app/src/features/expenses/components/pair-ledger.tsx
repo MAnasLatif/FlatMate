@@ -5,14 +5,13 @@ import {
   Chip,
   PressableFeedback,
   Separator,
-  Skeleton,
   Spinner,
   Typography,
 } from 'heroui-native';
 import { type ReactNode, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 
-import { LoadError, LoadingRows } from '@/components/query-states';
+import { LoadError, LoadingRows, PendingSkeleton } from '@/components/query-states';
 import { userErrorMessage } from '@/lib/errors';
 import { formatMinorUnits } from '@/lib/money';
 import { formatDate } from '@/lib/time';
@@ -91,7 +90,7 @@ export function PairLedger({
       ListEmptyComponent={
         expenses.isPending ? (
           <LoadingRows count={3} />
-        ) : expenses.isError ? (
+        ) : expenses.isLoadingError ? (
           <LoadError
             message={userErrorMessage(expenses.error, 'Could not load your shared expenses.')}
             onRetry={() => void expenses.refetch()}
@@ -140,9 +139,9 @@ function PairSummary({
   const balances = usePairBalances(apartmentId);
 
   if (balances.isPending) {
-    return <Skeleton className="h-40 rounded-2xl" accessibilityLabel="Loading balances" />;
+    return <PendingSkeleton className="h-40 rounded-2xl" accessibilityLabel="Loading balances" />;
   }
-  if (balances.isError) {
+  if (balances.isLoadingError) {
     return (
       <LoadError
         message={userErrorMessage(balances.error, 'Could not load your balance.')}

@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
-import { Button, Card, Typography } from 'heroui-native';
+import { Card, Typography } from 'heroui-native';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { TextInputField } from '@/components/form/text-input-field';
+import { OnlineButton } from '@/components/online-button';
 import { Screen } from '@/components/screen';
 import type { JoinResult } from '@/features/apartments/api';
 import {
@@ -81,14 +82,14 @@ function JoinSection() {
           autoCorrect={false}
           maxLength={9}
         />
-        <Button
+        <OnlineButton
           onPress={() =>
             void form.handleSubmit((values) => join.mutate(values.code, { onSuccess: onResult }))()
           }
           isDisabled={join.isPending}
         >
           {join.isPending ? 'Joining…' : 'Join'}
-        </Button>
+        </OnlineButton>
       </Card.Body>
     </Card>
   );
@@ -128,7 +129,7 @@ function CreateSection() {
           }
         />
         <ApartmentFormFields control={form.control} isCurrencyEditable />
-        <Button
+        <OnlineButton
           onPress={() =>
             void form.handleSubmit((values) =>
               create.mutate(values, { onSuccess: (apartmentId) => openApartment(apartmentId) }),
@@ -137,7 +138,7 @@ function CreateSection() {
           isDisabled={create.isPending}
         >
           {create.isPending ? 'Creating…' : 'Create apartment'}
-        </Button>
+        </OnlineButton>
       </Card.Body>
     </Card>
   );

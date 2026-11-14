@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
+import { OnlineButton } from '@/components/online-button';
 import { Screen } from '@/components/screen';
 import { confirmEmailWithCode, resendConfirmationCode } from '@/features/auth/api';
 import { AuthHeader } from '@/features/auth/components/auth-header';
@@ -76,21 +77,21 @@ export default function VerifyEmailScreen() {
         error={codeError}
       />
 
-      <Button onPress={submit} isDisabled={verify.isPending}>
+      <OnlineButton onPress={submit} isDisabled={verify.isPending}>
         {verify.isPending ? 'Checking…' : 'Confirm email'}
-      </Button>
+      </OnlineButton>
 
       <View className="items-center gap-2">
         <Typography.Paragraph color="muted" className="text-center">
           No email? Check your spam folder, or ask for a new code.
         </Typography.Paragraph>
-        <Button
+        <OnlineButton
           variant="ghost"
           onPress={() => resend.mutate(email)}
           isDisabled={resend.isPending || cooldown > 0}
         >
           {cooldown > 0 ? `Send a new code in ${cooldown}s` : 'Send a new code'}
-        </Button>
+        </OnlineButton>
       </View>
     </Screen>
   );

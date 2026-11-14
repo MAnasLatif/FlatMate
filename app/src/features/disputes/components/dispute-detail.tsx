@@ -13,10 +13,12 @@ import {
 import { type ReactNode, useState } from 'react';
 import { Alert, View } from 'react-native';
 
+import type { Freshness } from '@/components/freshness-banner';
 import { FormAlert } from '@/components/form/form-alert';
+import { OnlineButton } from '@/components/online-button';
 import { PhotoPicker } from '@/components/photo-picker';
 import { PrivateImageThumbnail } from '@/components/private-image';
-import { LoadError, LoadingRows } from '@/components/query-states';
+import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { Member } from '@/features/apartments/api';
 import { useMembers } from '@/features/apartments/hooks';
@@ -63,7 +65,7 @@ export function DisputeDetailView({
       </Screen>
     );
   }
-  const loadError = detail.error ?? members.error ?? (detail.data ? expense.error : null);
+  const loadError = loadingError(detail, members, ...(detail.data ? [expense] : []));
   if (loadError || !members.data) {
     return (
       <Screen padTop={false}>
@@ -95,6 +97,7 @@ export function DisputeDetailView({
       detail={detail.data}
       expense={expense.data}
       members={members.data}
+      freshness={detail}
       refreshing={detail.isRefetching}
       onRefresh={() => {
         void detail.refetch();
@@ -109,6 +112,7 @@ function DisputeContent({
   detail,
   expense,
   members,
+  freshness,
   refreshing,
   onRefresh,
 }: {
@@ -116,6 +120,7 @@ function DisputeContent({
   detail: DisputeDetail;
   expense: ExpenseDetail;
   members: Member[];
+  freshness: Freshness;
   refreshing: boolean;
   onRefresh: () => void;
 }) {
@@ -140,7 +145,7 @@ function DisputeContent({
   const raiserShare = expense.splits.find((split) => split.userId === dispute.raisedBy);
 
   return (
-    <Screen padTop={false} refreshing={refreshing} onRefresh={onRefresh}>
+    <Screen freshness={freshness} padTop={false} refreshing={refreshing} onRefresh={onRefresh}>
       <Card>
         <Card.Body className="gap-2">
           <View className="flex-row">
@@ -338,7 +343,7 @@ function DisputeActions({
         />
         {permissions.canRespond ? (
           <View className="flex-row gap-2">
-            <Button
+            <OnlineButton
               className="flex-1"
               isDisabled={isBusy}
               onPress={() =>
@@ -351,8 +356,8 @@ function DisputeActions({
               }
             >
               Accept
-            </Button>
-            <Button
+            </OnlineButton>
+            <OnlineButton
               className="flex-1"
               variant="secondary"
               isDisabled={isBusy}
@@ -362,12 +367,12 @@ function DisputeActions({
               }}
             >
               Reject
-            </Button>
+            </OnlineButton>
           </View>
         ) : null}
         {permissions.canDecide ? (
           <View className="gap-2">
-            <Button
+            <OnlineButton
               isDisabled={isBusy}
               onPress={() => {
                 const text = requiredMessage();
@@ -375,8 +380,8 @@ function DisputeActions({
               }}
             >
               Adjust the split as proposed
-            </Button>
-            <Button
+            </OnlineButton>
+            <OnlineButton
               variant="secondary"
               isDisabled={isBusy}
               onPress={() => {
@@ -385,11 +390,11 @@ function DisputeActions({
               }}
             >
               Keep the expense as it is
-            </Button>
+            </OnlineButton>
           </View>
         ) : null}
         {permissions.canWithdraw ? (
-          <Button
+          <OnlineButton
             variant="ghost"
             isDisabled={isBusy}
             onPress={() =>
@@ -399,7 +404,7 @@ function DisputeActions({
             }
           >
             Withdraw dispute
-          </Button>
+          </OnlineButton>
         ) : null}
       </Card.Body>
     </Card>
@@ -424,12 +429,12 @@ function AddEvidence({ apartmentId, disputeId }: { apartmentId: string; disputeI
         message={addEvidence.error ? evidenceUploadErrorMessage(addEvidence.error) : null}
       />
       {image ? (
-        <Button
+        <OnlineButton
           isDisabled={addEvidence.isPending}
           onPress={() => addEvidence.mutate(image, { onSuccess: () => setImage(null) })}
         >
           {addEvidence.isPending ? 'Uploading…' : 'Add photo'}
-        </Button>
+        </OnlineButton>
       ) : null}
     </View>
   );

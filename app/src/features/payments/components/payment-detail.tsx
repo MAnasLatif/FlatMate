@@ -12,10 +12,12 @@ import {
 import { type ReactNode, useState } from 'react';
 import { Alert, View } from 'react-native';
 
+import type { Freshness } from '@/components/freshness-banner';
 import { FormAlert } from '@/components/form/form-alert';
+import { OnlineButton } from '@/components/online-button';
 import { PhotoPicker } from '@/components/photo-picker';
 import { PrivateImageThumbnail } from '@/components/private-image';
-import { LoadError, LoadingRows } from '@/components/query-states';
+import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { Apartment, Member } from '@/features/apartments/api';
 import { useApartment, useMembers } from '@/features/apartments/hooks';
@@ -50,7 +52,7 @@ export function PaymentDetailView({
       </Screen>
     );
   }
-  const loadError = detail.error ?? apartment.error ?? members.error;
+  const loadError = loadingError(detail, apartment, members);
   if (loadError || !apartment.data || !members.data) {
     return (
       <Screen padTop={false}>
@@ -81,6 +83,7 @@ export function PaymentDetailView({
       apartment={apartment.data}
       detail={detail.data}
       members={members.data}
+      freshness={detail}
       refreshing={detail.isRefetching}
       onRefresh={() => void detail.refetch()}
     />
@@ -91,12 +94,14 @@ function PaymentContent({
   apartment,
   detail,
   members,
+  freshness,
   refreshing,
   onRefresh,
 }: {
   apartment: Apartment;
   detail: PaymentDetail;
   members: Member[];
+  freshness: Freshness;
   refreshing: boolean;
   onRefresh: () => void;
 }) {
@@ -144,7 +149,7 @@ function PaymentContent({
     );
 
   return (
-    <Screen padTop={false} refreshing={refreshing} onRefresh={onRefresh}>
+    <Screen freshness={freshness} padTop={false} refreshing={refreshing} onRefresh={onRefresh}>
       <Card>
         <Card.Body className="gap-2">
           <Typography.Paragraph type="body-sm" color="muted">
@@ -202,24 +207,24 @@ function PaymentContent({
                     accessibilityLabel="Why you decline the payment"
                   />
                 </TextField>
-                <Button variant="danger-soft" onPress={decline} isDisabled={isBusy}>
+                <OnlineButton variant="danger-soft" onPress={decline} isDisabled={isBusy}>
                   Decline payment
-                </Button>
+                </OnlineButton>
               </>
             ) : null}
             {permissions.canWithdrawDecline && openObjection ? (
-              <Button
+              <OnlineButton
                 variant="secondary"
                 onPress={() => mutations.withdrawDecline.mutate(openObjection.id)}
                 isDisabled={isBusy}
               >
                 The money arrived: withdraw my objection
-              </Button>
+              </OnlineButton>
             ) : null}
             {permissions.canVoid ? (
-              <Button variant="ghost" onPress={confirmVoid} isDisabled={isBusy}>
+              <OnlineButton variant="ghost" onPress={confirmVoid} isDisabled={isBusy}>
                 Void this payment
-              </Button>
+              </OnlineButton>
             ) : null}
           </Card.Body>
         </Card>
@@ -268,7 +273,7 @@ function PaymentContent({
               }
             />
             {proof ? (
-              <Button
+              <OnlineButton
                 isDisabled={mutations.addProof.isPending}
                 onPress={() =>
                   mutations.addProof.mutate(
@@ -278,7 +283,7 @@ function PaymentContent({
                 }
               >
                 {mutations.addProof.isPending ? 'Uploading…' : 'Attach proof'}
-              </Button>
+              </OnlineButton>
             ) : null}
           </View>
         ) : null}

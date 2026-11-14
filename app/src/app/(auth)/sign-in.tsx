@@ -8,6 +8,7 @@ import type { z } from 'zod';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { TextInputField } from '@/components/form/text-input-field';
+import { OnlineButton } from '@/components/online-button';
 import { Screen } from '@/components/screen';
 import { signInWithEmail } from '@/features/auth/api';
 import { AuthHeader } from '@/features/auth/components/auth-header';
@@ -64,12 +65,12 @@ export default function SignInScreen() {
       </View>
 
       <View className="gap-3">
-        <Button
+        <OnlineButton
           onPress={() => void form.handleSubmit((values) => signIn.mutate(values))()}
           isDisabled={signIn.isPending}
         >
           {signIn.isPending ? 'Signing in…' : 'Sign in'}
-        </Button>
+        </OnlineButton>
         <Button variant="ghost" onPress={() => router.push('/forgot-password')}>
           Forgot your password?
         </Button>

@@ -1,8 +1,8 @@
 import { useMutation } from '@tanstack/react-query';
-import { Button } from 'heroui-native';
 import { View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
+import { OnlineButton } from '@/components/online-button';
 import { getEnv } from '@/lib/env';
 
 import { signInWithGoogle } from '../api';
@@ -19,9 +19,13 @@ export function GoogleSignInButton() {
   return (
     <View className="gap-3">
       <FormAlert message={signIn.error ? authErrorMessage(signIn.error) : null} />
-      <Button variant="secondary" onPress={() => signIn.mutate()} isDisabled={signIn.isPending}>
+      <OnlineButton
+        variant="secondary"
+        onPress={() => signIn.mutate()}
+        isDisabled={signIn.isPending}
+      >
         {signIn.isPending ? 'Opening Google…' : 'Continue with Google'}
-      </Button>
+      </OnlineButton>
     </View>
   );
 }

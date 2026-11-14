@@ -3,6 +3,7 @@ import { Button, Card, Chip, Separator, Typography } from 'heroui-native';
 import { Alert, View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
+import { OnlineButton } from '@/components/online-button';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { userErrorMessage } from '@/lib/errors';
 
@@ -43,7 +44,7 @@ export function MyAccountsSection() {
         <FormAlert message={error ? userErrorMessage(error, 'Could not save that.') : null} />
         {accounts.isPending ? (
           <LoadingRows count={1} />
-        ) : accounts.isError ? (
+        ) : accounts.isLoadingError ? (
           <LoadError
             message={userErrorMessage(accounts.error, 'Could not load your accounts.')}
             onRetry={() => void accounts.refetch()}
@@ -75,23 +76,23 @@ export function MyAccountsSection() {
                   Edit
                 </Button>
                 {account.isPreferred ? null : (
-                  <Button
+                  <OnlineButton
                     size="sm"
                     variant="ghost"
                     isDisabled={mutations.prefer.isPending}
                     onPress={() => mutations.prefer.mutate(account.id)}
                   >
                     Make preferred
-                  </Button>
+                  </OnlineButton>
                 )}
-                <Button
+                <OnlineButton
                   size="sm"
                   variant="ghost"
                   isDisabled={mutations.remove.isPending}
                   onPress={() => confirmDelete(account)}
                 >
                   Delete
-                </Button>
+                </OnlineButton>
               </View>
             </View>
           ))

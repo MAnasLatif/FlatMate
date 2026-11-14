@@ -1,17 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { Skeleton } from 'heroui-native';
 import { useState } from 'react';
 import { Pressable } from 'react-native';
 
 import { userErrorMessage } from '@/lib/errors';
+import { useIsOnline } from '@/lib/network';
 import {
   createSignedImageUrl,
   type PrivateImageBucket,
   SIGNED_URL_STALE_TIME_MS,
 } from '@/lib/private-images';
 
-import { LoadError } from './query-states';
+import { LoadError, PendingSkeleton } from './query-states';
 
 /** A temporary link to a private photo, refreshed before it expires. */
 function useSignedImageUrl(bucket: PrivateImageBucket, path: string) {
@@ -45,7 +45,11 @@ export function PrivateImageThumbnail({
       {url.data ? (
         <Image source={{ uri: url.data }} style={{ flex: 1 }} contentFit="cover" />
       ) : url.isPending ? (
-        <Skeleton className="flex-1" />
+        <PendingSkeleton
+          className="flex-1"
+          accessibilityLabel="Loading photo"
+          offlineText="Offline"
+        />
       ) : null}
     </Pressable>
   );
@@ -55,9 +59,17 @@ export function PrivateImageThumbnail({
 export function PrivateImageView({ bucket, path }: { bucket: PrivateImageBucket; path: string }) {
   const url = useSignedImageUrl(bucket, path);
   const [imageFailed, setImageFailed] = useState(false);
+  const isOnline = useIsOnline();
 
-  if (url.isPending) {
-    return <Skeleton className="flex-1 rounded-xl" accessibilityLabel="Loading photo" />;
+  // Signed links are never saved, so offline a photo cannot be fetched.
+  if (url.isPending || (!isOnline && (url.error || imageFailed))) {
+    return (
+      <PendingSkeleton
+        className="flex-1 rounded-xl"
+        accessibilityLabel="Loading photo"
+        offlineText="Available when online"
+      />
+    );
   }
   if (url.error || imageFailed) {
     return (

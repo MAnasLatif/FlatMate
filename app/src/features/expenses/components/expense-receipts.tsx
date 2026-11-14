@@ -1,9 +1,9 @@
 import { router } from 'expo-router';
-import { Skeleton, Typography } from 'heroui-native';
+import { Typography } from 'heroui-native';
 import { View } from 'react-native';
 
 import { PrivateImageThumbnail } from '@/components/private-image';
-import { LoadError } from '@/components/query-states';
+import { LoadError, PendingSkeleton } from '@/components/query-states';
 import { userErrorMessage } from '@/lib/errors';
 
 import { useAttachments } from '../hooks';
@@ -19,9 +19,9 @@ export function ExpenseReceipts({
   const attachments = useAttachments(apartmentId, expenseId);
 
   if (attachments.isPending) {
-    return <Skeleton className="size-24 rounded-xl" accessibilityLabel="Loading receipts" />;
+    return <PendingSkeleton className="size-24 rounded-xl" accessibilityLabel="Loading receipts" />;
   }
-  if (attachments.error) {
+  if (attachments.isLoadingError) {
     return (
       <LoadError
         message={userErrorMessage(attachments.error, 'Could not load the receipts.')}

@@ -14,7 +14,8 @@ import { View } from 'react-native';
 
 import { ChoiceChips } from '@/components/choice-chips';
 import { FormAlert } from '@/components/form/form-alert';
-import { LoadError, LoadingRows } from '@/components/query-states';
+import { OnlineButton } from '@/components/online-button';
+import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { Member } from '@/features/apartments/api';
 import { useMembers } from '@/features/apartments/hooks';
@@ -53,7 +54,7 @@ export function RaiseDispute({
       </Screen>
     );
   }
-  const loadError = expense.error ?? members.error ?? disputes.error;
+  const loadError = loadingError(expense, members, disputes);
   if (loadError || !members.data || !disputes.data) {
     return (
       <Screen padTop={false}>
@@ -232,9 +233,9 @@ function RaiseDisputeForm({
               : null
         }
       />
-      <Button onPress={save} isDisabled={raise.isPending}>
+      <OnlineButton onPress={save} isDisabled={raise.isPending}>
         {raise.isPending ? 'Sending…' : 'Raise dispute'}
-      </Button>
+      </OnlineButton>
     </Screen>
   );
 }

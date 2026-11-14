@@ -4,7 +4,8 @@ import type { ReactNode } from 'react';
 import { Alert, View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
-import { LoadError, LoadingRows } from '@/components/query-states';
+import { OnlineButton } from '@/components/online-button';
+import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { Member } from '@/features/apartments/api';
 import { useApartment, useMembers } from '@/features/apartments/hooks';
@@ -55,7 +56,7 @@ export function ExpenseDetailView({
       </Screen>
     );
   }
-  const loadError = detail.error ?? members.error ?? apartment.error;
+  const loadError = loadingError(detail, members, apartment);
   if (loadError || !members.data || !apartment.data) {
     return (
       <Screen padTop={false}>
@@ -110,6 +111,7 @@ export function ExpenseDetailView({
 
   return (
     <Screen
+      freshness={detail}
       padTop={false}
       refreshing={detail.isRefetching}
       onRefresh={() => {
@@ -188,14 +190,14 @@ export function ExpenseDetailView({
             >
               Edit
             </Button>
-            <Button
+            <OnlineButton
               variant="danger-soft"
               className="flex-1"
               onPress={confirmVoid}
               isDisabled={voidMutation.isPending}
             >
               {voidMutation.isPending ? 'Voiding…' : 'Void'}
-            </Button>
+            </OnlineButton>
           </View>
         </View>
       ) : null}

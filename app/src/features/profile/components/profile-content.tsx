@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { TextInputField } from '@/components/form/text-input-field';
+import { OnlineButton } from '@/components/online-button';
 import { Screen } from '@/components/screen';
 import { MyAccountsSection } from '@/features/accounts/components/my-accounts';
 import { signOut, updatePassword } from '@/features/auth/api';
@@ -28,6 +29,8 @@ import {
   useUploadAvatar,
 } from '@/features/profile/hooks';
 import { userErrorMessage } from '@/lib/errors';
+import { useIsOnline } from '@/lib/network';
+import { LoadingRows } from '@/components/query-states';
 
 const nameFormSchema = z.object({ displayName: displayNameSchema });
 
@@ -35,7 +38,15 @@ export function ProfileContent() {
   const userId = useCurrentUserId();
   const { session } = useSession();
   const profile = useProfile(userId);
+  const isOnline = useIsOnline();
 
+  if (profile.isPending && !isOnline) {
+    return (
+      <Screen padTop={false}>
+        <LoadingRows count={1} />
+      </Screen>
+    );
+  }
   if (profile.isPending) {
     return (
       <Screen padTop={false}>
@@ -48,7 +59,7 @@ export function ProfileContent() {
     );
   }
 
-  if (profile.isError) {
+  if (profile.isLoadingError) {
     return (
       <Screen padTop={false}>
         <FormAlert message={userErrorMessage(profile.error, 'Could not load your profile.')} />
@@ -58,7 +69,7 @@ export function ProfileContent() {
   }
 
   return (
-    <Screen padTop={false}>
+    <Screen freshness={profile} padTop={false}>
       <PhotoSection
         userId={userId}
         name={profile.data.display_name}
@@ -123,23 +134,23 @@ function PhotoSection({
       <ProfileAvatar name={name} avatarPath={avatarPath} size="lg" />
       <FormAlert message={error} />
       <View className="flex-row gap-2">
-        <Button
+        <OnlineButton
           size="sm"
           variant="secondary"
           onPress={() => void pickPhoto()}
           isDisabled={upload.isPending || remove.isPending}
         >
           {upload.isPending ? 'Uploading…' : avatarPath ? 'Change photo' : 'Add photo'}
-        </Button>
+        </OnlineButton>
         {avatarPath ? (
-          <Button
+          <OnlineButton
             size="sm"
             variant="ghost"
             onPress={confirmRemove}
             isDisabled={upload.isPending || remove.isPending}
           >
             Remove
-          </Button>
+          </OnlineButton>
         ) : null}
       </View>
     </View>
@@ -176,12 +187,12 @@ function NameSection({ userId, currentName }: { userId: string; currentName: str
           autoComplete="name"
           textContentType="name"
         />
-        <Button
+        <OnlineButton
           onPress={() => void form.handleSubmit((values) => update.mutate(values.displayName))()}
           isDisabled={update.isPending || !form.formState.isDirty}
         >
           {update.isPending ? 'Saving…' : 'Save name'}
-        </Button>
+        </OnlineButton>
       </Card.Body>
     </Card>
   );
@@ -221,13 +232,13 @@ function PasswordSection() {
           textContentType="newPassword"
           onFocus={() => setSaved(false)}
         />
-        <Button
+        <OnlineButton
           variant="secondary"
           onPress={() => void form.handleSubmit((values) => change.mutate(values.password))()}
           isDisabled={change.isPending}
         >
           {change.isPending ? 'Saving…' : 'Change password'}
-        </Button>
+        </OnlineButton>
       </Card.Body>
     </Card>
   );
@@ -238,13 +249,13 @@ function SignOutSection() {
   return (
     <View className="gap-3">
       <FormAlert message={signOutMutation.error ? authErrorMessage(signOutMutation.error) : null} />
-      <Button
+      <OnlineButton
         variant="danger-soft"
         onPress={() => signOutMutation.mutate()}
         isDisabled={signOutMutation.isPending}
       >
         Sign out
-      </Button>
+      </OnlineButton>
     </View>
   );
 }

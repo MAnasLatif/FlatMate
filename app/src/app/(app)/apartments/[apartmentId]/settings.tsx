@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { Alert, Share, View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
+import { OnlineButton } from '@/components/online-button';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { Apartment, Category } from '@/features/apartments/api';
@@ -43,7 +44,7 @@ export default function ApartmentSettingsScreen() {
       </Screen>
     );
   }
-  if (apartment.isError) {
+  if (apartment.isLoadingError) {
     return (
       <Screen padTop={false}>
         <LoadError
@@ -65,7 +66,7 @@ export default function ApartmentSettingsScreen() {
   }
 
   return (
-    <Screen padTop={false}>
+    <Screen freshness={apartment} padTop={false}>
       <DetailsSection apartment={apartment.data} />
       <InvitesSection apartmentId={apartmentId} apartmentName={apartment.data.name} />
       <CategoriesSection apartmentId={apartmentId} />
@@ -111,12 +112,12 @@ function DetailsSection({ apartment }: { apartment: Apartment }) {
         <Typography.Paragraph type="body-xs" color="muted">
           A new settlement day applies from the next settlement period.
         </Typography.Paragraph>
-        <Button
+        <OnlineButton
           onPress={() => void form.handleSubmit((values) => update.mutate(values))()}
           isDisabled={update.isPending || !form.formState.isDirty}
         >
           {update.isPending ? 'Saving…' : 'Save settings'}
-        </Button>
+        </OnlineButton>
       </Card.Body>
     </Card>
   );
@@ -186,7 +187,7 @@ function InvitesSection({
           </View>
         ) : null}
 
-        <Button
+        <OnlineButton
           variant={newCode ? 'secondary' : 'primary'}
           onPress={() =>
             create.mutate(INVITE_VALID_DAYS, {
@@ -199,7 +200,7 @@ function InvitesSection({
           isDisabled={create.isPending}
         >
           {create.isPending ? 'Creating…' : 'Create a join code'}
-        </Button>
+        </OnlineButton>
 
         {invites.data && invites.data.length > 0 ? (
           <View className="gap-2">
@@ -212,14 +213,14 @@ function InvitesSection({
                 <Typography.Paragraph type="body-sm">
                   Created {formatDate(invite.created_at)}, expires {formatDate(invite.expires_at)}
                 </Typography.Paragraph>
-                <Button
+                <OnlineButton
                   size="sm"
                   variant="ghost"
                   onPress={() => confirmRevoke(invite.id)}
                   isDisabled={revoke.isPending}
                 >
                   Revoke
-                </Button>
+                </OnlineButton>
               </View>
             ))}
           </View>
@@ -262,7 +263,7 @@ function CategoriesSection({ apartmentId }: { apartmentId: string }) {
               : null
           }
         />
-        {categories.isError ? (
+        {categories.isLoadingError ? (
           <LoadError
             message={userErrorMessage(categories.error, 'Could not load the categories.')}
             onRetry={() => void categories.refetch()}
@@ -297,9 +298,9 @@ function CategoriesSection({ apartmentId }: { apartmentId: string }) {
             </Typography.Paragraph>
           ) : null}
         </TextField>
-        <Button variant="secondary" onPress={submitNew} isDisabled={add.isPending}>
+        <OnlineButton variant="secondary" onPress={submitNew} isDisabled={add.isPending}>
           {add.isPending ? 'Adding…' : 'Add category'}
-        </Button>
+        </OnlineButton>
       </Card.Body>
     </Card>
   );
@@ -349,9 +350,9 @@ function CategoryRow({ category, onRename, onArchive, isBusy }: CategoryRowProps
             />
           </TextField>
         </View>
-        <Button size="sm" onPress={save}>
+        <OnlineButton size="sm" onPress={save}>
           Save
-        </Button>
+        </OnlineButton>
       </View>
     );
   }
@@ -362,9 +363,9 @@ function CategoryRow({ category, onRename, onArchive, isBusy }: CategoryRowProps
       <Button size="sm" variant="ghost" onPress={() => setEditing(true)} isDisabled={isBusy}>
         Rename
       </Button>
-      <Button size="sm" variant="ghost" onPress={confirmArchive} isDisabled={isBusy}>
+      <OnlineButton size="sm" variant="ghost" onPress={confirmArchive} isDisabled={isBusy}>
         Archive
-      </Button>
+      </OnlineButton>
     </View>
   );
 }

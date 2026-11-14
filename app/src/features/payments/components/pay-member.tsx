@@ -14,8 +14,9 @@ import { View } from 'react-native';
 
 import { ChoiceChips } from '@/components/choice-chips';
 import { FormAlert } from '@/components/form/form-alert';
+import { OnlineButton } from '@/components/online-button';
 import { PhotoPicker } from '@/components/photo-picker';
-import { LoadError, LoadingRows } from '@/components/query-states';
+import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import { SharedAccounts } from '@/features/accounts/components/shared-accounts';
 import type { Apartment } from '@/features/apartments/api';
@@ -59,7 +60,7 @@ export function PayMember({
       </Screen>
     );
   }
-  const loadError = apartment.error ?? members.error ?? balances.error;
+  const loadError = loadingError(apartment, members, balances);
   if (loadError || !apartment.data || !members.data || !balances.data) {
     return (
       <Screen padTop={false}>
@@ -322,7 +323,7 @@ function PayForm({
           Continue without proof
         </Button>
       ) : null}
-      <Button onPress={() => void save()} isDisabled={isSaving}>
+      <OnlineButton onPress={() => void save()} isDisabled={isSaving}>
         {isSaving
           ? 'Saving…'
           : plan && plan.payMinor === 0
@@ -330,7 +331,7 @@ function PayForm({
             : paymentId
               ? 'Attach proof again'
               : 'Record payment'}
-      </Button>
+      </OnlineButton>
     </Screen>
   );
 }

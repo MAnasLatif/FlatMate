@@ -14,7 +14,8 @@ import { View } from 'react-native';
 
 import { ChoiceChips } from '@/components/choice-chips';
 import { FormAlert } from '@/components/form/form-alert';
-import { LoadError, LoadingRows } from '@/components/query-states';
+import { OnlineButton } from '@/components/online-button';
+import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { MyApartment } from '@/features/apartments/api';
 import { useMyApartments } from '@/features/apartments/hooks';
@@ -36,7 +37,7 @@ export function EditAccount({ accountId }: { accountId: string | null }) {
       </Screen>
     );
   }
-  const loadError = accounts.error ?? apartments.error;
+  const loadError = loadingError(accounts, apartments);
   if (loadError || !accounts.data || !apartments.data) {
     return (
       <Screen padTop={false}>
@@ -199,9 +200,9 @@ function AccountForm({
           error ? userErrorMessage(error, 'Could not save the account. Please try again.') : null
         }
       />
-      <Button onPress={() => void save()} isDisabled={isSaving}>
+      <OnlineButton onPress={() => void save()} isDisabled={isSaving}>
         {isSaving ? 'Saving…' : 'Save account'}
-      </Button>
+      </OnlineButton>
     </Screen>
   );
 }

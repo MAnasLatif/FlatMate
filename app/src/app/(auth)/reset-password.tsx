@@ -8,6 +8,7 @@ import type { z } from 'zod';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { TextInputField } from '@/components/form/text-input-field';
+import { OnlineButton } from '@/components/online-button';
 import { Screen } from '@/components/screen';
 import { updatePassword, verifyPasswordResetCode } from '@/features/auth/api';
 import { AuthHeader } from '@/features/auth/components/auth-header';
@@ -93,12 +94,12 @@ export default function ResetPasswordScreen() {
         textContentType="newPassword"
       />
 
-      <Button
+      <OnlineButton
         onPress={() => void form.handleSubmit((values) => reset.mutate(values))()}
         isDisabled={reset.isPending}
       >
         {reset.isPending ? 'Saving…' : 'Save new password'}
-      </Button>
+      </OnlineButton>
 
       <Button variant="ghost" onPress={() => router.replace('/forgot-password')}>
         Send a new code

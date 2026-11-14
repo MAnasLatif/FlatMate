@@ -3,7 +3,8 @@ import { Button, Card, Separator, Typography } from 'heroui-native';
 import { Alert, View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
-import { LoadError, LoadingRows } from '@/components/query-states';
+import { OnlineButton } from '@/components/online-button';
+import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import { APARTMENT_ERROR_MESSAGES } from '@/features/apartments/errors';
 import { useApartment, useLeaveApartment } from '@/features/apartments/hooks';
@@ -30,7 +31,7 @@ export function LeaveApartment({ apartmentId }: { apartmentId: string }) {
       </Screen>
     );
   }
-  const loadError = apartment.error ?? preview.error;
+  const loadError = loadingError(apartment, preview);
   if (loadError || !apartment.data || !preview.data) {
     return (
       <Screen padTop={false}>
@@ -59,7 +60,7 @@ export function LeaveApartment({ apartmentId }: { apartmentId: string }) {
     ]);
 
   return (
-    <Screen padTop={false}>
+    <Screen freshness={preview} padTop={false}>
       <Typography.Paragraph type="body-sm" color="muted">
         Leaving keeps every record. What you owe and are owed stays as it is, and you can still pay
         it later from Past apartments on the home screen.
@@ -121,9 +122,9 @@ export function LeaveApartment({ apartmentId }: { apartmentId: string }) {
             : null
         }
       />
-      <Button variant="danger-soft" onPress={confirm} isDisabled={leave.isPending}>
+      <OnlineButton variant="danger-soft" onPress={confirm} isDisabled={leave.isPending}>
         {leave.isPending ? 'Leaving…' : 'Leave apartment'}
-      </Button>
+      </OnlineButton>
     </Screen>
   );
 }

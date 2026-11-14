@@ -8,6 +8,7 @@ import type { z } from 'zod';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { TextInputField } from '@/components/form/text-input-field';
+import { OnlineButton } from '@/components/online-button';
 import { Screen } from '@/components/screen';
 import { signUpWithEmail } from '@/features/auth/api';
 import { AuthHeader } from '@/features/auth/components/auth-header';
@@ -73,12 +74,12 @@ export default function SignUpScreen() {
         />
       </View>
 
-      <Button
+      <OnlineButton
         onPress={() => void form.handleSubmit((values) => signUp.mutate(values))()}
         isDisabled={signUp.isPending}
       >
         {signUp.isPending ? 'Creating account…' : 'Create account'}
-      </Button>
+      </OnlineButton>
 
       <GoogleSignInButton />
 

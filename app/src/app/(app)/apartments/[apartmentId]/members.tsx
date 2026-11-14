@@ -29,6 +29,7 @@ import type { PairBalance } from '@/features/expenses/api';
 import { PairBalanceLine } from '@/features/expenses/components/pair-balance-line';
 import { usePairBalances } from '@/features/expenses/hooks';
 import { ProfileAvatar } from '@/features/profile/components/profile-avatar';
+import { useIsOnline } from '@/lib/network';
 import { userErrorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/time';
 
@@ -51,7 +52,7 @@ export default function MembersScreen() {
       </Screen>
     );
   }
-  if (members.isError) {
+  if (members.isLoadingError) {
     return (
       <Screen padTop={false}>
         <LoadError
@@ -83,6 +84,7 @@ export default function MembersScreen() {
 
   return (
     <Screen
+      freshness={members}
       padTop={false}
       refreshing={members.isRefetching}
       onRefresh={() => {
@@ -100,7 +102,7 @@ export default function MembersScreen() {
       <FormAlert
         status="warning"
         message={
-          balances.isError
+          balances.isLoadingError
             ? 'Could not load balances. Pull down to try again; the members are still shown.'
             : null
         }
@@ -215,6 +217,7 @@ function MemberRow({
   const name = nameOf(member);
   const isBusy =
     actions.setRole.isPending || actions.setCanAddExpense.isPending || actions.remove.isPending;
+  const isOnline = useIsOnline();
 
   const confirmRemove = () => {
     Alert.alert(
@@ -263,7 +266,7 @@ function MemberRow({
             <Menu.Trigger
               accessibilityRole="button"
               accessibilityLabel={`Actions for ${name}`}
-              isDisabled={isBusy}
+              isDisabled={isBusy || !isOnline}
             >
               <Ionicons name="ellipsis-horizontal" size={22} color={iconColor} />
             </Menu.Trigger>

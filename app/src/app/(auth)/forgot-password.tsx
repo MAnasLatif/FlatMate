@@ -7,6 +7,7 @@ import type { z } from 'zod';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { TextInputField } from '@/components/form/text-input-field';
+import { OnlineButton } from '@/components/online-button';
 import { Screen } from '@/components/screen';
 import { requestPasswordReset } from '@/features/auth/api';
 import { AuthHeader } from '@/features/auth/components/auth-header';
@@ -48,12 +49,12 @@ export default function ForgotPasswordScreen() {
         textContentType="emailAddress"
       />
 
-      <Button
+      <OnlineButton
         onPress={() => void form.handleSubmit((values) => request.mutate(values))()}
         isDisabled={request.isPending}
       >
         {request.isPending ? 'Sending…' : 'Send code'}
-      </Button>
+      </OnlineButton>
 
       <Button variant="ghost" onPress={() => router.back()}>
         Back to sign in

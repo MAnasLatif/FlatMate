@@ -19,7 +19,11 @@ export default function MyApartmentsScreen() {
   const apartments = useMyApartments();
 
   return (
-    <Screen refreshing={apartments.isRefetching} onRefresh={() => void apartments.refetch()}>
+    <Screen
+      freshness={apartments}
+      refreshing={apartments.isRefetching}
+      onRefresh={() => void apartments.refetch()}
+    >
       <View className="flex-row items-center justify-between">
         <Typography.Heading type="h2" accessibilityRole="header">
           Your apartments
@@ -39,7 +43,7 @@ export default function MyApartmentsScreen() {
 
       {apartments.isPending ? (
         <LoadingRows />
-      ) : apartments.isError ? (
+      ) : apartments.isLoadingError ? (
         <LoadError
           message={userErrorMessage(apartments.error, 'Could not load your apartments.')}
           onRetry={() => void apartments.refetch()}
