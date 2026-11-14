@@ -56,7 +56,17 @@ export default function VerifyEmailScreen() {
   return (
     <Screen>
       <View className="flex-1 gap-8">
-        <AuthHeader title="Check your email" subtitle={`We sent a 6-digit code to ${email}.`} />
+        <View>
+          <AuthHeader title="Check your email" subtitle={`We sent a 6-digit code to ${email}.`} />
+          {/* An unconfirmed account cannot change its email, so this goes back
+              to the form it came from (sign-up keeps what was typed) to send a
+              code to the right address. */}
+          <AuthFooterLink
+            prompt="Wrong email?"
+            action="Change it"
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/sign-up'))}
+          />
+        </View>
 
         <FormAlert message={error ? authErrorMessage(error) : null} />
         <FormAlert

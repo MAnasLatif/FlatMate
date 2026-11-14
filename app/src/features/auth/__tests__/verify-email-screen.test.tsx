@@ -11,7 +11,13 @@ jest.mock('@/features/auth/api', () => ({
   resendConfirmationCode: jest.fn(async () => undefined),
 }));
 jest.mock('expo-router', () => ({
-  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), dismissTo: jest.fn() },
+  router: {
+    push: jest.fn(),
+    back: jest.fn(),
+    replace: jest.fn(),
+    dismissTo: jest.fn(),
+    canGoBack: jest.fn(() => true),
+  },
   useLocalSearchParams: jest.fn(),
 }));
 
@@ -43,5 +49,20 @@ describe('VerifyEmailScreen', () => {
     await renderWithProviders(<VerifyEmailScreen />);
     await userEvent.setup().press(screen.getByRole('button', { name: 'Go back to login' }));
     expect(router.dismissTo).toHaveBeenCalledWith('/sign-in');
+  });
+
+  it('goes back to the form it came from to change a wrong email', async () => {
+    jest.mocked(useLocalSearchParams).mockReturnValue({ email, codeSent: '1' });
+    await renderWithProviders(<VerifyEmailScreen />);
+    await userEvent.setup().press(screen.getByRole('button', { name: 'Change it' }));
+    expect(router.back).toHaveBeenCalled();
+  });
+
+  it('opens sign-up to change the email when there is nothing to go back to', async () => {
+    jest.mocked(useLocalSearchParams).mockReturnValue({ email, codeSent: '1' });
+    jest.mocked(router.canGoBack).mockReturnValueOnce(false);
+    await renderWithProviders(<VerifyEmailScreen />);
+    await userEvent.setup().press(screen.getByRole('button', { name: 'Change it' }));
+    expect(router.replace).toHaveBeenCalledWith('/sign-up');
   });
 });
