@@ -109,21 +109,21 @@ Migrations reach a hosted project only through `db push` from the committed file
 
 ### Auth settings
 
-`config.toml` holds the auth settings for the local stack: email confirmation on, passwords of at least 8 characters, 6-digit email codes, the email templates in `templates/`, and `flatmate://auth/callback` as an allowed redirect. A hosted project needs the same settings, or sign-up confirmation emails will contain a link instead of the code the app asks for.
+`config.toml` holds the auth settings for the local stack: email confirmation on, passwords of at least 8 characters, 6-digit email codes, the email templates in `templates/`, and `flatmate://auth/callback` as an allowed redirect. Changing email needs a code from both the old and the new address (secure email change, on by default in hosted projects); the email-change template is sent to each with its own code. A hosted project needs the same settings, or sign-up confirmation emails will contain a link instead of the code the app asks for.
 
 **Connect an email provider first.** Supabase's built-in sender only sends its default link emails, and the API refuses custom templates until custom SMTP is set up. The project uses [Resend](https://resend.com) with a verified sending domain:
 
 1. In Resend, create an API key with **Sending access**, limited to the domain.
 2. In the Supabase dashboard, under **Authentication → Emails → SMTP Settings**, enable custom SMTP with host `smtp.resend.com`, port `465`, username `resend`, the API key as the password, a sender such as `no-reply@<your domain>`, sender name `FlatMate`, and a minimum interval of 60 seconds (the app's resend countdown). Enter the key there yourself. It never goes in the repository or through an agent.
 
-**Then push only the auth settings.** Do not run `config push --remote` from this folder: `config.toml` also holds values meant only for the local stack (such as a one-second email interval and `site_url` on 127.0.0.1). Instead, copy `templates/` and `.temp/project-ref` into a temporary folder's `supabase/`, give it a `config.toml` that declares only `project_id`, `[auth] additional_redirect_urls` and `minimum_password_length`, `[auth.email] otp_length`, and the two `[auth.email.template.*]` sections, then from that folder:
+**Then push only the auth settings.** Do not run `config push --remote` from this folder: `config.toml` also holds values meant only for the local stack (such as a one-second email interval and `site_url` on 127.0.0.1). Instead, copy `templates/` and `.temp/project-ref` into a temporary folder's `supabase/`, give it a `config.toml` that declares only `project_id`, `[auth] additional_redirect_urls` and `minimum_password_length`, `[auth.email] otp_length`, and the three `[auth.email.template.*]` sections (confirmation, recovery, email change), then from that folder:
 
 ```sh
 npx supabase@3.1.0 config diff --remote   # check that only the intended properties change
 npx supabase@3.1.0 config push --remote
 ```
 
-Properties the file does not declare, including the SMTP settings, are left as they are. Alternatively, set the same values in the dashboard: OTP length 6, `templates/confirmation.html` and `templates/recovery.html` as the "Confirm signup" and "Reset password" templates, and `flatmate://auth/callback` in the redirect URLs.
+Properties the file does not declare, including the SMTP settings, are left as they are. Alternatively, set the same values in the dashboard: OTP length 6, `templates/confirmation.html`, `templates/recovery.html` and `templates/email_change.html` as the "Confirm signup", "Reset password" and "Change email address" templates, and `flatmate://auth/callback` in the redirect URLs.
 
 Google sign-in additionally needs a Google OAuth client. Enable the Google provider in the project with its client ID and secret, then set `EXPO_PUBLIC_AUTH_GOOGLE_ENABLED=true` in `app/.env` to show the button. Locally, put the two values in `supabase/.env` as `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` and set `enabled = true` under `[auth.external.google]`.
 
