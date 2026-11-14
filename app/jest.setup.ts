@@ -1,5 +1,24 @@
 import 'react-native-gesture-handler/jestSetup';
 
+// expo-sqlite is a native module, and it imports expo-asset from inside the
+// expo package, where Metro finds it and Jest does not. Its key-value store is
+// replaced by an in-memory one; tests of the saved cache pass their own store.
+jest.mock('expo-sqlite/kv-store', () => {
+  const items = new Map<string, string>();
+  return {
+    __esModule: true,
+    default: {
+      getItem: async (key: string) => items.get(key) ?? null,
+      setItem: async (key: string, value: string) => {
+        items.set(key, value);
+      },
+      removeItem: async (key: string) => {
+        items.delete(key);
+      },
+    },
+  };
+});
+
 // NetInfo is a native module. Its own mock reports a connected device.
 jest.mock('@react-native-community/netinfo', () =>
   jest.requireActual('@react-native-community/netinfo/jest/netinfo-mock.js'),
