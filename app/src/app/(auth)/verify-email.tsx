@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Button } from 'heroui-native';
+import { Button, Typography } from 'heroui-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -73,23 +73,36 @@ export default function VerifyEmailScreen() {
           error={codeError}
         />
 
-        <OnlineButton onPress={submit} isDisabled={verify.isPending}>
-          {verify.isPending ? 'Checking…' : 'Confirm email'}
-        </OnlineButton>
-      </View>
+        <View className="gap-3">
+          <OnlineButton onPress={submit} isDisabled={verify.isPending}>
+            {verify.isPending ? 'Checking…' : 'Confirm email'}
+          </OnlineButton>
 
-      <AuthFooterLink
-        prompt="No email? Check spam, or"
-        action={
-          countdown.remaining > 0
-            ? `resend in ${formatCountdown(countdown.remaining)}`
-            : resend.isPending
-              ? 'sending…'
-              : 'send a new code'
-        }
-        onPress={() => resend.mutate(email)}
-        isDisabled={resend.isPending || countdown.remaining > 0}
-      />
+          <View className="items-center">
+            <AuthFooterLink
+              prompt="Didn't get the code?"
+              action={
+                countdown.remaining > 0
+                  ? `Resend in ${formatCountdown(countdown.remaining)}`
+                  : resend.isPending
+                    ? 'Sending…'
+                    : 'Resend'
+              }
+              onPress={() => resend.mutate(email)}
+              isDisabled={resend.isPending || countdown.remaining > 0}
+            />
+            <Typography.Paragraph type="body-xs" color="muted" className="text-center">
+              Check your spam folder too.
+            </Typography.Paragraph>
+          </View>
+
+          {/* Skipping does not confirm the account: signing in later brings the
+              person back here for a code, since the project requires it. */}
+          <Button variant="ghost" onPress={() => router.dismissTo('/sign-in')}>
+            Skip for now
+          </Button>
+        </View>
+      </View>
     </Screen>
   );
 }
