@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { Button, Card, Chip, PressableFeedback, useThemeColor } from 'heroui-native';
+import { Button, Card, PressableFeedback, useThemeColor } from 'heroui-native';
 import { View } from 'react-native';
 
 import { LoadError, LoadingRows } from '@/components/query-states';
@@ -91,12 +91,24 @@ function ApartmentCard({ item }: { item: MyApartment }) {
               <Card.Description>{apartment.location}</Card.Description>
             ) : null}
           </View>
+          {/* Settings live here, beside the apartment, for its admins only;
+              the gear is how an admin's apartment stands out. */}
           {item.role === 'admin' ? (
-            <Chip size="sm" variant="secondary">
-              Admin
-            </Chip>
+            <Button
+              isIconOnly
+              size="sm"
+              variant="ghost"
+              onPress={() =>
+                router.push({
+                  pathname: '/apartments/[apartmentId]/settings',
+                  params: { apartmentId: apartment.id },
+                })
+              }
+              accessibilityLabel={`Settings for ${apartment.name}`}
+            >
+              <Ionicons name="settings-outline" size={20} color={mutedColor} />
+            </Button>
           ) : null}
-          <Ionicons name="chevron-forward" size={18} color={mutedColor} />
         </Card.Body>
       </Card>
     </PressableFeedback>
