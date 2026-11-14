@@ -22,7 +22,7 @@ export function ApartmentSwitcher({ apartmentId }: { apartmentId: string }) {
       accessibilityLabel={`${name}. Switch apartment`}
       className="flex-row items-center gap-2"
     >
-      <AppLogo size={36} />
+      <AppLogo size={44} />
       <View>
         <Typography.Heading type="h5" numberOfLines={1}>
           FlatMate
