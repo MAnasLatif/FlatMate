@@ -109,13 +109,21 @@ Migrations reach a hosted project only through `db push` from the committed file
 
 ### Auth settings
 
-`config.toml` holds the auth settings for the local stack: email confirmation on, passwords of at least 8 characters, 6-digit email codes, the email templates in `templates/`, and `flatmate://auth/callback` as an allowed redirect. A hosted project needs the same settings, or sign-up confirmation emails will contain a link the app cannot use. Either push them, after checking the diff:
+`config.toml` holds the auth settings for the local stack: email confirmation on, passwords of at least 8 characters, 6-digit email codes, the email templates in `templates/`, and `flatmate://auth/callback` as an allowed redirect. A hosted project needs the same settings, or sign-up confirmation emails will contain a link instead of the code the app asks for.
+
+**Connect an email provider first.** Supabase's built-in sender only sends its default link emails, and the API refuses custom templates until custom SMTP is set up. The project uses [Resend](https://resend.com) with a verified sending domain:
+
+1. In Resend, create an API key with **Sending access**, limited to the domain.
+2. In the Supabase dashboard, under **Authentication → Emails → SMTP Settings**, enable custom SMTP with host `smtp.resend.com`, port `465`, username `resend`, the API key as the password, a sender such as `no-reply@<your domain>`, sender name `FlatMate`, and a minimum interval of 60 seconds (the app's resend countdown). Enter the key there yourself. It never goes in the repository or through an agent.
+
+**Then push only the auth settings.** Do not run `config push --remote` from this folder: `config.toml` also holds values meant only for the local stack (such as a one-second email interval and `site_url` on 127.0.0.1). Instead, copy `templates/` and `.temp/project-ref` into a temporary folder's `supabase/`, give it a `config.toml` that declares only `project_id`, `[auth] additional_redirect_urls` and `minimum_password_length`, `[auth.email] otp_length`, and the two `[auth.email.template.*]` sections, then from that folder:
 
 ```sh
+npx supabase@3.1.0 config diff --remote   # check that only the intended properties change
 npx supabase@3.1.0 config push --remote
 ```
 
-or set them in the dashboard: under Authentication, set the email OTP length to 6, paste `templates/confirmation.html` and `templates/recovery.html` into the "Confirm signup" and "Reset password" templates, and add `flatmate://auth/callback` to the redirect URLs.
+Properties the file does not declare, including the SMTP settings, are left as they are. Alternatively, set the same values in the dashboard: OTP length 6, `templates/confirmation.html` and `templates/recovery.html` as the "Confirm signup" and "Reset password" templates, and `flatmate://auth/callback` in the redirect URLs.
 
 Google sign-in additionally needs a Google OAuth client. Enable the Google provider in the project with its client ID and secret, then set `EXPO_PUBLIC_AUTH_GOOGLE_ENABLED=true` in `app/.env` to show the button. Locally, put the two values in `supabase/.env` as `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` and set `enabled = true` under `[auth.external.google]`.
 
