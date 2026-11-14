@@ -5,6 +5,7 @@ import {
   formatDate,
   formatDateTime,
   lastDayBefore,
+  monthGrid,
   monthStart,
   ordinal,
   todayInTimeZone,
@@ -79,5 +80,20 @@ describe('formatDateTime', () => {
     expect(text).toMatch(/Nov/);
     expect(text).toMatch(/2026/);
     expect(text).toMatch(/2:05|14:05/);
+  });
+});
+
+describe('monthGrid', () => {
+  it('lays out a month in Monday-first weeks, with blanks around it', () => {
+    // November 2026 starts on a Sunday, so six blanks come first.
+    const grid = monthGrid('2026-11-01');
+    expect(grid.slice(0, 7)).toEqual([null, null, null, null, null, null, '2026-11-01']);
+    expect(grid.filter(Boolean)).toHaveLength(30);
+    expect(grid.length % 7).toBe(0);
+    expect(grid.at(-1)).toBeNull();
+  });
+
+  it('handles February in a leap year', () => {
+    expect(monthGrid('2028-02-01').filter(Boolean).at(-1)).toBe('2028-02-29');
   });
 });

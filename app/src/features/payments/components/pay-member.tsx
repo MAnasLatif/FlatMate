@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { ChoiceChips } from '@/components/choice-chips';
+import { DateField } from '@/components/form/date-field';
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
 import { PhotoPicker } from '@/components/photo-picker';
@@ -30,7 +31,7 @@ import { useNameOf } from '@/features/settlement/names';
 import { userErrorMessage } from '@/lib/errors';
 import { formatMinorUnits } from '@/lib/money';
 import type { PickedImage } from '@/lib/private-images';
-import { addDays, todayInTimeZone } from '@/lib/time';
+import { todayInTimeZone } from '@/lib/time';
 import { randomUuid } from '@/lib/uuid';
 
 import { PAYMENT_ERROR_MESSAGES, proofUploadErrorMessage } from '../errors';
@@ -134,7 +135,7 @@ function PayForm({
   const checked = planPayment(owe, owed, mode, amount);
   const plan = submittedPlan ?? checked.plan;
   const dateError = !isValidDate(paidOn)
-    ? 'Enter the date as YYYY-MM-DD.'
+    ? 'Choose the day you paid.'
     : paidOn > today
       ? 'The date cannot be in the future.'
       : undefined;
@@ -258,28 +259,15 @@ function PayForm({
             />
             <FieldError>{showErrors ? checked.error : undefined}</FieldError>
           </TextField>
-          <TextField isInvalid={showErrors && dateError !== undefined}>
-            <Label>Paid on</Label>
-            <Input
-              value={paidOn}
-              onChangeText={setPaidOn}
-              placeholder="YYYY-MM-DD"
-              keyboardType="numbers-and-punctuation"
-              editable={!submittedPlan}
-              accessibilityLabel="Paid on, as year-month-day"
-            />
-            <FieldError>{showErrors ? dateError : undefined}</FieldError>
-          </TextField>
-          <ChoiceChips
-            accessibilityLabel="Quick date"
-            choices={[
-              { value: today, label: 'Today' },
-              { value: addDays(today, -1), label: 'Yesterday' },
-            ]}
-            selected={paidOn}
-            onSelect={(value) => {
-              if (!submittedPlan) setPaidOn(value);
-            }}
+          <DateField
+            label="Paid on"
+            value={paidOn}
+            onChange={setPaidOn}
+            today={today}
+            // A payment cannot have been made in the future.
+            maxDate={today}
+            isDisabled={submittedPlan !== null}
+            error={showErrors ? dateError : undefined}
           />
           {sharedAccounts.data && sharedAccounts.data.length > 0 ? (
             <View className="gap-2">

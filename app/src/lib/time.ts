@@ -104,3 +104,22 @@ export function formatMonth(date: string): string {
     timeZone: 'UTC',
   });
 }
+
+/**
+ * The days of a month laid out in weeks starting on Monday, for a calendar:
+ * YYYY-MM-DD dates, with null for the blanks before the 1st and after the
+ * last day. Always whole weeks.
+ */
+export function monthGrid(monthStartDate: string): (string | null)[] {
+  const [year, month] = monthStartDate.split('-').map(Number);
+  const first = new Date(Date.UTC(year, month - 1, 1));
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  // getUTCDay counts from Sunday; shift so Monday is 0.
+  const leading = (first.getUTCDay() + 6) % 7;
+  const cells: (string | null)[] = Array.from({ length: leading }, () => null);
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    cells.push(`${monthStartDate.slice(0, 8)}${String(day).padStart(2, '0')}`);
+  }
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
