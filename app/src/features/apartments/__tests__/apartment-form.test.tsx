@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { screen } from '@testing-library/react-native';
+import { screen, userEvent } from '@testing-library/react-native';
 import { useForm } from 'react-hook-form';
 
 import { supabase } from '@/lib/supabase';
@@ -38,7 +38,7 @@ describe('ApartmentFormFields', () => {
   it('creating picks the currency from a list, with no time zone or location switch', async () => {
     await renderWithProviders(<Form mode="create" />);
 
-    expect(screen.getByLabelText('Currency, PKR · Pakistani rupee')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Currency, PKR Pakistani Rupee')).toBeOnTheScreen();
     expect(screen.queryByLabelText('Time zone')).not.toBeOnTheScreen();
     expect(screen.queryByText('Show the location to members')).not.toBeOnTheScreen();
   });
@@ -48,6 +48,30 @@ describe('ApartmentFormFields', () => {
 
     expect(screen.getByText('The currency cannot be changed.')).toBeOnTheScreen();
     expect(screen.getByLabelText('Time zone')).toBeOnTheScreen();
+  });
+});
+
+describe('the currency picker', () => {
+  it('finds a currency by name, code or symbol and picks it', async () => {
+    await renderWithProviders(<Form mode="create" />);
+    const user = userEvent.setup();
+
+    await user.press(screen.getByLabelText('Currency, PKR Pakistani Rupee'));
+    await user.type(screen.getByLabelText('Search currencies'), 'dirham');
+    expect(screen.queryByLabelText('USD US Dollar')).not.toBeOnTheScreen();
+    await user.press(screen.getByLabelText('AED United Arab Emirates Dirham'));
+
+    expect(screen.getByLabelText('Currency, AED United Arab Emirates Dirham')).toBeOnTheScreen();
+  });
+
+  it('says when nothing matches', async () => {
+    await renderWithProviders(<Form mode="create" />);
+    const user = userEvent.setup();
+
+    await user.press(screen.getByLabelText('Currency, PKR Pakistani Rupee'));
+    await user.type(screen.getByLabelText('Search currencies'), 'zzz');
+
+    expect(screen.getByText(/No currency matches/)).toBeOnTheScreen();
   });
 });
 
