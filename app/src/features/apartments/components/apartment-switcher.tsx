@@ -3,33 +3,37 @@ import { router } from 'expo-router';
 import { Menu, Typography, useThemeColor } from 'heroui-native';
 import { View } from 'react-native';
 
+import { AppLogo } from '@/components/app-logo';
+
 import { useApartment, useMyApartments } from '../hooks';
 
 /**
- * The apartment name in the top bar. Tapping it lists the user's other
+ * The top bar's title: FlatMate's logo and name, as on the home screen, with
+ * the open apartment's name under it. Tapping it lists the user's other
  * apartments to switch to (SRS section 3.1).
  */
 export function ApartmentSwitcher({ apartmentId }: { apartmentId: string }) {
   const apartment = useApartment(apartmentId);
   const apartments = useMyApartments();
-  const foregroundColor = useThemeColor('foreground');
+  const [foregroundColor, mutedColor] = useThemeColor(['foreground', 'muted']);
   const name = apartment.data?.name ?? '';
 
   return (
     <Menu>
       <Menu.Trigger accessibilityRole="button" accessibilityLabel={`${name}. Switch apartment`}>
-        <View className="flex-row items-center gap-1">
+        <View className="flex-row items-center gap-2">
+          <AppLogo size={36} />
           <View>
             <Typography.Heading type="h5" numberOfLines={1}>
-              {name}
+              FlatMate
             </Typography.Heading>
-            {apartment.data?.show_location && apartment.data.location ? (
+            <View className="flex-row items-center gap-1">
               <Typography.Paragraph type="body-xs" color="muted" numberOfLines={1}>
-                {apartment.data.location}
+                {name}
               </Typography.Paragraph>
-            ) : null}
+              <Ionicons name="chevron-down" size={12} color={mutedColor} />
+            </View>
           </View>
-          <Ionicons name="chevron-down" size={16} color={foregroundColor} />
         </View>
       </Menu.Trigger>
       <Menu.Portal>
