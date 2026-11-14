@@ -11,6 +11,7 @@ import { StyleSheet, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { SessionProvider, useSession } from '@/features/auth/session-provider';
+import { showNotificationsInForeground } from '@/features/notifications/push';
 import { connectQueryClientToDevice } from '@/lib/network';
 import { queryClient } from '@/lib/query-client';
 
@@ -19,6 +20,7 @@ import { queryClient } from '@/lib/query-client';
 SplashScreen.preventAutoHideAsync();
 
 connectQueryClientToDevice();
+showNotificationsInForeground();
 
 export default function RootLayout() {
   return (

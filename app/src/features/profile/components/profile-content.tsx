@@ -12,7 +12,7 @@ import { TextInputField } from '@/components/form/text-input-field';
 import { OnlineButton } from '@/components/online-button';
 import { Screen } from '@/components/screen';
 import { MyAccountsSection } from '@/features/accounts/components/my-accounts';
-import { signOut, updatePassword } from '@/features/auth/api';
+import { updatePassword } from '@/features/auth/api';
 import { authErrorMessage } from '@/features/auth/errors';
 import {
   changePasswordSchema,
@@ -25,6 +25,7 @@ import { avatarUploadErrorMessage } from '@/features/profile/errors';
 import {
   useProfile,
   useRemoveAvatar,
+  useSignOut,
   useUpdateDisplayName,
   useUploadAvatar,
 } from '@/features/profile/hooks';
@@ -245,7 +246,7 @@ function PasswordSection() {
 }
 
 function SignOutSection() {
-  const signOutMutation = useMutation({ mutationFn: signOut });
+  const signOutMutation = useSignOut();
   return (
     <View className="gap-3">
       <FormAlert message={signOutMutation.error ? authErrorMessage(signOutMutation.error) : null} />

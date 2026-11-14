@@ -4,6 +4,8 @@ import { Tabs } from 'expo-router/tabs';
 import { PressableFeedback, useThemeColor } from 'heroui-native';
 import { View } from 'react-native';
 
+import { useCurrentUserId } from '@/features/auth/session-provider';
+import { NotificationBell } from '@/features/notifications/components/notification-bell';
 import { ApartmentSwitcher } from '@/features/apartments/components/apartment-switcher';
 import { useApartmentId, useMyMembership } from '@/features/apartments/hooks';
 
@@ -83,9 +85,11 @@ function TabIcon({
 function HeaderActions({ apartmentId }: { apartmentId: string }) {
   const iconColor = useThemeColor('foreground');
   const membership = useMyMembership(apartmentId);
+  const userId = useCurrentUserId();
 
   return (
     <View className="flex-row items-center gap-4 pr-4">
+      <NotificationBell userId={userId} />
       <PressableFeedback
         onPress={() =>
           router.push({ pathname: '/apartments/[apartmentId]/members', params: { apartmentId } })

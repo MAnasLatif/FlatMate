@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { signOut } from '@/features/auth/api';
+import { unregisterThisDevice } from '@/features/notifications/push';
+
 import {
   AVATAR_URL_STALE_TIME_MS,
   createAvatarUrl,
@@ -69,5 +72,15 @@ export function useRemoveAvatar(userId: string) {
   return useMutation({
     mutationFn: () => removeAvatar(userId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: profileKeys.profile(userId) }),
+  });
+}
+
+/** Signs out, after removing this device from the user's push notifications. */
+export function useSignOut() {
+  return useMutation({
+    mutationFn: async () => {
+      await unregisterThisDevice();
+      await signOut();
+    },
   });
 }

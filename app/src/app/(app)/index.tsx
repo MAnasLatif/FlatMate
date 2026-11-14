@@ -8,6 +8,7 @@ import { Screen } from '@/components/screen';
 import type { MyApartment } from '@/features/apartments/api';
 import { useMyApartments } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
+import { NotificationBell } from '@/features/notifications/components/notification-bell';
 import { ProfileAvatar } from '@/features/profile/components/profile-avatar';
 import { useProfile } from '@/features/profile/hooks';
 import { PastApartments } from '@/features/settlement/components/past-apartments';
@@ -28,17 +29,20 @@ export default function MyApartmentsScreen() {
         <Typography.Heading type="h2" accessibilityRole="header">
           Your apartments
         </Typography.Heading>
-        <PressableFeedback
-          onPress={() => router.push('/profile')}
-          accessibilityRole="button"
-          accessibilityLabel="Your profile"
-        >
-          <ProfileAvatar
-            name={profile.data?.display_name}
-            avatarPath={profile.data?.avatar_path}
-            size="sm"
-          />
-        </PressableFeedback>
+        <View className="flex-row items-center gap-5">
+          <NotificationBell userId={userId} />
+          <PressableFeedback
+            onPress={() => router.push('/profile')}
+            accessibilityRole="button"
+            accessibilityLabel="Your profile"
+          >
+            <ProfileAvatar
+              name={profile.data?.display_name}
+              avatarPath={profile.data?.avatar_path}
+              size="sm"
+            />
+          </PressableFeedback>
+        </View>
       </View>
 
       {apartments.isPending ? (
