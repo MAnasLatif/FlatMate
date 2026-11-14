@@ -10,6 +10,7 @@ import { NotificationBell } from '@/features/notifications/components/notificati
 import { ApartmentSwitcher } from '@/features/apartments/components/apartment-switcher';
 import { useApartmentId, useMyMembership } from '@/features/apartments/hooks';
 import { ProfileTabIcon } from '@/features/profile/components/profile-tab-icon';
+import { SignOutButton } from '@/features/profile/components/sign-out-button';
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -65,6 +66,10 @@ export default function ApartmentTabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
+          // The user's own page, not the apartment's: a plain title and sign-out.
+          headerTitle: 'Profile',
+          headerTitleAlign: 'left',
+          headerRight: () => <SignOutButton />,
           tabBarAccessibilityLabel: 'Profile',
           tabBarIcon: ({ focused }) => <ProfileTabIcon focused={focused} />,
         }}
