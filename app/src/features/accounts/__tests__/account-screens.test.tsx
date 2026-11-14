@@ -1,4 +1,4 @@
-import { screen, userEvent } from '@testing-library/react-native';
+import { fireEvent, screen, userEvent } from '@testing-library/react-native';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 
@@ -7,13 +7,16 @@ import { renderWithProviders } from '@/test/render';
 
 import {
   createAccount,
+  deleteAccount,
   fetchMyAccounts,
   fetchSharedAccounts,
   type MyAccount,
+  setPreferredAccount,
   shareAccount,
   updateAccount,
   unshareAccount,
 } from '../api';
+import { AccountDetails } from '../components/account-details';
 import { EditAccount } from '../components/edit-account';
 import { MyAccountsSection } from '../components/my-accounts';
 import { SharedAccounts } from '../components/shared-accounts';
@@ -25,6 +28,7 @@ const OTHER = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 jest.mock('@/lib/supabase', () => ({ supabase: {} }));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn() } }));
+jest.mock('expo-router/stack', () => ({ __esModule: true, default: { Screen: () => null } }));
 jest.mock('@/features/auth/session-provider', () => ({
   useCurrentUserId: () => '11111111-1111-1111-1111-111111111111',
 }));
@@ -37,6 +41,8 @@ jest.mock('../api', () => ({
   fetchMyAccounts: jest.fn(),
   fetchSharedAccounts: jest.fn(),
   createAccount: jest.fn(),
+  deleteAccount: jest.fn(),
+  setPreferredAccount: jest.fn(),
   updateAccount: jest.fn(),
   shareAccount: jest.fn(),
   unshareAccount: jest.fn(),
@@ -97,6 +103,98 @@ describe('MyAccountsSection', () => {
     expect(await screen.findByText('Anas Latif · •••• 0123')).toBeOnTheScreen();
     expect(screen.getByText('Shared with 1 apartment')).toBeOnTheScreen();
     expect(screen.getByText('Preferred')).toBeOnTheScreen();
+  });
+
+  it('only lists the accounts, with no action buttons in the list', async () => {
+    await renderWithProviders(<MyAccountsSection />);
+    await screen.findByText('Meezan Bank');
+
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Make preferred' })).not.toBeOnTheScreen();
+  });
+
+  it('opens the account details when an account is tapped', async () => {
+    await renderWithProviders(<MyAccountsSection />);
+    const row = await screen.findByRole('button', { name: /^Meezan Bank/ });
+
+    await userEvent.setup().press(row);
+
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/accounts/[accountId]',
+      params: { accountId: 'acc-1' },
+    });
+  });
+
+  it('opens the edit form on a swipe right', async () => {
+    await renderWithProviders(<MyAccountsSection />);
+    await screen.findByText('Meezan Bank');
+
+    fireEvent(screen.getByTestId('swipeable-row'), 'swipeableOpen', 'right');
+
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/accounts/edit',
+      params: { accountId: 'acc-1' },
+    });
+  });
+
+  it('asks before deleting on a swipe left, then deletes', async () => {
+    jest.mocked(deleteAccount).mockResolvedValue();
+    await renderWithProviders(<MyAccountsSection />);
+    await screen.findByText('Meezan Bank');
+
+    fireEvent(screen.getByTestId('swipeable-row'), 'swipeableOpen', 'left');
+
+    expect(await screen.findByText('Delete Meezan Bank?')).toBeOnTheScreen();
+    expect(
+      screen.getByText('Flatmates you shared it with will no longer see it.'),
+    ).toBeOnTheScreen();
+    expect(deleteAccount).not.toHaveBeenCalled();
+
+    await userEvent.setup().press(screen.getByRole('button', { name: 'Delete account' }));
+    expect(deleteAccount).toHaveBeenCalledWith('acc-1');
+  });
+});
+
+describe('AccountDetails', () => {
+  it('shows the details, masking the number until revealed', async () => {
+    await renderWithProviders(<AccountDetails accountId="acc-1" />);
+    const user = userEvent.setup();
+
+    expect(await screen.findByText('Bank account')).toBeOnTheScreen();
+    expect(screen.getByText('Anas Latif')).toBeOnTheScreen();
+    expect(screen.getByText('Members of Flat 4B')).toBeOnTheScreen();
+    expect(screen.getByText('•••• 0123')).toBeOnTheScreen();
+    expect(screen.queryByText('PK36MEZN0001234567890123')).not.toBeOnTheScreen();
+
+    await user.press(screen.getByRole('button', { name: 'Show number' }));
+    expect(screen.getByText('PK36MEZN0001234567890123')).toBeOnTheScreen();
+  });
+
+  it('offers to make a non-preferred account preferred', async () => {
+    jest.mocked(fetchMyAccounts).mockResolvedValue([{ ...meezan, isPreferred: false }]);
+    jest.mocked(setPreferredAccount).mockResolvedValue();
+    await renderWithProviders(<AccountDetails accountId="acc-1" />);
+
+    await userEvent.setup().press(await screen.findByRole('button', { name: 'Make preferred' }));
+
+    expect(setPreferredAccount).toHaveBeenCalledWith(ANAS, 'acc-1');
+  });
+
+  it('opens the edit form', async () => {
+    await renderWithProviders(<AccountDetails accountId="acc-1" />);
+
+    await userEvent.setup().press(await screen.findByRole('button', { name: 'Edit' }));
+
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/accounts/edit',
+      params: { accountId: 'acc-1' },
+    });
+  });
+
+  it('says when the account no longer exists', async () => {
+    await renderWithProviders(<AccountDetails accountId="gone" />);
+
+    expect(await screen.findByText('This account no longer exists.')).toBeOnTheScreen();
   });
 });
 

@@ -1,37 +1,36 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { Button, Chip, Separator, Typography } from 'heroui-native';
-import { Alert, View } from 'react-native';
+import {
+  Button,
+  Chip,
+  PressableFeedback,
+  Separator,
+  Typography,
+  useThemeColor,
+} from 'heroui-native';
+import { useRef, useState } from 'react';
+import ReanimatedSwipeable, {
+  type SwipeableMethods,
+  SwipeDirection,
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { View } from 'react-native';
 
-import { FormAlert } from '@/components/form/form-alert';
-import { OnlineButton } from '@/components/online-button';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { userErrorMessage } from '@/lib/errors';
 
 import type { MyAccount } from '../api';
-import { useAccountMutations, useMyAccounts } from '../hooks';
+import { useMyAccounts } from '../hooks';
 import { maskIdentifier } from '../rules';
+import { DeleteAccountSheet } from './delete-account-sheet';
 
-/** The user's receiving accounts, for the profile screen (SRS FR-01.3). */
+/**
+ * The user's bank and wallet accounts, for the profile screen (SRS FR-01.3).
+ * The list only shows them: tapping one opens its details and every option, and
+ * swiping a row reveals Edit (swipe right) and Delete (swipe left).
+ */
 export function MyAccountsSection() {
   const accounts = useMyAccounts();
-  const mutations = useAccountMutations();
-  const error = mutations.remove.error ?? mutations.prefer.error;
-
-  const edit = (accountId?: string) =>
-    router.push({ pathname: '/accounts/edit', params: accountId ? { accountId } : {} });
-  const confirmDelete = (account: MyAccount) =>
-    Alert.alert(
-      `Delete ${account.provider}?`,
-      'Flatmates you shared it with will no longer see it.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => mutations.remove.mutate(account.id),
-        },
-      ],
-    );
+  const [deleting, setDeleting] = useState<MyAccount | null>(null);
 
   return (
     <View className="gap-3">
@@ -40,7 +39,6 @@ export function MyAccountsSection() {
         Where flatmates can pay you. Each account is private until you share it with an apartment.
         FlatMate never asks for passwords, PINs or codes.
       </Typography.Paragraph>
-      <FormAlert message={error ? userErrorMessage(error, 'Could not save that.') : null} />
       {accounts.isPending ? (
         <LoadingRows count={1} />
       ) : accounts.isLoadingError ? (
@@ -50,55 +48,121 @@ export function MyAccountsSection() {
         />
       ) : (
         accounts.data.map((account) => (
-          <View key={account.id} className="gap-2">
+          <View key={account.id}>
             <Separator />
-            <View className="flex-row items-center gap-2">
-              <View className="flex-1 gap-0.5">
-                <Typography.Paragraph>{account.provider}</Typography.Paragraph>
-                <Typography.Paragraph type="body-xs" color="muted">
-                  {account.accountTitle} · {maskIdentifier(account.accountIdentifier)}
-                </Typography.Paragraph>
-                <Typography.Paragraph type="body-xs" color="muted">
-                  {account.sharedWith.length === 0
-                    ? 'Private'
-                    : `Shared with ${account.sharedWith.length} ${account.sharedWith.length === 1 ? 'apartment' : 'apartments'}`}
-                </Typography.Paragraph>
-              </View>
-              {account.isPreferred ? (
-                <Chip size="sm" variant="soft" color="accent">
-                  Preferred
-                </Chip>
-              ) : null}
-            </View>
-            <View className="flex-row flex-wrap gap-2">
-              <Button size="sm" variant="secondary" onPress={() => edit(account.id)}>
-                Edit
-              </Button>
-              {account.isPreferred ? null : (
-                <OnlineButton
-                  size="sm"
-                  variant="ghost"
-                  isDisabled={mutations.prefer.isPending}
-                  onPress={() => mutations.prefer.mutate(account.id)}
-                >
-                  Make preferred
-                </OnlineButton>
-              )}
-              <OnlineButton
-                size="sm"
-                variant="ghost"
-                isDisabled={mutations.remove.isPending}
-                onPress={() => confirmDelete(account)}
-              >
-                Delete
-              </OnlineButton>
-            </View>
+            <AccountRow account={account} onDelete={() => setDeleting(account)} />
           </View>
         ))
       )}
-      <Button variant="secondary" onPress={() => edit()}>
+      <Button variant="secondary" onPress={() => editAccount()}>
         Add bank or wallet
       </Button>
+      <DeleteAccountSheet account={deleting} onClose={() => setDeleting(null)} />
+    </View>
+  );
+}
+
+/** The add or edit form; with no id it adds a new account. */
+function editAccount(accountId?: string) {
+  router.push({ pathname: '/accounts/edit', params: accountId ? { accountId } : {} });
+}
+
+function AccountRow({ account, onDelete }: { account: MyAccount; onDelete: () => void }) {
+  const swipeable = useRef<SwipeableMethods>(null);
+  const [accent, accentForeground, dangerForeground] = useThemeColor([
+    'accent',
+    'accent-foreground',
+    'danger-foreground',
+  ]);
+  const shared =
+    account.sharedWith.length === 0
+      ? 'Private'
+      : `Shared with ${account.sharedWith.length} ${account.sharedWith.length === 1 ? 'apartment' : 'apartments'}`;
+
+  return (
+    <ReanimatedSwipeable
+      ref={swipeable}
+      friction={1.5}
+      leftThreshold={SWIPE_ACTION_WIDTH * 0.6}
+      rightThreshold={SWIPE_ACTION_WIDTH * 0.6}
+      // A swipe past the threshold is the action itself: right edits, left
+      // asks to delete. The row springs back as the action starts.
+      onSwipeableOpen={(direction) => {
+        swipeable.current?.close();
+        if (direction === SwipeDirection.RIGHT) editAccount(account.id);
+        else onDelete();
+      }}
+      renderLeftActions={() => (
+        <SwipeAction
+          label="Edit"
+          icon="create-outline"
+          className="bg-accent"
+          color={accentForeground}
+        />
+      )}
+      renderRightActions={() => (
+        <SwipeAction
+          label="Delete"
+          icon="trash-outline"
+          className="bg-danger"
+          color={dangerForeground}
+        />
+      )}
+    >
+      <PressableFeedback
+        onPress={() =>
+          router.push({ pathname: '/accounts/[accountId]', params: { accountId: account.id } })
+        }
+        accessibilityRole="button"
+        accessibilityLabel={`${account.provider}, ${shared}${account.isPreferred ? ', preferred' : ''}`}
+        accessibilityHint="Opens the account's details"
+        className="bg-background flex-row items-center gap-2 py-3"
+      >
+        <View className="flex-1 gap-0.5">
+          <Typography.Paragraph>{account.provider}</Typography.Paragraph>
+          <Typography.Paragraph type="body-xs" color="muted">
+            {account.accountTitle} · {maskIdentifier(account.accountIdentifier)}
+          </Typography.Paragraph>
+          <Typography.Paragraph type="body-xs" color="muted">
+            {shared}
+          </Typography.Paragraph>
+        </View>
+        {account.isPreferred ? (
+          <Chip size="sm" variant="soft" color="accent">
+            Preferred
+          </Chip>
+        ) : null}
+        <Ionicons name="chevron-forward" size={18} color={accent} />
+      </PressableFeedback>
+    </ReanimatedSwipeable>
+  );
+}
+
+const SWIPE_ACTION_WIDTH = 112;
+
+/** What a swipe will do, shown behind the row as it slides. */
+function SwipeAction({
+  label,
+  icon,
+  className,
+  color,
+}: {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  className: string;
+  color: string;
+}) {
+  return (
+    <View
+      className={`flex-row items-center justify-center gap-2 ${className}`}
+      style={{ width: SWIPE_ACTION_WIDTH }}
+      importantForAccessibility="no-hide-descendants"
+      accessibilityElementsHidden
+    >
+      <Ionicons name={icon} size={18} color={color} />
+      <Typography.Paragraph style={{ color }} className="font-semibold">
+        {label}
+      </Typography.Paragraph>
     </View>
   );
 }

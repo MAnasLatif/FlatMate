@@ -45,7 +45,10 @@ export function useAccountMutations() {
           : createAccount(userId, input.account),
       onSuccess: refresh,
     }),
-    remove: useMutation({ mutationFn: deleteAccount, onSuccess: refresh }),
+    remove: useMutation({
+      mutationFn: (accountId: string) => deleteAccount(accountId),
+      onSuccess: refresh,
+    }),
     prefer: useMutation({
       mutationFn: (accountId: string) => setPreferredAccount(userId, accountId),
       onSuccess: refresh,
