@@ -3,6 +3,7 @@ import type { QueryKey } from '@tanstack/react-query';
 import { accountKeys } from '@/features/accounts/hooks';
 import { apartmentKeys } from '@/features/apartments/hooks';
 import { expenseKeys } from '@/features/expenses/hooks';
+import { notificationKeys } from '@/features/notifications/hooks';
 import { profileKeys } from '@/features/profile/hooks';
 import { settlementKeys } from '@/features/settlement/hooks';
 
@@ -29,7 +30,7 @@ export const APARTMENT_CHANGE_KINDS = [
 ] as const;
 export type ApartmentChangeKind = (typeof APARTMENT_CHANGE_KINDS)[number];
 
-export const USER_CHANGE_KINDS = ['membership', 'profile', 'account'] as const;
+export const USER_CHANGE_KINDS = ['membership', 'profile', 'account', 'notification'] as const;
 export type UserChangeKind = (typeof USER_CHANGE_KINDS)[number];
 
 /** Everything shown about the people in an apartment: names, photos, roles. */
@@ -74,6 +75,8 @@ const userChanges: Record<UserChangeKind, (userId: string) => QueryKey[]> = {
   membership: (userId) => [ALL_MY_APARTMENTS_ROOT, ['apartments'], settlementKeys.exits(userId)],
   profile: (userId) => [profileKeys.profile(userId)],
   account: (userId) => [accountKeys.mine(userId)],
+  // A new notification, or one read on another device.
+  notification: (userId) => [notificationKeys.all(userId)],
 };
 
 function isApartmentKind(kind: string | null): kind is ApartmentChangeKind {

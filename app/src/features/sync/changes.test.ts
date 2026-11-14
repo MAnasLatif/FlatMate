@@ -68,7 +68,12 @@ describe('apartment change events', () => {
 
 describe('user change events', () => {
   it('maps every kind the database sends', () => {
-    expect([...USER_CHANGE_KINDS].sort()).toEqual(['account', 'membership', 'profile']);
+    expect([...USER_CHANGE_KINDS].sort()).toEqual([
+      'account',
+      'membership',
+      'notification',
+      'profile',
+    ]);
   });
 
   it('refreshes the apartment list and member lists when added or removed', () => {
