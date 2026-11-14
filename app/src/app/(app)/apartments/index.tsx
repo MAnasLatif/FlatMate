@@ -71,12 +71,15 @@ function ApartmentCard({ item }: { item: MyApartment }) {
 
   return (
     <PressableFeedback
-      onPress={() =>
+      onPress={() => {
+        // The chosen apartment takes the place of the one this list was
+        // opened from, so Back does not return to it.
+        router.dismissAll();
         router.replace({
           pathname: '/apartments/[apartmentId]',
           params: { apartmentId: apartment.id },
-        })
-      }
+        });
+      }}
       accessibilityRole="button"
       accessibilityLabel={`Open ${apartment.name}`}
     >
