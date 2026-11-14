@@ -964,6 +964,93 @@ export type Database = {
           },
         ];
       };
+      notifications: {
+        Row: {
+          actor_id: string | null;
+          apartment_id: string;
+          audit_event_id: number | null;
+          created_at: string;
+          id: string;
+          push_attempts: number;
+          push_claimed_at: string | null;
+          push_error: string | null;
+          push_next_attempt_at: string;
+          push_status: string;
+          pushed_at: string | null;
+          read_at: string | null;
+          record_id: string | null;
+          record_type: string;
+          type: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id?: string | null;
+          apartment_id: string;
+          audit_event_id?: number | null;
+          created_at?: string;
+          id?: string;
+          push_attempts?: number;
+          push_claimed_at?: string | null;
+          push_error?: string | null;
+          push_next_attempt_at?: string;
+          push_status?: string;
+          pushed_at?: string | null;
+          read_at?: string | null;
+          record_id?: string | null;
+          record_type: string;
+          type: string;
+          user_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          apartment_id?: string;
+          audit_event_id?: number | null;
+          created_at?: string;
+          id?: string;
+          push_attempts?: number;
+          push_claimed_at?: string | null;
+          push_error?: string | null;
+          push_next_attempt_at?: string;
+          push_status?: string;
+          pushed_at?: string | null;
+          read_at?: string | null;
+          record_id?: string | null;
+          record_type?: string;
+          type?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notifications_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_audit_event_id_fkey';
+            columns: ['audit_event_id'];
+            isOneToOne: false;
+            referencedRelation: 'audit_events';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       offsets: {
         Row: {
           amount_minor: number;
@@ -1284,6 +1371,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      push_tokens: {
+        Row: {
+          created_at: string;
+          platform: string;
+          token: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          platform: string;
+          token: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          platform?: string;
+          token?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'push_tokens_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       receiving_account_shares: {
         Row: {
           account_id: string;
@@ -1508,6 +1628,14 @@ export type Database = {
         Returns: string;
       };
       archive_category: { Args: { p_category_id: string }; Returns: undefined };
+      claim_pushes: {
+        Args: { p_limit?: number };
+        Returns: {
+          body: string;
+          notification_id: string;
+          token: string;
+        }[];
+      };
       create_apartment: {
         Args: {
           p_approval_days?: number;
@@ -1621,6 +1749,7 @@ export type Database = {
       };
       join_apartment: { Args: { p_code: string }; Returns: Json };
       leave_apartment: { Args: { p_apartment_id: string }; Returns: undefined };
+      mark_notifications_read: { Args: { p_ids?: string[] }; Returns: number };
       net_off: {
         Args: {
           p_amount_minor?: number;
@@ -1682,8 +1811,10 @@ export type Database = {
         };
         Returns: string;
       };
+      register_push_token: { Args: { p_platform: string; p_token: string }; Returns: undefined };
       remove_member: { Args: { p_apartment_id: string; p_user_id: string }; Returns: undefined };
       rename_category: { Args: { p_category_id: string; p_name: string }; Returns: undefined };
+      report_pushes: { Args: { p_results: Json }; Returns: undefined };
       respond_to_dispute: {
         Args: { p_accept: boolean; p_dispute_id: string; p_message?: string };
         Returns: undefined;
@@ -1697,6 +1828,7 @@ export type Database = {
         Args: { p_apartment_id: string; p_role: string; p_user_id: string };
         Returns: undefined;
       };
+      unregister_push_token: { Args: { p_token: string }; Returns: undefined };
       update_apartment_settings: {
         Args: {
           p_apartment_id: string;
