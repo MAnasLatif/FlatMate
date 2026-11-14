@@ -43,11 +43,13 @@ describe('ApartmentFormFields', () => {
     expect(screen.queryByText('Show the location to members')).not.toBeOnTheScreen();
   });
 
-  it('settings shows the currency locked and lets the time zone be fixed', async () => {
+  it('editing shows the same fields, with the currency locked', async () => {
     await renderWithProviders(<Form mode="settings" />);
 
-    expect(screen.getByText('The currency cannot be changed.')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Time zone')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Apartment name')).toBeOnTheScreen();
+    expect(screen.queryByLabelText('Time zone')).not.toBeOnTheScreen();
+    expect(screen.getByText(/so it cannot be changed/)).toBeOnTheScreen();
+    expect(screen.getByLabelText('Currency, PKR Pakistani Rupee')).toBeDisabled();
   });
 });
 

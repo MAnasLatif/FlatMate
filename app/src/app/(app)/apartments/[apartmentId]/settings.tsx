@@ -68,6 +68,7 @@ export default function ApartmentSettingsScreen() {
   return (
     <Screen freshness={apartment} padTop={false}>
       <DetailsSection apartment={apartment.data} />
+      <Separator />
       <InvitesSection apartmentId={apartmentId} apartmentName={apartment.data.name} />
       <CategoriesSection apartmentId={apartmentId} />
     </Screen>
@@ -89,36 +90,33 @@ function DetailsSection({ apartment }: { apartment: Apartment }) {
   });
 
   return (
-    <Card>
-      <Card.Body className="gap-4">
-        <Card.Title>Details</Card.Title>
-        <FormAlert
-          message={
-            update.error
-              ? userErrorMessage(
-                  update.error,
-                  'Could not save the settings.',
-                  APARTMENT_ERROR_MESSAGES,
-                )
-              : null
-          }
-        />
-        <FormAlert
-          status="success"
-          message={update.isSuccess && !form.formState.isDirty ? 'Settings saved.' : null}
-        />
-        <ApartmentFormFields control={form.control} mode="settings" />
-        <Typography.Paragraph type="body-xs" color="muted">
-          A new settlement day applies from the next settlement period.
-        </Typography.Paragraph>
-        <OnlineButton
-          onPress={() => void form.handleSubmit((values) => update.mutate(values))()}
-          isDisabled={update.isPending || !form.formState.isDirty}
-        >
-          {update.isPending ? 'Saving…' : 'Save settings'}
-        </OnlineButton>
-      </Card.Body>
-    </Card>
+    <View className="gap-4">
+      <FormAlert
+        message={
+          update.error
+            ? userErrorMessage(
+                update.error,
+                'Could not save the settings.',
+                APARTMENT_ERROR_MESSAGES,
+              )
+            : null
+        }
+      />
+      <FormAlert
+        status="success"
+        message={update.isSuccess && !form.formState.isDirty ? 'Settings saved.' : null}
+      />
+      <ApartmentFormFields control={form.control} mode="settings" />
+      <Typography.Paragraph type="body-xs" color="muted">
+        A new settlement day applies from the next settlement period.
+      </Typography.Paragraph>
+      <OnlineButton
+        onPress={() => void form.handleSubmit((values) => update.mutate(values))()}
+        isDisabled={update.isPending || !form.formState.isDirty}
+      >
+        {update.isPending ? 'Saving…' : 'Save settings'}
+      </OnlineButton>
+    </View>
   );
 }
 

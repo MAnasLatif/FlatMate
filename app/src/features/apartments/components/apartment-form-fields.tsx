@@ -13,8 +13,10 @@ export type ApartmentFormOutput = z.output<typeof apartmentFormSchema>;
 type ApartmentFormFieldsProps = {
   control: Control<ApartmentFormInput, unknown, ApartmentFormOutput>;
   /**
-   * Creating picks the currency from a list and takes the time zone from the
-   * phone. In settings the currency is locked and the time zone can be fixed.
+   * Both show the same fields. The currency is chosen when creating and locked
+   * afterwards, since amounts already recorded are in it. The time zone is not
+   * a field: creating takes the phone's, and editing keeps the apartment's, so
+   * an admin abroad does not move everyone's deadlines.
    */
   mode: 'create' | 'settings';
 };
@@ -31,17 +33,7 @@ export function ApartmentFormFields({ control, mode }: ApartmentFormFieldsProps)
         description="Such as the area or building."
         autoCapitalize="words"
       />
-      {mode === 'create' ? (
-        <CurrencyField control={control} />
-      ) : (
-        <TextInputField
-          control={control}
-          name="currency"
-          label="Currency"
-          description="The currency cannot be changed."
-          editable={false}
-        />
-      )}
+      <CurrencyField control={control} isLocked={mode === 'settings'} />
       <TextInputField
         control={control}
         name="settlementDay"
@@ -58,16 +50,6 @@ export function ApartmentFormFields({ control, mode }: ApartmentFormFieldsProps)
         keyboardType="number-pad"
         maxLength={2}
       />
-      {mode === 'settings' ? (
-        <TextInputField
-          control={control}
-          name="timezone"
-          label="Time zone"
-          description="Settlement days and deadlines follow this time zone."
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-      ) : null}
     </View>
   );
 }

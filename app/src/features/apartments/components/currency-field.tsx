@@ -24,8 +24,11 @@ import type { ApartmentFormInput, ApartmentFormOutput } from './apartment-form-f
  */
 export function CurrencyField({
   control,
+  isLocked = false,
 }: {
   control: Control<ApartmentFormInput, unknown, ApartmentFormOutput>;
+  /** After creation the currency is shown but cannot be changed. */
+  isLocked?: boolean;
 }) {
   const { field, fieldState } = useController({ control, name: 'currency' });
   const [isOpen, setOpen] = useState(false);
@@ -51,9 +54,11 @@ export function CurrencyField({
       <Label>Currency</Label>
       <PressableFeedback
         onPress={() => setOpen(true)}
+        isDisabled={isLocked}
+        accessibilityState={{ disabled: isLocked }}
         accessibilityRole="button"
         accessibilityLabel={`Currency, ${selected ? `${selected.code} ${selected.name}` : 'not chosen'}`}
-        accessibilityHint="Opens the list of currencies"
+        accessibilityHint={isLocked ? undefined : 'Opens the list of currencies'}
         className="min-h-12 flex-row items-center gap-3 rounded-field bg-field px-3"
       >
         {selected ? (
@@ -68,11 +73,17 @@ export function CurrencyField({
             Choose a currency
           </Typography.Paragraph>
         )}
-        <Ionicons name="chevron-down" size={18} color={mutedColor} />
+        <Ionicons
+          name={isLocked ? 'lock-closed-outline' : 'chevron-down'}
+          size={18}
+          color={mutedColor}
+        />
       </PressableFeedback>
       {fieldState.error ? null : (
         <Description>
-          All amounts in this apartment use this currency. It cannot be changed later.
+          {isLocked
+            ? 'All amounts in this apartment are in this currency, so it cannot be changed.'
+            : 'All amounts in this apartment use this currency. It cannot be changed later.'}
         </Description>
       )}
       <FieldError>{fieldState.error?.message}</FieldError>
