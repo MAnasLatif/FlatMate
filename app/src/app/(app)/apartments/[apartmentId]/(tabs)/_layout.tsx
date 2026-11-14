@@ -47,9 +47,9 @@ export default function ApartmentTabsLayout() {
         options={{
           title: 'Add',
           tabBarAccessibilityLabel: 'Add an expense',
-          tabBarIcon: ({ focused, size }) => (
-            <TabIcon name="add-circle" focused={focused} size={size + 18} />
-          ),
+          // The default icon box is smaller than the button and would cut it off.
+          tabBarIconStyle: { width: ADD_BUTTON_SIZE, height: ADD_BUTTON_SIZE },
+          tabBarIcon: () => <AddButton />,
         }}
         listeners={{
           tabPress: (event) => {
@@ -70,6 +70,21 @@ export default function ApartmentTabsLayout() {
         }}
       />
     </Tabs>
+  );
+}
+
+const ADD_BUTTON_SIZE = 44;
+
+/** The Add tab: a filled circle with a plus, larger than the other icons. */
+function AddButton() {
+  const foreground = useThemeColor('accent-foreground');
+  return (
+    <View
+      className="items-center justify-center rounded-full bg-accent"
+      style={{ width: ADD_BUTTON_SIZE, height: ADD_BUTTON_SIZE }}
+    >
+      <Ionicons name="add" size={28} color={foreground} />
+    </View>
   );
 }
 
