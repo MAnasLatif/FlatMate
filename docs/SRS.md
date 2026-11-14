@@ -43,8 +43,8 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 ### 3.1 First-time and returning users
 1. Splash/session check.
 2. Unauthenticated: Login / Sign Up via email/password or Google (Supabase Auth); password recovery and verification as appropriate.
-3. Authenticated: **My Apartments** list of joined flats; `New Apartment` action.
-4. With no apartment, the home screen shows `Join by Code` (code input with paste, Join) and a `Create new apartment` button that opens the create flow. Creating takes the time zone from the phone and the currency from a list; a location, when given, is shown to members.
+3. Authenticated, in an apartment: the app opens the apartment last opened on that device (or the first), with its dashboard as the home. **My Apartments**, the list of joined flats with join and create actions, is reached from the apartment switcher.
+4. With no apartment, the home screen, with the bottom bar but no Add, shows `Join by Code` (code input with paste, Join) and a `Create new apartment` button that opens the create flow. Creating takes the time zone from the phone and the currency from a list; a location, when given, is shown to members.
 5. Create: apartment name, optional location and visibility, settlement day, default approval window (7 days), reminders, other settings; creator becomes admin.
 6. Select an apartment to enter its dashboard. The user can switch apartments from the top-bar apartment-name dropdown.
 7. Subsequent launches: show apartment list/selector as agreed, not a forced auto-entry to one apartment.
@@ -251,7 +251,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 ## 9. Primary End-to-End User Flows
 
 1. **New user:** launch → sign up/login → apartment selector → create/join → dashboard.
-2. **Returning multi-flat user:** launch → apartment list → select flat → switch via top bar.
+2. **Returning multi-flat user:** launch → last opened flat → switch via top bar (or All apartments).
 3. **One-time expense:** Add → details/payers → split/exclusions → preview → save → notify → ledger.
 4. **Fixed recurring:** admin config → schedule → monthly instance → apply saved split → notify.
 5. **Variable recurring:** admin config expected day → reminder → enter actual amount/proof/due date → create instance → notify.
