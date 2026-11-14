@@ -1,11 +1,20 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { Button, Card, Chip, PressableFeedback, Typography, useThemeColor } from 'heroui-native';
+import {
+  Button,
+  Card,
+  Chip,
+  PressableFeedback,
+  Separator,
+  Typography,
+  useThemeColor,
+} from 'heroui-native';
 import { View } from 'react-native';
 
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { MyApartment } from '@/features/apartments/api';
+import { JoinApartment } from '@/features/apartments/components/join-apartment';
 import { useMyApartments } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { NotificationBell } from '@/features/notifications/components/notification-bell';
@@ -63,9 +72,22 @@ export default function MyApartmentsScreen() {
       )}
 
       {apartments.data && apartments.data.length > 0 ? (
-        <Button variant="secondary" onPress={() => router.push('/apartments/new')}>
-          Create or join another apartment
-        </Button>
+        <View className="flex-row gap-3">
+          <Button
+            variant="secondary"
+            className="flex-1"
+            onPress={() => router.push('/apartments/join')}
+          >
+            Join an apartment
+          </Button>
+          <Button
+            variant="secondary"
+            className="flex-1"
+            onPress={() => router.push('/apartments/new')}
+          >
+            Create new
+          </Button>
+        </View>
       ) : null}
 
       <PastApartments />
@@ -108,16 +130,27 @@ function ApartmentCard({ item }: { item: MyApartment }) {
   );
 }
 
+/** No apartment yet: join with a code right here, or go create one. */
 function EmptyState() {
   return (
-    <View className="flex-1 items-center justify-center gap-4 py-10">
-      <Typography.Heading type="h4" className="text-center">
-        You are not in an apartment yet
-      </Typography.Heading>
-      <Typography.Paragraph color="muted" className="text-center">
-        Create one for your flat, or join with the code a flatmate shares with you.
-      </Typography.Paragraph>
-      <Button onPress={() => router.push('/apartments/new')}>Create or join an apartment</Button>
+    <View className="gap-6 py-6">
+      <View className="gap-2">
+        <Typography.Heading type="h4">Join your flat</Typography.Heading>
+        <Typography.Paragraph color="muted">
+          Enter the code a flatmate shared with you.
+        </Typography.Paragraph>
+      </View>
+      <JoinApartment />
+      <View className="flex-row items-center gap-3">
+        <Separator className="flex-1" />
+        <Typography.Paragraph type="body-sm" color="muted">
+          or
+        </Typography.Paragraph>
+        <Separator className="flex-1" />
+      </View>
+      <Button variant="secondary" onPress={() => router.push('/apartments/new')}>
+        Create new apartment
+      </Button>
     </View>
   );
 }

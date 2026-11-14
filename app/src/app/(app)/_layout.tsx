@@ -24,6 +24,7 @@ export default function AppLayout() {
       />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Stack.Screen name="apartments/new" options={{ title: 'New apartment' }} />
+      <Stack.Screen name="apartments/join" options={{ title: 'Join an apartment' }} />
       <Stack.Screen name="accounts/[accountId]" options={{ title: 'Account' }} />
       <Stack.Screen
         name="accounts/edit"
