@@ -4,11 +4,18 @@ import { Tabs } from 'expo-router/tabs';
 import { PressableFeedback, useThemeColor } from 'heroui-native';
 import { View } from 'react-native';
 
-import { TAB_ICON_BOX, TAB_ICON_SIZE, tabTransition } from '@/components/screen-transitions';
+import {
+  ADD_ICON_SIZE,
+  HEADER_ICON_SIZE,
+  TAB_ICON_BOX,
+  TAB_ICON_SIZE,
+  tabTransition,
+} from '@/components/screen-transitions';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { NotificationBell } from '@/features/notifications/components/notification-bell';
 import { ApartmentSwitcher } from '@/features/apartments/components/apartment-switcher';
-import { useApartmentId, useMyMembership } from '@/features/apartments/hooks';
+import { useApartmentId } from '@/features/apartments/hooks';
+import { HeaderBack } from '@/components/header-back';
 import { ProfileTabIcon } from '@/features/profile/components/profile-tab-icon';
 import { SignOutButton } from '@/features/profile/components/sign-out-button';
 
@@ -52,8 +59,9 @@ export default function ApartmentTabsLayout() {
         options={{
           title: 'Add',
           tabBarAccessibilityLabel: 'Add an expense',
-          // The same size as the other icons, in the accent colour as the main action.
-          tabBarIcon: () => <Ionicons name="add-circle" size={TAB_ICON_SIZE} color={accent} />,
+          tabBarIconStyle: { width: ADD_ICON_SIZE + 4, height: ADD_ICON_SIZE + 4 },
+          // Grey like the other icons: blue marks only the open tab.
+          tabBarIcon: () => <Ionicons name="add-circle" size={ADD_ICON_SIZE} color={muted} />,
         }}
         listeners={{
           tabPress: (event) => {
@@ -69,8 +77,16 @@ export default function ApartmentTabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          // The user's own page, not the apartment's: a plain title and sign-out.
+          // The user's own page, not the apartment's: a plain title, back to the
+          // expenses, and sign-out.
           headerTitle: 'Profile',
+          headerLeft: () => (
+            <HeaderBack
+              onPress={() =>
+                router.navigate({ pathname: '/apartments/[apartmentId]', params: { apartmentId } })
+              }
+            />
+          ),
           headerTitleAlign: 'left',
           headerRight: () => <SignOutButton />,
           tabBarAccessibilityLabel: 'Profile',
@@ -96,7 +112,6 @@ function TabIcon({
 
 function HeaderActions({ apartmentId }: { apartmentId: string }) {
   const iconColor = useThemeColor('foreground');
-  const membership = useMyMembership(apartmentId);
   const userId = useCurrentUserId();
 
   return (
@@ -110,20 +125,8 @@ function HeaderActions({ apartmentId }: { apartmentId: string }) {
         accessibilityLabel="Members"
         hitSlop={8}
       >
-        <Ionicons name="people-outline" size={22} color={iconColor} />
+        <Ionicons name="people-outline" size={HEADER_ICON_SIZE} color={iconColor} />
       </PressableFeedback>
-      {membership?.role === 'admin' ? (
-        <PressableFeedback
-          onPress={() =>
-            router.push({ pathname: '/apartments/[apartmentId]/settings', params: { apartmentId } })
-          }
-          accessibilityRole="button"
-          accessibilityLabel="Apartment settings"
-          hitSlop={8}
-        >
-          <Ionicons name="settings-outline" size={22} color={iconColor} />
-        </PressableFeedback>
-      ) : null}
     </View>
   );
 }

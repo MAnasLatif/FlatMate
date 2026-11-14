@@ -1,8 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { Tabs } from 'expo-router/tabs';
 import { useThemeColor } from 'heroui-native';
 
 import { TAB_ICON_BOX, TAB_ICON_SIZE, tabTransition } from '@/components/screen-transitions';
+import { HeaderBack } from '@/components/header-back';
 import { ProfileTabIcon } from '@/features/profile/components/profile-tab-icon';
 import { SignOutButton } from '@/features/profile/components/sign-out-button';
 
@@ -44,6 +46,7 @@ export default function HomeTabsLayout() {
         options={{
           title: 'Profile',
           headerShown: true,
+          headerLeft: () => <HeaderBack onPress={() => router.navigate('/')} />,
           headerRight: () => <SignOutButton />,
           tabBarAccessibilityLabel: 'Profile',
           tabBarIcon: ({ focused }) => <ProfileTabIcon focused={focused} />,
