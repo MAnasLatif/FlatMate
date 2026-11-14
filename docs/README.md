@@ -7,6 +7,7 @@ All project documentation lives in this folder.
 | [SRS.md](SRS.md) | Software Requirements Specification: what the product must do, the proposed data model, acceptance criteria, delivery phases and open decisions. |
 | [TASKS.md](TASKS.md) | The ordered list of remaining work, from the current state to release. |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | How the app, backend and website fit together, and where each responsibility lives. |
+| [NOTIFICATIONS.md](NOTIFICATIONS.md) | How notifications and push work, and how to set up Firebase, EAS and Supabase for them. |
 | [decisions/](decisions/) | Architecture decision records: significant choices and the reasons behind them. |
 
 Related documents in the repository root: [README](../README.md), [AGENTS.md](../AGENTS.md), [CONTRIBUTING](../CONTRIBUTING.md) and [SECURITY](../SECURITY.md).
