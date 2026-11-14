@@ -1,5 +1,11 @@
 import type { ExpoConfig } from 'expo/config';
 
+// Firebase identifies the Android app for push notifications. EAS cloud builds
+// get the file from the GOOGLE_SERVICES_JSON file environment variable, and
+// local builds from the same variable in app/.env (docs/NOTIFICATIONS.md).
+// Without it the app builds and runs, and Android push is unavailable.
+const googleServicesFile = process.env.GOOGLE_SERVICES_JSON;
+
 const config: ExpoConfig = {
   name: 'FlatMate',
   slug: 'flatmate',
@@ -20,6 +26,7 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'com.manaslatif.flatmate',
+    ...(googleServicesFile ? { googleServicesFile } : {}),
     adaptiveIcon: {
       foregroundImage: './assets/images/android-icon-foreground.png',
       backgroundImage: './assets/images/android-icon-background.png',
@@ -41,6 +48,14 @@ const config: ExpoConfig = {
       },
     ],
     'expo-secure-store',
+    [
+      'expo-notifications',
+      {
+        // Android draws the status-bar icon from the image's alpha, so it must
+        // be white on transparent: the adaptive icon's monochrome layer.
+        icon: './assets/images/android-icon-monochrome.png',
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,

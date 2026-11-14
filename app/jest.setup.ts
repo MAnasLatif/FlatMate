@@ -19,6 +19,21 @@ jest.mock('expo-sqlite/kv-store', () => {
   };
 });
 
+// expo-notifications is a native module, and in Jest it behaves as in Expo Go,
+// where Android push is unavailable. Tests see a device without permission.
+jest.mock('expo-notifications', () => ({
+  AndroidImportance: { HIGH: 4 },
+  DEFAULT_ACTION_IDENTIFIER: 'expo.modules.notifications.actions.DEFAULT',
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(async () => null),
+  getPermissionsAsync: jest.fn(async () => ({ status: 'denied' })),
+  requestPermissionsAsync: jest.fn(async () => ({ status: 'denied' })),
+  getExpoPushTokenAsync: jest.fn(async () => ({ data: 'ExponentPushToken[test-token-000001]' })),
+  addPushTokenListener: jest.fn(() => ({ remove: jest.fn() })),
+  useLastNotificationResponse: jest.fn(() => null),
+  clearLastNotificationResponseAsync: jest.fn(async () => undefined),
+}));
+
 // NetInfo is a native module. Its own mock reports a connected device.
 jest.mock('@react-native-community/netinfo', () =>
   jest.requireActual('@react-native-community/netinfo/jest/netinfo-mock.js'),
