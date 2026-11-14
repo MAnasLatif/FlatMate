@@ -88,16 +88,18 @@ Tests sit next to the code they test, as `name.test.ts`. Tests for a route go in
 
 A screen calls a feature's hooks; hooks wrap TanStack Query around the feature's `api.ts`; `api.ts` calls Supabase through the client in `src/lib/supabase.ts`. Reads are table selects or read-only functions, and writes are always database functions (`supabase.rpc`). After a write, a hook invalidates the affected cache keys: everything about an apartment's money is under `['money', apartmentId]` (`useRefreshMoney`), and apartment data under `['apartments', apartmentId]`. The full picture is in [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md#data-in-the-app).
 
-React Query follows the device: `src/lib/network.ts` tells it when the device goes offline or online and when the app returns to the foreground, so loads pause offline and stale data refetches on return. Reads retry only failures that could change; writes never wait in a queue and fail at once offline. `OfflineBanner` shows when the data on screen was last updated.
+React Query follows the device: `src/lib/network.ts` tells it when the device goes offline or online and when the app returns to the foreground, so loads pause offline and stale data refetches on return. Reads retry only failures that could change; writes never wait in a queue and fail at once offline. `Screen` shows a `FreshnessBanner` offline, with when the data was last updated, and online when a refresh failed over saved data.
 
 Loaded data is saved on the device (`src/lib/saved-cache.ts`), so it stays readable offline and appears at once on the next launch. It is encrypted with `EncryptedStorage` (`src/lib/encrypted-storage.ts`), the same scheme as the session, kept per user for up to 7 days, and deleted at sign-out. Signed image links and failed loads are never saved. The splash screen stays up until it is restored. A query whose data must never be saved goes in `UNSAVED_QUERY_ROOTS` there.
 
-Planned in [decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md), tasks 1.37 to 1.42: offline states on every screen, and the app becomes fully event-driven. One router in `src/lib/sync/` listens for change events through Supabase Realtime and invalidates the matching cache keys.
+Planned in [decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md), tasks 1.38 to 1.42: the app becomes fully event-driven. One router in `src/lib/sync/` listens for change events through Supabase Realtime and invalidates the matching cache keys.
 
 ## Rules specific to this folder
 
 - A screen calls hooks and renders components. Queries, split calculations and permission decisions live in a feature's logic or data-access code, or on the server.
 - Freshness comes from events, not timers. Never poll or refetch on an interval. Once the event router exists (task 1.41), a new kind of record gets its event kind mapped to its cache keys in `src/lib/sync/`, and features never open Realtime channels themselves. A mutation still invalidates its own keys so the person acting sees the result at once.
+- Offline, every screen keeps what it has. Pass the screen's main query to `Screen` as `freshness`, so the banner can say when it was last updated. Decide on a load error with `isLoadingError` or `loadingError(...)` from `src/components/query-states.tsx`, never `isError` or `error`, which are also set when a refresh fails over data that is still worth showing. Use `LoadingRows` or `PendingSkeleton` for loading, so a load that waits for the connection says so.
+- Every button that writes to the server is an `OnlineButton`, which is disabled offline. Buttons that only navigate stay `Button`.
 - The app can preview a split or a balance, but the server decides. Never treat a client-side calculation as authoritative.
 - Money is an integer number of minor units from the database to the screen. Format it with `formatMinorUnits` at the last step, and never divide it into a decimal.
 - Render screens in tests with `renderWithProviders` from `src/test/render.tsx`. Theme colours do not exist under Jest, so tests check behaviour and text, not colours.
