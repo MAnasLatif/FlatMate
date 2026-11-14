@@ -85,10 +85,24 @@ describe('JoinApartment paste', () => {
     await renderWithProviders(<JoinApartment />);
     const user = userEvent.setup();
 
-    await user.press(screen.getByRole('button', { name: 'Paste join code' }));
+    expect(screen.queryByRole('button', { name: 'Paste join code' })).not.toBeOnTheScreen();
+    fireEvent(screen.getByLabelText('Join code'), 'focus');
+    await user.press(await screen.findByRole('button', { name: 'Paste join code' }));
     expect(screen.getByLabelText('Join code')).toHaveDisplayValue('7kq2-m9xd');
 
     await user.press(screen.getByRole('button', { name: 'Join' }));
     expect(jest.mocked(joinApartment).mock.calls[0][0]).toBe('7KQ2M9XD');
+  });
+
+  it('hides Paste once the field is left', async () => {
+    await renderWithProviders(<JoinApartment />);
+    const field = screen.getByLabelText('Join code');
+
+    fireEvent(field, 'focus');
+    expect(await screen.findByRole('button', { name: 'Paste join code' })).toBeOnTheScreen();
+    fireEvent(field, 'endEditing');
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Paste join code' })).not.toBeOnTheScreen(),
+    );
   });
 });

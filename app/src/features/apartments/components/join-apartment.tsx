@@ -4,6 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { Button, useThemeColor } from 'heroui-native';
 import { View } from 'react-native';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 
@@ -39,6 +40,7 @@ export function JoinApartment() {
   });
 
   const accent = useThemeColor('accent');
+  const [isFocused, setFocused] = useState(false);
 
   const paste = async () => {
     const text = (await Clipboard.getStringAsync()).trim();
@@ -85,18 +87,25 @@ export function JoinApartment() {
         autoCapitalize="characters"
         autoCorrect={false}
         maxLength={9}
+        onFocus={() => setFocused(true)}
         // Leaving the field clears the error until Join is pressed again.
-        onEndEditing={() => form.clearErrors('code')}
+        onEndEditing={() => {
+          setFocused(false);
+          form.clearErrors('code');
+        }}
         endContent={
-          <Button
-            size="sm"
-            variant="ghost"
-            onPress={() => void paste()}
-            accessibilityLabel="Paste join code"
-          >
-            <Ionicons name="clipboard-outline" size={16} color={accent} />
-            <Button.Label>Paste</Button.Label>
-          </Button>
+          // Paste is offered only while the field is in use.
+          isFocused ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onPress={() => void paste()}
+              accessibilityLabel="Paste join code"
+            >
+              <Ionicons name="clipboard-outline" size={16} color={accent} />
+              <Button.Label>Paste</Button.Label>
+            </Button>
+          ) : null
         }
       />
       <OnlineButton

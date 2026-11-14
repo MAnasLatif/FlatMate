@@ -19,7 +19,10 @@ export type TextInputFieldProps<TFieldValues extends FieldValues, TTransformed> 
   isRequired?: boolean;
   /** A decorative icon at the start of the input, such as "mail-outline". */
   icon?: keyof typeof Ionicons.glyphMap;
-  /** Interactive content at the end of the input, such as a show-password button. */
+  /**
+   * Interactive content at the end of the input, such as a show-password
+   * button. Pass null to hide it for now without rebuilding the input.
+   */
   endContent?: ReactNode;
 } & Omit<ComponentProps<typeof Input>, 'value' | 'onChangeText' | 'onBlur'>;
 
@@ -55,7 +58,9 @@ export function TextInputField<TFieldValues extends FieldValues, TTransformed>({
   return (
     <TextField isRequired={isRequired} isInvalid={isInvalid}>
       <Label>{label}</Label>
-      {icon || endContent ? (
+      {/* endContent may be null while hidden: the group stays, so the input is
+          not rebuilt (and does not lose focus) when the content appears. */}
+      {icon !== undefined || endContent !== undefined ? (
         <InputGroup>
           {icon ? (
             <InputGroup.Prefix isDecorative>
