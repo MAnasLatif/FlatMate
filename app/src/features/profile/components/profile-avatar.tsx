@@ -5,9 +5,17 @@ import { useAvatarUrl } from '../hooks';
 type ProfileAvatarProps = {
   name: string | null | undefined;
   avatarPath: string | null | undefined;
-  /** "xl" is the large photo on the profile screen; HeroUI's sizes stop at "lg". */
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  /**
+   * HeroUI's sizes run from "sm" to "lg". "xs" is the tab bar icon and "xl" the
+   * large photo on the profile screen.
+   */
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 };
+
+const EXTRA_SIZES = {
+  xs: { base: 'sm', root: 'size-7', text: 'text-[10px]' },
+  xl: { base: 'lg', root: 'size-28', text: 'text-3xl' },
+} as const;
 
 export function initialsOf(name: string | null | undefined): string {
   const words = (name ?? '').trim().split(/\s+/).filter(Boolean);
@@ -20,15 +28,16 @@ export function initialsOf(name: string | null | undefined): string {
 export function ProfileAvatar({ name, avatarPath, size = 'md' }: ProfileAvatarProps) {
   const avatarUrl = useAvatarUrl(avatarPath);
   const initials = initialsOf(name);
+  const extra = size === 'xs' || size === 'xl' ? EXTRA_SIZES[size] : undefined;
 
   return (
     <Avatar
-      size={size === 'xl' ? 'lg' : size}
-      className={size === 'xl' ? 'size-28' : undefined}
+      size={extra ? extra.base : (size as 'sm' | 'md' | 'lg')}
+      className={extra?.root}
       alt={name ?? 'Profile photo'}
     >
       {avatarUrl.data ? <Avatar.Image source={{ uri: avatarUrl.data }} /> : null}
-      <Avatar.Fallback classNames={size === 'xl' ? { text: 'text-3xl' } : undefined}>
+      <Avatar.Fallback classNames={extra ? { text: extra.text } : undefined}>
         {initials || undefined}
       </Avatar.Fallback>
     </Avatar>

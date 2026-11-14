@@ -9,6 +9,7 @@ import { useCurrentUserId } from '@/features/auth/session-provider';
 import { NotificationBell } from '@/features/notifications/components/notification-bell';
 import { ApartmentSwitcher } from '@/features/apartments/components/apartment-switcher';
 import { useApartmentId, useMyMembership } from '@/features/apartments/hooks';
+import { ProfileTabIcon } from '@/features/profile/components/profile-tab-icon';
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -25,6 +26,7 @@ export default function ApartmentTabsLayout() {
         headerTitle: () => <ApartmentSwitcher apartmentId={apartmentId} />,
         headerTitleAlign: 'left',
         headerRight: () => <HeaderActions apartmentId={apartmentId} />,
+        tabBarShowLabel: false,
         tabBarActiveTintColor: accent,
         tabBarInactiveTintColor: muted,
       }}
@@ -34,6 +36,7 @@ export default function ApartmentTabsLayout() {
         name="index"
         options={{
           title: 'Expenses',
+          tabBarAccessibilityLabel: 'Expenses',
           tabBarIcon: ({ focused, size }) => (
             <TabIcon name="receipt-outline" focused={focused} size={size} />
           ),
@@ -45,7 +48,7 @@ export default function ApartmentTabsLayout() {
           title: 'Add',
           tabBarAccessibilityLabel: 'Add an expense',
           tabBarIcon: ({ focused, size }) => (
-            <TabIcon name="add-circle" focused={focused} size={size + 8} />
+            <TabIcon name="add-circle" focused={focused} size={size + 18} />
           ),
         }}
         listeners={{
@@ -62,9 +65,8 @@ export default function ApartmentTabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ focused, size }) => (
-            <TabIcon name="person-circle-outline" focused={focused} size={size} />
-          ),
+          tabBarAccessibilityLabel: 'Profile',
+          tabBarIcon: ({ focused }) => <ProfileTabIcon focused={focused} />,
         }}
       />
     </Tabs>
