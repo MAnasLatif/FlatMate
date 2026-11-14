@@ -148,7 +148,7 @@ it('offers a retry when the balances cannot be loaded', async () => {
   const user = userEvent.setup();
 
   expect(await screen.findByText('Could not load your balances.')).toBeOnTheScreen();
-  await user.press(screen.getByRole('button', { name: 'Try again' }));
+  await user.press(screen.getByRole('button', { name: /Tap to try again/ }));
 
   expect(await screen.findByLabelText('You owe, 0.00 PKR')).toBeOnTheScreen();
 });

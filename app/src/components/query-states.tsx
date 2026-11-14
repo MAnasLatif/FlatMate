@@ -1,10 +1,8 @@
 import type { UseQueryResult } from '@tanstack/react-query';
-import { Button, Skeleton, Typography } from 'heroui-native';
+import { PressableFeedback, Skeleton, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
 import { useIsOnline } from '@/lib/network';
-
-import { FormAlert } from './form/form-alert';
 
 /**
  * Placeholder rows shown while a list loads, sized like the real rows. Offline,
@@ -29,15 +27,25 @@ export function LoadingRows({ count = 3 }: { count?: number }) {
   );
 }
 
-/** A failed load with a way to try again. */
+/**
+ * A failed load. Tapping it loads again, as in most apps, instead of a
+ * separate Try again button.
+ */
 export function LoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <View className="gap-3">
-      <FormAlert message={message} />
-      <Button variant="secondary" onPress={onRetry}>
-        Try again
-      </Button>
-    </View>
+    <PressableFeedback
+      onPress={onRetry}
+      accessibilityRole="button"
+      accessibilityLabel={`${message} Tap to try again.`}
+      className="items-center gap-1 rounded-xl py-6"
+    >
+      <Typography.Paragraph type="body-sm" color="muted" className="text-center">
+        {message}
+      </Typography.Paragraph>
+      <Typography.Paragraph type="body-xs" color="muted" className="text-center">
+        Tap to try again.
+      </Typography.Paragraph>
+    </PressableFeedback>
   );
 }
 

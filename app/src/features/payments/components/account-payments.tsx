@@ -27,7 +27,7 @@ export function AccountPayments({ accountId }: { accountId: string }) {
         <LoadingRows count={2} />
       ) : payments.isLoadingError ? (
         <LoadError
-          message={userErrorMessage(payments.error, 'Could not load the payments.')}
+          message={userErrorMessage(payments.error, 'Payments are not available right now.')}
           onRetry={() => void payments.refetch()}
         />
       ) : items.length === 0 ? (

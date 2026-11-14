@@ -62,7 +62,7 @@ describe('ExpenseReceipts', () => {
     const user = userEvent.setup();
 
     expect(await screen.findByText('Could not load the receipts.')).toBeOnTheScreen();
-    await user.press(screen.getByRole('button', { name: 'Try again' }));
+    await user.press(screen.getByRole('button', { name: /Tap to try again/ }));
 
     expect(await screen.findByText('No receipt attached.')).toBeOnTheScreen();
   });
