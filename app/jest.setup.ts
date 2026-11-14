@@ -48,6 +48,11 @@ jest.mock('react-native-reanimated', () => jest.requireActual('react-native-rean
 // layout code needs a device. The package ships a mock that renders plain views.
 jest.mock('@gorhom/bottom-sheet', () => jest.requireActual('@gorhom/bottom-sheet/mock'));
 
+// AsyncStorage is a native module; the package ships an in-memory mock.
+jest.mock('@react-native-async-storage/async-storage', () =>
+  jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
 // Gesture Handler's swipeable row needs Reanimated shared values that its mock
 // does not provide. This stand-in renders the row and its actions, and passes
 // onSwipeableOpen through, so a test can fire fireEvent(row, 'swipeableOpen', 'right').
