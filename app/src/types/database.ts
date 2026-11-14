@@ -686,6 +686,7 @@ export type Database = {
         Row: {
           amount_minor: number;
           apartment_id: string;
+          category_detail: string | null;
           category_id: string | null;
           client_request_id: string | null;
           collector_id: string | null;
@@ -708,6 +709,7 @@ export type Database = {
         Insert: {
           amount_minor: number;
           apartment_id: string;
+          category_detail?: string | null;
           category_id?: string | null;
           client_request_id?: string | null;
           collector_id?: string | null;
@@ -729,6 +731,7 @@ export type Database = {
         Update: {
           amount_minor?: number;
           apartment_id?: string;
+          category_detail?: string | null;
           category_id?: string | null;
           client_request_id?: string | null;
           collector_id?: string | null;
@@ -1877,6 +1880,7 @@ export type Database = {
         Args: {
           p_amount_minor: number;
           p_apartment_id: string;
+          p_category_detail?: string;
           p_category_id?: string;
           p_client_request_id?: string;
           p_collector_id?: string;
@@ -1938,6 +1942,10 @@ export type Database = {
       revoke_invite: { Args: { p_invite_id: string }; Returns: undefined };
       set_bill_collector: {
         Args: { p_collector_id: string; p_expense_id: string };
+        Returns: undefined;
+      };
+      set_expense_category_detail: {
+        Args: { p_detail: string; p_expense_id: string };
         Returns: undefined;
       };
       set_member_can_add_expense: {
