@@ -2,7 +2,8 @@ import { LinkButton, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
 type AuthFooterLinkProps = {
-  prompt: string;
+  /** Text before the link, such as "New to FlatMate?". */
+  prompt?: string;
   action: string;
   onPress: () => void;
   isDisabled?: boolean;
@@ -12,9 +13,11 @@ type AuthFooterLinkProps = {
 export function AuthFooterLink({ prompt, action, onPress, isDisabled }: AuthFooterLinkProps) {
   return (
     <View className="flex-row flex-wrap items-center justify-center gap-1 pt-2">
-      <Typography.Paragraph type="body-sm" color="muted">
-        {prompt}
-      </Typography.Paragraph>
+      {prompt ? (
+        <Typography.Paragraph type="body-sm" color="muted">
+          {prompt}
+        </Typography.Paragraph>
+      ) : null}
       <LinkButton size="sm" onPress={onPress} isDisabled={isDisabled}>
         <LinkButton.Label className={isDisabled ? 'text-muted' : 'font-semibold text-accent'}>
           {action}

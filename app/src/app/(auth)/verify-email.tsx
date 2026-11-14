@@ -95,14 +95,12 @@ export default function VerifyEmailScreen() {
               Check your spam folder too.
             </Typography.Paragraph>
           </View>
-
-          {/* Skipping does not confirm the account: signing in later brings the
-              person back here for a code, since the project requires it. */}
-          <Button variant="ghost" onPress={() => router.dismissTo('/sign-in')}>
-            Skip for now
-          </Button>
         </View>
       </View>
+
+      {/* Going back does not confirm the account: signing in later brings the
+          person back here for a code, since the project requires it. */}
+      <AuthFooterLink action="Go back to login" onPress={() => router.dismissTo('/sign-in')} />
     </Screen>
   );
 }

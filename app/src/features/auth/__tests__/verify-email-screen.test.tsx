@@ -38,10 +38,10 @@ describe('VerifyEmailScreen', () => {
     expect(screen.getByText('A new code is on its way.')).toBeOnTheScreen();
   });
 
-  it('lets the person skip for now and go back to sign-in', async () => {
+  it('goes back to the login screen from the link at the bottom', async () => {
     jest.mocked(useLocalSearchParams).mockReturnValue({ email, codeSent: '1' });
     await renderWithProviders(<VerifyEmailScreen />);
-    await userEvent.setup().press(screen.getByRole('button', { name: 'Skip for now' }));
+    await userEvent.setup().press(screen.getByRole('button', { name: 'Go back to login' }));
     expect(router.dismissTo).toHaveBeenCalledWith('/sign-in');
   });
 });
