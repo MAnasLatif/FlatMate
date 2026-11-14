@@ -14,6 +14,29 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', user_id, 'role', 'authenticated')::text, true);
 end;
 $$;
+
+-- Joining needs an admin's approval: ask with the code, then approve as an
+-- admin of the apartment, and carry on as the person who joined.
+create function pg_temp.join(code text) returns void language plpgsql as $$
+declare
+  joiner_claims text := current_setting('request.jwt.claims', true);
+  result jsonb := public.join_apartment(code);
+  admin uuid;
+begin
+  if result ->> 'status' not in ('requested', 'pending') then
+    raise exception 'join failed: %', result;
+  end if;
+  perform set_config('role', 'postgres', true);
+  select user_id into admin from public.apartment_members
+  where apartment_id = (result ->> 'apartment_id')::uuid and role = 'admin' and left_at is null
+  order by joined_at
+  limit 1;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform public.approve_join_request((result ->> 'request_id')::uuid);
+  perform set_config('request.jwt.claims', joiner_claims, true);
+end;
+$$;
 create function pg_temp.a() returns uuid language sql as $$ select '11111111-1111-1111-1111-111111111111'::uuid $$;
 create function pg_temp.z() returns uuid language sql as $$ select '22222222-2222-2222-2222-222222222222'::uuid $$;
 create temporary table vals (name text primary key, val text);
@@ -31,8 +54,8 @@ insert into vals values ('old', public.create_apartment('Old flat', 1)::text);
 insert into vals values ('code', public.create_invite(pg_temp.v('flat')::uuid));
 insert into vals values ('old-code', public.create_invite(pg_temp.v('old')::uuid));
 select pg_temp.act_as(pg_temp.z());
-select public.join_apartment(pg_temp.v('code'));
-select public.join_apartment(pg_temp.v('old-code'));
+select pg_temp.join(pg_temp.v('code'));
+select pg_temp.join(pg_temp.v('old-code'));
 select pg_temp.act_as(pg_temp.a());
 select public.set_member_role(pg_temp.v('old')::uuid, pg_temp.z(), 'admin');
 select public.leave_apartment(pg_temp.v('old')::uuid);

@@ -16,6 +16,29 @@ begin
 end;
 $$;
 
+-- Joining needs an admin's approval: ask with the code, then approve as an
+-- admin of the apartment, and carry on as the person who joined.
+create function pg_temp.join(code text) returns void language plpgsql as $$
+declare
+  joiner_claims text := current_setting('request.jwt.claims', true);
+  result jsonb := public.join_apartment(code);
+  admin uuid;
+begin
+  if result ->> 'status' not in ('requested', 'pending') then
+    raise exception 'join failed: %', result;
+  end if;
+  perform set_config('role', 'postgres', true);
+  select user_id into admin from public.apartment_members
+  where apartment_id = (result ->> 'apartment_id')::uuid and role = 'admin' and left_at is null
+  order by joined_at
+  limit 1;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform public.approve_join_request((result ->> 'request_id')::uuid);
+  perform set_config('request.jwt.claims', joiner_claims, true);
+end;
+$$;
+
 create temporary table vals (name text primary key, val text);
 grant all on table vals to authenticated;
 
@@ -24,9 +47,9 @@ insert into vals values ('flat', public.create_apartment('Flat 4B', 1)::text);
 insert into vals values ('code', public.create_invite((select val::uuid from vals where name = 'flat')));
 
 select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
-select public.join_apartment((select val from vals where name = 'code'));
+select pg_temp.join((select val from vals where name = 'code'));
 select pg_temp.act_as('33333333-3333-3333-3333-333333333333');
-select public.join_apartment((select val from vals where name = 'code'));
+select pg_temp.join((select val from vals where name = 'code'));
 
 create function pg_temp.flat() returns uuid language sql as $$ select val::uuid from vals where name = 'flat' $$;
 create function pg_temp.role_of(user_id uuid) returns text language sql as $$
@@ -145,7 +168,9 @@ reset role;
 
 select results_eq(
   $$ select action from public.audit_events where apartment_id = pg_temp.flat() order by id $$,
-  $$ values ('created'::text), ('created'), ('joined'), ('joined'), ('role_changed'), ('role_changed'),
+  $$ values ('created'::text), ('created'),
+            ('requested'), ('joined'), ('approved'), ('requested'), ('joined'), ('approved'),
+            ('role_changed'), ('role_changed'),
             ('expense_permission_changed'), ('removed'), ('left'), ('left') $$,
   'every change is recorded in the activity history, in order'
 );

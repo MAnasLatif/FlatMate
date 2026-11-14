@@ -14,6 +14,29 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', user_id, 'role', 'authenticated')::text, true);
 end;
 $$;
+
+-- Joining needs an admin's approval: ask with the code, then approve as an
+-- admin of the apartment, and carry on as the person who joined.
+create function pg_temp.join(code text) returns void language plpgsql as $$
+declare
+  joiner_claims text := current_setting('request.jwt.claims', true);
+  result jsonb := public.join_apartment(code);
+  admin uuid;
+begin
+  if result ->> 'status' not in ('requested', 'pending') then
+    raise exception 'join failed: %', result;
+  end if;
+  perform set_config('role', 'postgres', true);
+  select user_id into admin from public.apartment_members
+  where apartment_id = (result ->> 'apartment_id')::uuid and role = 'admin' and left_at is null
+  order by joined_at
+  limit 1;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform public.approve_join_request((result ->> 'request_id')::uuid);
+  perform set_config('request.jwt.claims', joiner_claims, true);
+end;
+$$;
 create function pg_temp.a() returns uuid language sql as $$ select '11111111-1111-1111-1111-111111111111'::uuid $$;
 create function pg_temp.z() returns uuid language sql as $$ select '22222222-2222-2222-2222-222222222222'::uuid $$;
 create function pg_temp.j() returns uuid language sql as $$ select '33333333-3333-3333-3333-333333333333'::uuid $$;
@@ -30,9 +53,9 @@ select pg_temp.act_as(pg_temp.a());
 insert into vals values ('flat', public.create_apartment('Flat 4B', 1)::text);
 insert into vals values ('code', public.create_invite(pg_temp.v('flat')::uuid));
 select pg_temp.act_as(pg_temp.z());
-select public.join_apartment(pg_temp.v('code'));
+select pg_temp.join(pg_temp.v('code'));
 select pg_temp.act_as(pg_temp.j());
-select public.join_apartment(pg_temp.v('code'));
+select pg_temp.join(pg_temp.v('code'));
 
 reset role;
 select is(pg_temp.told(pg_temp.a(), 'member.joined'), 2, 'the admin hears about each person joining');
@@ -58,7 +81,8 @@ select isnt_empty(
 
 -- The inbox is private.
 select pg_temp.act_as(pg_temp.z());
-select is((select count(*)::int from public.notifications), 1, 'a person reads their own notifications');
+select is((select count(*)::int from public.notifications), 2,
+  'a person reads their own notifications: their approved join request and the expense');
 select throws_ok($$ select push_status from public.notifications $$, '42501', null,
   'but not the push delivery columns');
 select throws_ok(
@@ -69,7 +93,7 @@ select is_empty($$ select 1 from public.notifications where type = 'expense.crea
   'nobody reads someone else''s notifications');
 
 select pg_temp.act_as(pg_temp.z());
-select is(public.mark_notifications_read(), 1, 'marking all read marks the unread one');
+select is(public.mark_notifications_read(), 2, 'marking all read marks the unread ones');
 select is(public.mark_notifications_read(), 0, 'and marking again changes nothing');
 select isnt((select read_at from public.notifications limit 1), null, 'it is now read');
 

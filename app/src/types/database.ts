@@ -768,6 +768,69 @@ export type Database = {
           },
         ];
       };
+      join_requests: {
+        Row: {
+          apartment_id: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          id: string;
+          invite_id: string | null;
+          state: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          id?: string;
+          invite_id?: string | null;
+          state?: string;
+          user_id: string;
+        };
+        Update: {
+          apartment_id?: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          id?: string;
+          invite_id?: string | null;
+          state?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'join_requests_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'join_requests_decided_by_fkey';
+            columns: ['decided_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'join_requests_invite_id_fkey';
+            columns: ['invite_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartment_invites';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'join_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       ledger_entries: {
         Row: {
           adjustment_id: string | null;
@@ -1646,7 +1709,9 @@ export type Database = {
         Args: { p_payment_id: string; p_storage_path: string };
         Returns: string;
       };
+      approve_join_request: { Args: { p_request_id: string }; Returns: undefined };
       archive_category: { Args: { p_category_id: string }; Returns: undefined };
+      cancel_join_request: { Args: { p_request_id: string }; Returns: undefined };
       claim_pushes: {
         Args: { p_limit?: number };
         Returns: {
@@ -1672,6 +1737,7 @@ export type Database = {
         Args: { p_apply: boolean; p_dispute_id: string; p_message: string };
         Returns: undefined;
       };
+      decline_join_request: { Args: { p_request_id: string }; Returns: undefined };
       decline_payment: { Args: { p_payment_id: string; p_reason: string }; Returns: string };
       edit_expense: {
         Args: {
@@ -1690,6 +1756,16 @@ export type Database = {
         };
         Returns: number;
       };
+      get_join_requests: {
+        Args: { p_apartment_id: string };
+        Returns: {
+          avatar_path: string;
+          created_at: string;
+          display_name: string;
+          id: string;
+          user_id: string;
+        }[];
+      };
       get_my_balances: {
         Args: { p_apartment_id: string };
         Returns: {
@@ -1697,6 +1773,15 @@ export type Database = {
           disputed_minor: number;
           final_minor: number;
           provisional_minor: number;
+        }[];
+      };
+      get_my_join_requests: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          apartment_id: string;
+          apartment_name: string;
+          created_at: string;
+          id: string;
         }[];
       };
       get_my_monthly_share: { Args: { p_apartment_id: string; p_month: string }; Returns: number };

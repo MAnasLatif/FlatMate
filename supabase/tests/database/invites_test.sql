@@ -1,7 +1,7 @@
 -- Join codes: creation by admins, joining, expiry, revocation and rate limiting.
 begin;
 
-select plan(22);
+select plan(24);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111111', 'anas@example.test', '{"display_name": "Anas"}'),
@@ -51,17 +51,36 @@ select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
 
 select is(
   public.join_apartment(lower(replace((select val from vals where name = 'code'), '-', ' '))) ->> 'status',
-  'joined',
-  'a signed-in user joins with the code typed in lower case with a space'
+  'requested',
+  'a signed-in user asks to join with the code typed in lower case with a space'
 );
 
+select is(
+  public.join_apartment((select val from vals where name = 'code')) ->> 'status',
+  'pending',
+  'asking again while the request waits reports it as pending'
+);
+
+reset role;
+
+select is(
+  (select count(*)::int from public.apartment_members
+   where user_id = '22222222-2222-2222-2222-222222222222'),
+  0,
+  'asking to join does not make someone a member before an admin approves'
+);
+
+-- Anas, the admin, approves.
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');
+select public.approve_join_request(
+  (select id from public.get_join_requests((select val from vals where name = 'flat')::uuid)));
 reset role;
 
 select results_eq(
   $$ select role, can_add_expense from public.apartment_members
      where user_id = '22222222-2222-2222-2222-222222222222' $$,
   $$ values ('member'::text, true) $$,
-  'someone who joins becomes a member who can add expenses'
+  'once approved, they are a member who can add expenses'
 );
 
 select is(
@@ -75,7 +94,7 @@ select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
 select is(
   public.join_apartment((select val from vals where name = 'code')) ->> 'status',
   'already_member',
-  'joining twice reports that the user is already a member'
+  'asking again as a member reports that the user is already a member'
 );
 
 select is(
@@ -167,7 +186,7 @@ select is(
 
 select is(
   public.join_apartment((select val from vals where name = 'code')) ->> 'status',
-  'joined',
+  'requested',
   'other valid codes keep working'
 );
 
