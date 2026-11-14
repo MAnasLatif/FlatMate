@@ -97,12 +97,13 @@ describe('SharedAccounts', () => {
 });
 
 describe('MyAccountsSection', () => {
-  it('lists the accounts masked, with where each is shared', async () => {
+  it('lists the owner their accounts with the full number', async () => {
     await renderWithProviders(<MyAccountsSection />);
 
-    expect(await screen.findByText('Anas Latif · •••• 0123')).toBeOnTheScreen();
-    expect(screen.getByText('Shared with 1 apartment')).toBeOnTheScreen();
+    expect(await screen.findByText('PK36MEZN0001234567890123')).toBeOnTheScreen();
+    expect(screen.getByText('Anas Latif')).toBeOnTheScreen();
     expect(screen.getByText('Preferred')).toBeOnTheScreen();
+    expect(screen.queryByText(/Shared with|Private/)).not.toBeOnTheScreen();
   });
 
   it('only lists the accounts, with no action buttons in the list', async () => {
@@ -156,18 +157,16 @@ describe('MyAccountsSection', () => {
 });
 
 describe('AccountDetails', () => {
-  it('shows the details, masking the number until revealed', async () => {
+  it('shows the owner the details with the full number, and copies it', async () => {
     await renderWithProviders(<AccountDetails accountId="acc-1" />);
-    const user = userEvent.setup();
 
     expect(await screen.findByText('Bank account')).toBeOnTheScreen();
     expect(screen.getByText('Anas Latif')).toBeOnTheScreen();
     expect(screen.getByText('Members of Flat 4B')).toBeOnTheScreen();
-    expect(screen.getByText('•••• 0123')).toBeOnTheScreen();
-    expect(screen.queryByText('PK36MEZN0001234567890123')).not.toBeOnTheScreen();
-
-    await user.press(screen.getByRole('button', { name: 'Show number' }));
     expect(screen.getByText('PK36MEZN0001234567890123')).toBeOnTheScreen();
+
+    await userEvent.setup().press(screen.getByRole('button', { name: 'Copy number' }));
+    expect(Clipboard.setStringAsync).toHaveBeenCalledWith('PK36MEZN0001234567890123');
   });
 
   it('offers to make a non-preferred account preferred', async () => {

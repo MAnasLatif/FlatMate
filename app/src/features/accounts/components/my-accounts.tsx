@@ -20,7 +20,6 @@ import { userErrorMessage } from '@/lib/errors';
 
 import type { MyAccount } from '../api';
 import { useMyAccounts } from '../hooks';
-import { maskIdentifier } from '../rules';
 import { DeleteAccountSheet } from './delete-account-sheet';
 
 /**
@@ -47,12 +46,17 @@ export function MyAccountsSection() {
           onRetry={() => void accounts.refetch()}
         />
       ) : (
-        accounts.data.map((account) => (
-          <View key={account.id}>
-            <Separator />
-            <AccountRow account={account} onDelete={() => setDeleting(account)} />
-          </View>
-        ))
+        // Rows sit directly between dividers, with no gap, so a swipe action
+        // behind a row is exactly as tall as the row.
+        <View>
+          {accounts.data.map((account) => (
+            <View key={account.id}>
+              <Separator />
+              <AccountRow account={account} onDelete={() => setDeleting(account)} />
+            </View>
+          ))}
+          {accounts.data.length > 0 ? <Separator /> : null}
+        </View>
       )}
       <Button variant="secondary" onPress={() => editAccount()}>
         Add bank or wallet
@@ -74,11 +78,6 @@ function AccountRow({ account, onDelete }: { account: MyAccount; onDelete: () =>
     'accent-foreground',
     'danger-foreground',
   ]);
-  const shared =
-    account.sharedWith.length === 0
-      ? 'Private'
-      : `Shared with ${account.sharedWith.length} ${account.sharedWith.length === 1 ? 'apartment' : 'apartments'}`;
-
   return (
     <ReanimatedSwipeable
       ref={swipeable}
@@ -114,18 +113,21 @@ function AccountRow({ account, onDelete }: { account: MyAccount; onDelete: () =>
           router.push({ pathname: '/accounts/[accountId]', params: { accountId: account.id } })
         }
         accessibilityRole="button"
-        accessibilityLabel={`${account.provider}, ${shared}${account.isPreferred ? ', preferred' : ''}`}
+        accessibilityLabel={`${account.provider}, ${account.accountTitle}, ${account.accountIdentifier}${account.isPreferred ? ', preferred' : ''}`}
         accessibilityHint="Opens the account's details"
-        className="bg-background flex-row items-center gap-2 py-3"
+        // No shrink on press: a smaller row would uncover the swipe actions
+        // behind it. A ripple shows the press instead.
+        animation={false}
+        className="bg-background flex-row items-center gap-2 overflow-hidden py-3"
       >
+        <PressableFeedback.Ripple />
         <View className="flex-1 gap-0.5">
           <Typography.Paragraph>{account.provider}</Typography.Paragraph>
           <Typography.Paragraph type="body-xs" color="muted">
-            {account.accountTitle} · {maskIdentifier(account.accountIdentifier)}
+            {account.accountTitle}
           </Typography.Paragraph>
-          <Typography.Paragraph type="body-xs" color="muted">
-            {shared}
-          </Typography.Paragraph>
+          {/* The owner's own list shows the whole number; flatmates see it masked. */}
+          <Typography.Paragraph type="body-sm">{account.accountIdentifier}</Typography.Paragraph>
         </View>
         {account.isPreferred ? (
           <Chip size="sm" variant="soft" color="accent">

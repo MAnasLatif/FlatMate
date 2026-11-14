@@ -14,7 +14,6 @@ import { userErrorMessage } from '@/lib/errors';
 
 import type { MyAccount } from '../api';
 import { useAccountMutations, useMyAccounts } from '../hooks';
-import { maskIdentifier } from '../rules';
 import { DeleteAccountSheet } from './delete-account-sheet';
 
 /** One of the user's bank or wallet accounts, with everything they can do to it. */
@@ -73,7 +72,6 @@ function Details({
   freshness: Parameters<typeof Screen>[0]['freshness'];
 }) {
   const { prefer } = useAccountMutations();
-  const [isRevealed, setIsRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const isBank = account.kind === 'bank';
@@ -103,13 +101,10 @@ function Details({
       <View className="gap-2">
         <Detail
           label={isBank ? 'Account number or IBAN' : 'Wallet number'}
-          value={isRevealed ? account.accountIdentifier : maskIdentifier(account.accountIdentifier)}
-          selectable={isRevealed}
+          value={account.accountIdentifier}
+          selectable
         />
-        <View className="flex-row gap-2">
-          <Button size="sm" variant="ghost" onPress={() => setIsRevealed((value) => !value)}>
-            {isRevealed ? 'Hide number' : 'Show number'}
-          </Button>
+        <View className="flex-row">
           <Button size="sm" variant="secondary" onPress={() => void copy()}>
             {copied ? 'Copied' : 'Copy number'}
           </Button>
