@@ -53,6 +53,8 @@ describe('describeHistoryEvent', () => {
     [event('created', { paid: false }), 'Anas added this as an unpaid bill'],
     [event('bill_paid'), 'Anas recorded that the bill was paid'],
     [event('receipt_added'), 'Anas attached a receipt'],
+    [event('collector_set', { collector_id: 'z' }), 'Anas chose who will pay the bill'],
+    [event('collector_set', { collector_id: null }), 'Anas cleared who will pay the bill'],
     [event('something_new'), 'Anas changed this expense'],
     [
       event('edited', {

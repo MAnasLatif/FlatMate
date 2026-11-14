@@ -28,6 +28,7 @@ describe('validateDraft', () => {
       expenseDate: '2026-11-13',
       dueDate: null,
       description: null,
+      collectorId: null,
       splitMethod: 'equal',
       participants: [{ userId: A }, { userId: Z }, { userId: J }],
       payers: [{ userId: A, amountMinor: 20_000 }],
@@ -124,6 +125,15 @@ describe('validateDraft', () => {
     expect(result.debts).toBeUndefined();
   });
 
+  it('keeps who will pay only for a bill not paid yet', () => {
+    expect(
+      validateDraft(draft({ paidNow: false, collectorId: 'z' }), members).value?.collectorId,
+    ).toBe('z');
+    expect(
+      validateDraft(draft({ paidNow: true, collectorId: 'z' }), members).value?.collectorId,
+    ).toBeNull();
+  });
+
   it('keeps no due date on an expense that is already paid', () => {
     const result = validateDraft(draft({ paidNow: true, dueDate: '2026-11-20' }), members);
     expect(result.errors.dueDate).toBeUndefined();
@@ -203,6 +213,7 @@ describe('draftFromExpense', () => {
     expenseDate: '2026-11-10',
     description: null,
     paidStatus: 'paid',
+    collectorId: null,
     dueDate: null,
     splitMethod: 'percentage',
     splits: [

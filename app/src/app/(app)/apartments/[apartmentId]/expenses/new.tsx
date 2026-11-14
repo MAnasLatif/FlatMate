@@ -5,7 +5,6 @@ import { useMemo, useState } from 'react';
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
 import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
-import { PhotoPicker } from '@/components/photo-picker';
 import { Screen } from '@/components/screen';
 import type { Apartment, Category, Member } from '@/features/apartments/api';
 import {
@@ -18,6 +17,7 @@ import { useCurrentUserId } from '@/features/auth/session-provider';
 import { ExpenseForm } from '@/features/expenses/components/expense-form';
 import { newDraft, validateDraft } from '@/features/expenses/draft';
 import { EXPENSE_ERROR_MESSAGES, receiptUploadErrorMessage } from '@/features/expenses/errors';
+import { ReceiptsField } from '@/features/expenses/components/receipts-field';
 import { usePostExpense, useUploadReceipt } from '@/features/expenses/hooks';
 import { userErrorMessage } from '@/lib/errors';
 import { todayInTimeZone } from '@/lib/time';
@@ -77,8 +77,8 @@ function AddExpenseForm({
   // One id per expense being added, so a retried save cannot create a duplicate.
   const [requestId] = useState(randomUuid);
   const [showErrors, setShowErrors] = useState(false);
-  const [receipt, setReceipt] = useState<PickedImage | null>(null);
-  // Set once the expense is posted, so a failed receipt upload is retried on its own.
+  const [receipts, setReceipts] = useState<PickedImage[]>([]);
+  // Set once the expense is posted, so failed receipt uploads are retried on their own.
   const [savedExpenseId, setSavedExpenseId] = useState<string | null>(null);
   const post = usePostExpense(apartment.id);
   const upload = useUploadReceipt(apartment.id);
@@ -101,8 +101,21 @@ function AddExpenseForm({
     );
   }
 
-  const attach = (expenseId: string, picked: PickedImage) =>
-    upload.mutate({ expenseId, receipt: picked }, { onSuccess: () => router.back() });
+  // Uploads the receipts one by one. Each one that arrives leaves the list,
+  // so a retry after a failure sends only the rest.
+  const attachAll = async (expenseId: string, pending: PickedImage[]) => {
+    let remaining = pending;
+    try {
+      for (const receipt of pending) {
+        await upload.mutateAsync({ expenseId, receipt });
+        remaining = remaining.slice(1);
+        setReceipts(remaining);
+      }
+      router.back();
+    } catch {
+      // The upload keeps its error for the message on the screen.
+    }
+  };
 
   if (savedExpenseId) {
     return (
@@ -111,19 +124,19 @@ function AddExpenseForm({
         <FormAlert
           message={
             upload.error
-              ? `The receipt was not attached. ${receiptUploadErrorMessage(upload.error)}`
+              ? `${receipts.length === 1 ? 'A receipt was' : 'Some receipts were'} not attached. ${receiptUploadErrorMessage(upload.error)}`
               : null
           }
         />
-        <ReceiptField receipt={receipt} onChange={setReceipt} isDisabled={upload.isPending} />
+        <ReceiptsField receipts={receipts} onChange={setReceipts} isDisabled={upload.isPending} />
         <OnlineButton
-          onPress={() => receipt && attach(savedExpenseId, receipt)}
-          isDisabled={upload.isPending || !receipt}
+          onPress={() => void attachAll(savedExpenseId, receipts)}
+          isDisabled={upload.isPending || receipts.length === 0}
         >
-          {upload.isPending ? 'Uploading receipt…' : 'Upload receipt'}
+          {upload.isPending ? 'Uploading receipts…' : 'Upload receipts'}
         </OnlineButton>
         <Button variant="ghost" onPress={() => router.back()} isDisabled={upload.isPending}>
-          Finish without a receipt
+          Finish without them
         </Button>
       </Screen>
     );
@@ -136,12 +149,12 @@ function AddExpenseForm({
       { expense: result.value, requestId },
       {
         onSuccess: (expenseId) => {
-          if (!receipt) {
+          if (receipts.length === 0) {
             router.back();
             return;
           }
           setSavedExpenseId(expenseId);
-          attach(expenseId, receipt);
+          void attachAll(expenseId, receipts);
         },
       },
     );
@@ -160,8 +173,10 @@ function AddExpenseForm({
         currency={apartment.currency}
         today={today}
         currentUserId={userId}
+        afterDate={
+          <ReceiptsField receipts={receipts} onChange={setReceipts} isDisabled={isSaving} />
+        }
       />
-      <ReceiptField receipt={receipt} onChange={setReceipt} isDisabled={isSaving} />
       <FormAlert
         message={
           post.error
@@ -179,26 +194,5 @@ function AddExpenseForm({
         {post.isPending ? 'Saving…' : 'Save expense'}
       </OnlineButton>
     </Screen>
-  );
-}
-
-function ReceiptField({
-  receipt,
-  onChange,
-  isDisabled,
-}: {
-  receipt: PickedImage | null;
-  onChange: (receipt: PickedImage | null) => void;
-  isDisabled: boolean;
-}) {
-  return (
-    <PhotoPicker
-      title="Receipt"
-      description="Optional. A photo your flatmates can check. It cannot be removed once saved."
-      attachLabel="Attach receipt"
-      image={receipt}
-      onChange={onChange}
-      isDisabled={isDisabled}
-    />
   );
 }

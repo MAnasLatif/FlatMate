@@ -58,6 +58,10 @@ export function describeHistoryEvent(
       return `${actorName} recorded that the bill was paid`;
     case 'receipt_added':
       return `${actorName} attached a receipt`;
+    case 'collector_set':
+      return field(event.details, 'collector_id')
+        ? `${actorName} chose who will pay the bill`
+        : `${actorName} cleared who will pay the bill`;
     case 'edited': {
       const changes = field(event.details, 'changes');
       const amount = field(changes, 'amount_minor');

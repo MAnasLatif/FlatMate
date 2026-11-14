@@ -29,15 +29,28 @@ export function imagePath(folder: string, image: PickedImage): string {
   return `${folder}/${image.id}.${EXTENSIONS[image.mimeType] ?? 'jpg'}`;
 }
 
+/** Where a photo comes from: the device's library, or the camera, taken now. */
+export type ImageSource = 'library' | 'camera';
+
 /**
- * Lets the user choose one photo from their library. Returns null when they
- * cancel, or an error sentence when the photo breaks the bucket limits.
+ * Lets the user choose one photo from their library, or take one with the
+ * camera. Returns null when they cancel, or an error sentence when the camera
+ * is not allowed or the photo breaks the bucket limits.
  */
-export async function pickImage(): Promise<{ image: PickedImage } | { error: string } | null> {
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images'],
-    quality: 0.7,
-  });
+export async function pickImage(
+  source: ImageSource = 'library',
+): Promise<{ image: PickedImage } | { error: string } | null> {
+  if (source === 'camera') {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      return { error: 'Allow FlatMate to use the camera in your phone settings to take a photo.' };
+    }
+  }
+  const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.7 };
+  const result =
+    source === 'camera'
+      ? await ImagePicker.launchCameraAsync(options)
+      : await ImagePicker.launchImageLibraryAsync(options);
   const asset = result.canceled ? undefined : result.assets[0];
   if (!asset) return null;
 

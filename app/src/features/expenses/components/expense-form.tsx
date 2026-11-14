@@ -8,9 +8,8 @@ import {
   Tabs,
   TextArea,
   TextField,
-  Typography,
 } from 'heroui-native';
-import type { Dispatch, SetStateAction } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { View } from 'react-native';
 
 import { ChoiceChips } from '@/components/choice-chips';
@@ -39,16 +38,17 @@ type ExpenseFormProps = {
    * expense: an unpaid bill is paid by recording who paid it.
    */
   isPaidStatusFixed?: boolean;
+  /** Shown fourth, after the title, amount and date, such as the receipts when adding. */
+  afterDate?: ReactNode;
 };
 
-/** The fields of an expense: details, who paid, how it is split, a preview, then notes. */
+/** The fields of an expense: details, who paid, how it is split, then notes. */
 export function ExpenseForm(props: ExpenseFormProps) {
   return (
     <View className="gap-6">
       <DetailsSection {...props} />
       <PaidSection {...props} />
       <SplitSection {...props} />
-      <PreviewSection {...props} />
       <NotesSection {...props} />
     </View>
   );
@@ -62,6 +62,7 @@ function DetailsSection({
   categories,
   currency,
   today,
+  afterDate,
 }: ExpenseFormProps) {
   const error = (field: keyof DraftResult['errors']) =>
     showErrors ? result.errors[field] : undefined;
@@ -101,6 +102,7 @@ function DetailsSection({
         today={today}
         error={error('expenseDate')}
       />
+      {afterDate}
 
       {categories.length > 0 ? (
         <View className="gap-2">
@@ -186,6 +188,26 @@ function PaidSection({
             error={payersError}
           />
         ) : null}
+
+        {draft.paidNow ? null : (
+          <View className="gap-2">
+            <Label>Who will pay it? (optional)</Label>
+            <ChoiceChips
+              accessibilityLabel="Who will pay the bill"
+              choices={members
+                .filter((member) => member.leftAt === null)
+                .map((member) => ({
+                  value: member.userId,
+                  label: memberLabel(member, currentUserId),
+                }))}
+              selected={draft.collectorId}
+              onSelect={(collectorId) =>
+                update({ collectorId: collectorId === draft.collectorId ? null : collectorId })
+              }
+            />
+            <Description>They are told. Nobody owes anything until the bill is paid.</Description>
+          </View>
+        )}
 
         {draft.paidNow ? null : (
           <DateField
@@ -308,44 +330,6 @@ function SplitSection({
           );
         })}
         {splitError ? <FieldError isInvalid>{splitError}</FieldError> : null}
-      </Card.Body>
-    </Card>
-  );
-}
-
-function PreviewSection({ draft, result, members, currentUserId, currency }: ExpenseFormProps) {
-  const nameOf = (userId: string) => {
-    const member = members.find((item) => item.userId === userId);
-    return member ? memberLabel(member, currentUserId) : 'Someone';
-  };
-
-  let content: string[];
-  if (!draft.paidNow) {
-    content = ['Nobody owes anything until someone pays this bill.'];
-  } else if (!result.debts) {
-    content = ['Enter the amount, who paid and the split to see who will owe whom.'];
-  } else if (result.debts.length === 0) {
-    content = ['Everyone paid their own share. Nobody will owe anything.'];
-  } else {
-    content = result.debts.map(
-      (debt) =>
-        `${nameOf(debt.debtorId)} will owe ${nameOf(debt.creditorId)} ${formatMinorUnits(debt.amountMinor)} ${currency}`,
-    );
-  }
-
-  return (
-    <Card>
-      <Card.Body className="gap-2">
-        <Card.Title>Preview</Card.Title>
-        {content.map((line) => (
-          <Typography.Paragraph key={line} type="body-sm">
-            {line}
-          </Typography.Paragraph>
-        ))}
-        <Typography.Paragraph type="body-xs" color="muted">
-          Everyone included can object within the apartment&apos;s objection window. Until then the
-          expense counts as provisional.
-        </Typography.Paragraph>
       </Card.Body>
     </Card>
   );

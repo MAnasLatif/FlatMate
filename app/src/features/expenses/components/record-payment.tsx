@@ -94,11 +94,15 @@ function RecordPaymentForm({
   allMembers: Member[];
 }) {
   const userId = useCurrentUserId();
-  const [input, setInput] = useState<PayerInput>({
+  // The person named to pay the bill is suggested first, while they are a member.
+  const [input, setInput] = useState<PayerInput>(() => ({
     payerMode: 'single',
-    payerId: userId,
+    payerId:
+      expense.collectorId && members.some((member) => member.userId === expense.collectorId)
+        ? expense.collectorId
+        : userId,
     payerAmounts: {},
-  });
+  }));
   const [showErrors, setShowErrors] = useState(false);
   const record = useRecordBillPayment(apartmentId, expense.id);
 

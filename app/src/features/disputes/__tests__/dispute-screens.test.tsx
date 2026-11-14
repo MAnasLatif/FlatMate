@@ -81,6 +81,7 @@ const groceries: ExpenseDetail = {
   expenseDate: '2026-11-13',
   dueDate: null,
   paidStatus: 'paid',
+  collectorId: null,
   status: 'provisional',
   revision: 1,
   finalizeAfter: '2026-11-20T19:00:00Z',

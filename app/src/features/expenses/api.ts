@@ -74,6 +74,8 @@ export type ExpenseDetail = {
   expenseDate: string;
   dueDate: string | null;
   paidStatus: 'paid' | 'unpaid';
+  /** Who will pay an unpaid bill, if named; kept on record after it is paid. */
+  collectorId: string | null;
   status: ExpenseStatus;
   revision: number;
   /** When the objection window closes, if no dispute is opened. */
@@ -108,9 +110,23 @@ export async function postExpense(
     p_description: expense.description ?? undefined,
     p_due_date: expense.dueDate ?? undefined,
     p_client_request_id: requestId,
+    p_collector_id: expense.collectorId ?? undefined,
   });
   if (error) throw error;
   return data;
+}
+
+/** Names who will pay a bill that is not paid yet, or clears it with null. */
+export async function setBillCollector(
+  expenseId: string,
+  collectorId: string | null,
+): Promise<void> {
+  const { error } = await supabase.rpc('set_bill_collector', {
+    p_expense_id: expenseId,
+    // The database takes null to clear it.
+    p_collector_id: collectorId as string,
+  });
+  if (error) throw error;
 }
 
 /** One page of the expenses dated in the month starting on monthStartDate, newest first. */
@@ -147,7 +163,7 @@ export async function fetchExpenseDetail(expenseId: string): Promise<ExpenseDeta
       .from('expenses')
       .select(
         `id, apartment_id, title, description, category_id, amount_minor, currency, expense_date, due_date,
-         paid_status, status, revision, finalize_after, finalized_at, created_by, created_at,
+         paid_status, collector_id, status, revision, finalize_after, finalized_at, created_by, created_at,
          category:expense_categories(name),
          revisions:expense_revisions(revision, split_method,
            splits:expense_splits(user_id, amount_minor, basis_points),
@@ -184,6 +200,7 @@ export async function fetchExpenseDetail(expenseId: string): Promise<ExpenseDeta
     expenseDate: row.expense_date,
     dueDate: row.due_date,
     paidStatus: row.paid_status as ExpenseDetail['paidStatus'],
+    collectorId: row.collector_id,
     status: row.status as ExpenseStatus,
     revision: row.revision,
     finalizeAfter: row.finalize_after,

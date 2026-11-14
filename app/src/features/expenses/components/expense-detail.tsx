@@ -144,6 +144,11 @@ export function ExpenseDetailView({
               Due {formatDate(expense.dueDate)}
             </Typography.Paragraph>
           ) : null}
+          {expense.paidStatus === 'unpaid' && expense.collectorId ? (
+            <Typography.Paragraph type="body-sm">
+              To be paid by {nameOf(expense.collectorId)}
+            </Typography.Paragraph>
+          ) : null}
           {expense.description ? (
             <Typography.Paragraph type="body-sm">{expense.description}</Typography.Paragraph>
           ) : null}

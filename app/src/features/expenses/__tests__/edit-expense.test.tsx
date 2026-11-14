@@ -89,6 +89,7 @@ const snacks: ExpenseDetail = {
   expenseDate: '2026-11-12',
   dueDate: null,
   paidStatus: 'paid',
+  collectorId: null,
   status: 'provisional',
   revision: 2,
   finalizeAfter: '2026-11-19T10:00:00Z',

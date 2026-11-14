@@ -5,6 +5,7 @@ import { addMonths } from '@/lib/time';
 
 import {
   editExpense,
+  setBillCollector,
   EXPENSES_PAGE_SIZE,
   fetchAttachments,
   fetchExpenseDetail,
@@ -113,11 +114,17 @@ export function useRecordBillPayment(apartmentId: string, expenseId: string) {
 export function useEditExpense(apartmentId: string, expenseId: string) {
   const refresh = useRefreshMoney(apartmentId);
   return useMutation({
-    mutationFn: (input: {
+    mutationFn: async (input: {
       expectedRevision: number;
       expense: ValidExpense;
       reason: string | null;
-    }) => editExpense(expenseId, input.expectedRevision, input.expense, input.reason),
+      /** A new collector for an unpaid bill, or undefined to leave it as it is. */
+      collector?: string | null;
+    }) => {
+      await editExpense(expenseId, input.expectedRevision, input.expense, input.reason);
+      // Who will pay is not part of the bill's money, so it is saved on its own.
+      if (input.collector !== undefined) await setBillCollector(expenseId, input.collector);
+    },
     onSuccess: refresh,
   });
 }

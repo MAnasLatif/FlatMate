@@ -29,6 +29,8 @@ export type ExpenseDraft = {
   paidNow: boolean;
   /** YYYY-MM-DD, or empty. */
   dueDate: string;
+  /** For a bill not paid yet: the member who will pay it, if one is named. */
+  collectorId: string | null;
   splitMethod: SplitMethod;
   /** Members left out of the split. */
   excluded: string[];
@@ -52,6 +54,8 @@ export type ValidExpense = {
   expenseDate: string;
   dueDate: string | null;
   description: string | null;
+  /** Who will pay an unpaid bill; always null for a paid expense. */
+  collectorId: string | null;
   splitMethod: SplitMethod;
   participants: SplitParticipant[];
   /** Empty for an unpaid bill. */
@@ -77,6 +81,7 @@ export function newDraft(currentUserId: string, today: string): ExpenseDraft {
     description: '',
     paidNow: true,
     dueDate: '',
+    collectorId: null,
     splitMethod: 'equal',
     excluded: [],
     percentages: {},
@@ -96,6 +101,7 @@ export type PostedExpense = {
   description: string | null;
   paidStatus: 'paid' | 'unpaid';
   dueDate: string | null;
+  collectorId: string | null;
   splitMethod: SplitMethod;
   splits: readonly { userId: string; amountMinor: number; basisPoints: number | null }[];
   payers: readonly Contribution[];
@@ -122,6 +128,7 @@ export function draftFromExpense(
     description: expense.description ?? '',
     paidNow: expense.paidStatus === 'paid',
     dueDate: expense.dueDate ?? '',
+    collectorId: expense.collectorId,
     splitMethod: expense.splitMethod,
     excluded: memberIds.filter((id) => !inSplit.has(id)),
     percentages: Object.fromEntries(
@@ -275,6 +282,7 @@ export function validateDraft(
             expenseDate: draft.expenseDate,
             dueDate: dueDate === '' ? null : dueDate,
             description: description === '' ? null : description,
+            collectorId: draft.paidNow ? null : draft.collectorId,
             splitMethod: draft.splitMethod,
             participants,
             payers: draft.paidNow ? payers : [],

@@ -131,7 +131,15 @@ function EditExpenseForm({
     setShowErrors(true);
     if (!result.value || reasonError) return;
     edit.mutate(
-      { expectedRevision: baseRevision, expense: result.value, reason: reason.trim() || null },
+      {
+        expectedRevision: baseRevision,
+        expense: result.value,
+        reason: reason.trim() || null,
+        collector:
+          expense.paidStatus === 'unpaid' && result.value.collectorId !== expense.collectorId
+            ? result.value.collectorId
+            : undefined,
+      },
       { onSuccess: () => router.back() },
     );
   };
