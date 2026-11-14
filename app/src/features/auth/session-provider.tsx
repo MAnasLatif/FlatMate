@@ -15,11 +15,16 @@ import { supabase } from '@/lib/supabase';
 
 type SessionContextValue = {
   session: Session | null;
+  /**
+   * True until the app can show its first screen: the stored session is read
+   * and, for someone already signed in, their saved data is restored. The
+   * splash screen stays up meanwhile and no navigator renders.
+   */
   isLoading: boolean;
   /**
-   * True while the signed-in user's saved data is being restored. The app
-   * keeps the splash screen up and shows no signed-in screen until it is done,
-   * so screens start from the saved data instead of from nothing.
+   * True while the signed-in user's saved data is being restored, such as
+   * just after signing in. Signed-in screens wait for it, so they start from
+   * the saved data instead of from nothing.
    */
   isRestoring: boolean;
   /**
@@ -35,7 +40,9 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isReadingSession, setReadingSession] = useState(true);
+  // Who was signed in when the app started, once the stored session is read.
+  const [launchUserId, setLaunchUserId] = useState<string | null>(null);
   const [isNavigationHeld, setNavigationHeld] = useState(false);
   const [restoredFor, setRestoredFor] = useState<string | null>(null);
   const savedCache = useRef<{ userId: string; cache: SavedCache } | null>(null);
@@ -48,12 +55,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       // A stored session that can no longer be read means signed out.
       if (active) {
         setSession(data.session);
-        setIsLoading(false);
+        setLaunchUserId(data.session?.user.id ?? null);
+        setReadingSession(false);
       }
     });
 
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (event === 'SIGNED_OUT') {
+        setRestoredFor(null);
         // Never show one person's data to the next. Saving stops before the
         // cache is cleared, and the saved copy is deleted once no write to it
         // is still under way.
@@ -92,6 +101,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [userId]);
 
   const isRestoring = userId !== null && restoredFor !== userId;
+  // At launch, loading lasts until the signed-in user's saved data is back.
+  // The navigator must not render before then: with the signed-in screens
+  // still closed, the router lands on "not found" and stays there.
+  const isLoading =
+    isReadingSession || (launchUserId !== null && userId === launchUserId && isRestoring);
 
   const value = useMemo(
     () => ({ session, isLoading, isRestoring, isNavigationHeld, setNavigationHeld }),

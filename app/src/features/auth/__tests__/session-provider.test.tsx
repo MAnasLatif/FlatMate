@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react-native';
+import { act, render, screen, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
 import { queryClient } from '@/lib/query-client';
@@ -64,15 +64,33 @@ describe('SessionProvider and the saved cache', () => {
     queryClient.clear();
   });
 
-  it('reports restoring until the saved data is back', async () => {
+  it('at launch, stays loading until the saved session data is back', async () => {
     const { finishRestore } = controlledCache();
     await render(
       <SessionProvider>
         <State />
       </SessionProvider>,
     );
-    expect(await screen.findByText('signed-in restoring')).toBeTruthy();
-    expect(startSavedCache).toHaveBeenCalledWith(queryClient, 'user-1');
+    await waitFor(() => expect(startSavedCache).toHaveBeenCalledWith(queryClient, 'user-1'));
+    // Loading, not just restoring: no navigator may render yet.
+    expect(screen.getByText('loading restoring')).toBeTruthy();
+
+    await act(async () => finishRestore());
+    expect(screen.getByText('signed-in')).toBeTruthy();
+  });
+
+  it('after a sign-in, restores without loading, so open screens stay mounted', async () => {
+    mockStoredSession = null;
+    const { finishRestore } = controlledCache();
+    await render(
+      <SessionProvider>
+        <State />
+      </SessionProvider>,
+    );
+    expect(await screen.findByText('signed-out')).toBeTruthy();
+
+    await act(async () => mockAuthHandler?.('SIGNED_IN', signedIn));
+    expect(screen.getByText('signed-in restoring')).toBeTruthy();
 
     await act(async () => finishRestore());
     expect(screen.getByText('signed-in')).toBeTruthy();

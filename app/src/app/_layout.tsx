@@ -3,14 +3,14 @@ import '@/global.css';
 import { QueryClientProvider } from '@tanstack/react-query';
 import * as SplashScreen from 'expo-splash-screen';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
-import Stack from 'expo-router/stack';
 import { StatusBar } from 'expo-status-bar';
 import { HeroUINativeProvider, useThemeColor } from 'heroui-native';
-import { type ReactNode, useEffect, useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import { StyleSheet, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { SessionProvider, useSession } from '@/features/auth/session-provider';
+import { RootNavigator } from '@/features/auth/components/root-navigator';
+import { SessionProvider } from '@/features/auth/session-provider';
 import { showNotificationsInForeground } from '@/features/notifications/push';
 import { connectQueryClientToDevice } from '@/lib/network';
 import { queryClient } from '@/lib/query-client';
@@ -37,38 +37,6 @@ export default function RootLayout() {
         </HeroUINativeProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
-  );
-}
-
-function RootNavigator() {
-  const { session, isLoading, isRestoring, isNavigationHeld } = useSession();
-
-  // The splash stays up until the session is read and, for a signed-in user,
-  // their saved data is restored. The navigator renders under it meanwhile.
-  useEffect(() => {
-    if (!isLoading && !isRestoring) {
-      SplashScreen.hideAsync();
-    }
-  }, [isLoading, isRestoring]);
-
-  if (isLoading) {
-    return null;
-  }
-
-  // Signed-in screens wait for the restore, so they start from the saved data.
-  // The navigator itself stays mounted, so a flow such as a password reset that
-  // creates a session is not interrupted.
-  const isSignedIn = session !== null && !isNavigationHeld && !isRestoring;
-
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={isSignedIn}>
-        <Stack.Screen name="(app)" />
-      </Stack.Protected>
-      <Stack.Protected guard={!isSignedIn}>
-        <Stack.Screen name="(auth)" />
-      </Stack.Protected>
-    </Stack>
   );
 }
 
