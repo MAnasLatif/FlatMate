@@ -83,21 +83,22 @@ export default function SignUpScreen() {
           />
         </View>
 
-        <OnlineButton
-          onPress={() => void form.handleSubmit((values) => signUp.mutate(values))()}
-          isDisabled={signUp.isPending}
-        >
-          {signUp.isPending ? 'Creating account…' : 'Create account'}
-        </OnlineButton>
+        <View className="gap-3">
+          <OnlineButton
+            onPress={() => void form.handleSubmit((values) => signUp.mutate(values))()}
+            isDisabled={signUp.isPending}
+          >
+            {signUp.isPending ? 'Creating account…' : 'Create account'}
+          </OnlineButton>
+          <AuthFooterLink
+            prompt="Already have an account?"
+            action="Sign in"
+            onPress={() => router.back()}
+          />
+        </View>
 
         <GoogleSignInButton />
       </View>
-
-      <AuthFooterLink
-        prompt="Already have an account?"
-        action="Sign in"
-        onPress={() => router.back()}
-      />
     </Screen>
   );
 }

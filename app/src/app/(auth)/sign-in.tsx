@@ -77,21 +77,22 @@ export default function SignInScreen() {
           </View>
         </View>
 
-        <OnlineButton
-          onPress={() => void form.handleSubmit((values) => signIn.mutate(values))()}
-          isDisabled={signIn.isPending}
-        >
-          {signIn.isPending ? 'Signing in…' : 'Sign in'}
-        </OnlineButton>
+        <View className="gap-3">
+          <OnlineButton
+            onPress={() => void form.handleSubmit((values) => signIn.mutate(values))()}
+            isDisabled={signIn.isPending}
+          >
+            {signIn.isPending ? 'Signing in…' : 'Sign in'}
+          </OnlineButton>
+          <AuthFooterLink
+            prompt="New to FlatMate?"
+            action="Create an account"
+            onPress={() => router.push('/sign-up')}
+          />
+        </View>
 
         <GoogleSignInButton />
       </View>
-
-      <AuthFooterLink
-        prompt="New to FlatMate?"
-        action="Create an account"
-        onPress={() => router.push('/sign-up')}
-      />
     </Screen>
   );
 }
