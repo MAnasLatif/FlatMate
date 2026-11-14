@@ -5,6 +5,17 @@ import { supabase } from '@/lib/supabase';
 
 export type SignUpResult = { needsEmailConfirmation: boolean };
 
+/**
+ * Where a confirmation link in an email lands: the app's auth/callback screen,
+ * which exchanges the link's code for a session. It works on the phone that
+ * signed up, which holds the PKCE verifier for that code. The 6-digit code in
+ * the email works anywhere; a project whose email templates show only a link
+ * (the free plan's built-in sender) relies on this.
+ */
+function emailLinkRedirect(): string {
+  return Linking.createURL(AUTH_CALLBACK_PATH);
+}
+
 export async function signUpWithEmail(input: {
   displayName: string;
   email: string;
@@ -13,8 +24,11 @@ export async function signUpWithEmail(input: {
   const { data, error } = await supabase.auth.signUp({
     email: input.email,
     password: input.password,
-    // Read by the database when it creates the profile.
-    options: { data: { display_name: input.displayName } },
+    options: {
+      // Read by the database when it creates the profile.
+      data: { display_name: input.displayName },
+      emailRedirectTo: emailLinkRedirect(),
+    },
   });
   if (error) throw error;
   return { needsEmailConfirmation: data.session === null };
@@ -26,7 +40,11 @@ export async function confirmEmailWithCode(email: string, code: string): Promise
 }
 
 export async function resendConfirmationCode(email: string): Promise<void> {
-  const { error } = await supabase.auth.resend({ type: 'signup', email });
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: emailLinkRedirect() },
+  });
   if (error) throw error;
 }
 
