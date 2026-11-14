@@ -8,11 +8,14 @@ import {
   fetchMembers,
   type Member,
 } from '@/features/apartments/api';
+import { fetchSharedAccounts } from '@/features/accounts/api';
 import { type ExpenseDetail, fetchExpenseDetail, fetchPairBalances } from '@/features/expenses/api';
+import { fetchDisplayNames } from '@/features/profile/api';
 import { renderWithProviders } from '@/test/render';
 
 import {
   declinePayment,
+  fetchAccountPaymentsPage,
   fetchPairPaymentsPage,
   fetchPaymentDetail,
   netOff,
@@ -21,6 +24,7 @@ import {
   recordPayment,
   voidPayment,
 } from '../api';
+import { AccountPayments } from '../components/account-payments';
 import { ExpensePayActions } from '../components/expense-pay-actions';
 import { PairPayments } from '../components/pair-payments';
 import { PayMember } from '../components/pay-member';
@@ -46,8 +50,17 @@ jest.mock('@/features/expenses/api', () => ({
   fetchPairBalances: jest.fn(),
   fetchExpenseDetail: jest.fn(),
 }));
+jest.mock('@/features/accounts/api', () => ({
+  ...jest.requireActual('@/features/accounts/api'),
+  fetchSharedAccounts: jest.fn(),
+}));
+jest.mock('@/features/profile/api', () => ({
+  ...jest.requireActual('@/features/profile/api'),
+  fetchDisplayNames: jest.fn(),
+}));
 jest.mock('../api', () => ({
   ...jest.requireActual('../api'),
+  fetchAccountPaymentsPage: jest.fn(),
   fetchPairPaymentsPage: jest.fn(),
   fetchPaymentDetail: jest.fn(),
   recordPayment: jest.fn(),
@@ -104,7 +117,10 @@ const payment: Payment = {
   finalizedAt: null,
   expenseId: null,
   createdAt: '2026-11-13T10:00:00Z',
+  paidTo: null,
 };
+
+const UBL = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
 
 function detailOf(overrides: Partial<Payment> = {}): PaymentDetail {
   return { payment: { ...payment, ...overrides }, objections: [], proofs: [] };
@@ -120,6 +136,7 @@ beforeEach(() => {
     .mocked(fetchPairBalances)
     .mockResolvedValue([{ counterpartyId: ANAS, owe: amounts(15_000), owed: amounts(12_000) }]);
   jest.mocked(fetchPaymentDetail).mockResolvedValue(detailOf());
+  jest.mocked(fetchSharedAccounts).mockResolvedValue([]);
 });
 
 describe('PayMember', () => {
@@ -150,6 +167,47 @@ describe('PayMember', () => {
       pathname: '/apartments/[apartmentId]/payments/[paymentId]',
       params: { apartmentId: APARTMENT, paymentId: PAYMENT },
     });
+  });
+
+  it("records which of the recipient's shared accounts it went into, when chosen", async () => {
+    jest.mocked(fetchSharedAccounts).mockResolvedValue([
+      {
+        id: UBL,
+        kind: 'bank',
+        provider: 'UBL',
+        accountTitle: 'Anas Latif',
+        accountIdentifier: '006138918235849',
+        isPreferred: true,
+      },
+    ]);
+    jest.mocked(recordPayment).mockResolvedValue(PAYMENT);
+    await renderWithProviders(
+      <PayMember apartmentId={APARTMENT} memberId={ANAS} expenseId={null} />,
+    );
+    const user = userEvent.setup();
+
+    await user.type(await screen.findByLabelText('Amount you paid, in PKR'), '100');
+    await user.press(await screen.findByRole('button', { name: 'UBL · •••• 5849' }));
+    await user.press(screen.getByRole('button', { name: 'Record payment' }));
+
+    expect(recordPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ amountMinor: 10_000, receivingAccountId: UBL }),
+    );
+  });
+
+  it('leaves the account out when none is chosen', async () => {
+    jest.mocked(recordPayment).mockResolvedValue(PAYMENT);
+    await renderWithProviders(
+      <PayMember apartmentId={APARTMENT} memberId={ANAS} expenseId={null} />,
+    );
+    const user = userEvent.setup();
+
+    await user.type(await screen.findByLabelText('Amount you paid, in PKR'), '100');
+    await user.press(screen.getByRole('button', { name: 'Record payment' }));
+
+    expect(recordPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ receivingAccountId: null }),
+    );
   });
 
   it('nets off first and pays the rest in net mode (FR-07.1, AC-09)', async () => {
@@ -285,5 +343,40 @@ describe('ExpensePayActions', () => {
       pathname: '/apartments/[apartmentId]/pay/[memberId]',
       params: { apartmentId: APARTMENT, memberId: ANAS, expenseId: 'e1' },
     });
+  });
+});
+
+describe('AccountPayments', () => {
+  it('lists the payments made into an account, with who paid', async () => {
+    jest.mocked(fetchAccountPaymentsPage).mockResolvedValue([
+      {
+        ...payment,
+        paidTo: {
+          accountId: UBL,
+          provider: 'UBL',
+          accountTitle: 'Anas Latif',
+          identifierMasked: '•••• 5849',
+        },
+      },
+    ]);
+    jest.mocked(fetchDisplayNames).mockResolvedValue({ [ZUBAIR]: 'Zubair' });
+    await renderWithProviders(<AccountPayments accountId={UBL} />);
+    const user = userEvent.setup();
+
+    expect(await screen.findByText('Zubair paid you 120.00 PKR')).toBeOnTheScreen();
+    expect(fetchAccountPaymentsPage).toHaveBeenCalledWith(UBL, 0);
+
+    await user.press(screen.getByRole('button', { name: /Zubair paid you/ }));
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/apartments/[apartmentId]/payments/[paymentId]',
+      params: { apartmentId: APARTMENT, paymentId: PAYMENT },
+    });
+  });
+
+  it('says when nothing has been paid into it yet', async () => {
+    jest.mocked(fetchAccountPaymentsPage).mockResolvedValue([]);
+    await renderWithProviders(<AccountPayments accountId={UBL} />);
+
+    expect(await screen.findByText(/No payments yet/)).toBeOnTheScreen();
   });
 });

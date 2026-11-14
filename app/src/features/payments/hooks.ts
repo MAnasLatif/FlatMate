@@ -5,8 +5,10 @@ import { useRefreshMoney } from '@/features/expenses/hooks';
 import type { PickedImage } from '@/lib/private-images';
 
 import {
+  ACCOUNT_PAYMENTS_PAGE_SIZE,
   addPaymentProof,
   declinePayment,
+  fetchAccountPaymentsPage,
   fetchPairPaymentsPage,
   fetchPaymentDetail,
   netOff,
@@ -18,7 +20,11 @@ import {
 } from './api';
 
 // Under the apartment's money keys, so any financial change refreshes payments too.
+/** Every account's payment list; account payments span apartments. */
+export const ACCOUNT_PAYMENTS_ROOT = ['account-payments'] as const;
+
 export const paymentKeys = {
+  account: (accountId: string) => [...ACCOUNT_PAYMENTS_ROOT, accountId] as const,
   pair: (apartmentId: string, counterpartyId: string) =>
     ['money', apartmentId, 'payments', counterpartyId] as const,
   detail: (apartmentId: string, paymentId: string) =>
@@ -34,6 +40,17 @@ export function usePairPayments(apartmentId: string, counterpartyId: string) {
     initialPageParam: 0,
     getNextPageParam: (lastPage, pages) =>
       lastPage.length === PAIR_PAYMENTS_PAGE_SIZE ? pages.length : undefined,
+  });
+}
+
+/** Payments made into one of the user's accounts, newest first. */
+export function useAccountPayments(accountId: string) {
+  return useInfiniteQuery({
+    queryKey: paymentKeys.account(accountId),
+    queryFn: ({ pageParam }) => fetchAccountPaymentsPage(accountId, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) =>
+      lastPage.length === ACCOUNT_PAYMENTS_PAGE_SIZE ? pages.length : undefined,
   });
 }
 

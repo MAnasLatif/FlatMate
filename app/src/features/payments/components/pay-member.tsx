@@ -19,6 +19,8 @@ import { PhotoPicker } from '@/components/photo-picker';
 import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import { SharedAccounts } from '@/features/accounts/components/shared-accounts';
+import { useSharedAccounts } from '@/features/accounts/hooks';
+import { maskIdentifier } from '@/features/accounts/rules';
 import type { Apartment } from '@/features/apartments/api';
 import { useApartment, useMembers } from '@/features/apartments/hooks';
 import { pairPosition } from '@/features/expenses/balances';
@@ -114,6 +116,9 @@ function PayForm({
   const [amount, setAmount] = useState('');
   const [paidOn, setPaidOn] = useState(today);
   const [reference, setReference] = useState('');
+  // The recipient's shared account the money went into; optional (cash, or not listed).
+  const [paidInto, setPaidInto] = useState<string | null>(null);
+  const sharedAccounts = useSharedAccounts(apartment.id, memberId);
   const [proof, setProof] = useState<PickedImage | null>(null);
   const [showErrors, setShowErrors] = useState(false);
   // Fixed ids, so retrying after a failure never nets off or records twice.
@@ -162,6 +167,7 @@ function PayForm({
           reference: reference.trim() || null,
           expenseId,
           requestId: paymentRequestId,
+          receivingAccountId: paidInto,
         });
         setPaymentId(recorded);
       }
@@ -275,6 +281,25 @@ function PayForm({
               if (!submittedPlan) setPaidOn(value);
             }}
           />
+          {sharedAccounts.data && sharedAccounts.data.length > 0 ? (
+            <View className="gap-2">
+              <Label>Paid into (optional)</Label>
+              <ChoiceChips
+                accessibilityLabel={`Which of ${name}'s accounts you paid into`}
+                choices={sharedAccounts.data.map((account) => ({
+                  value: account.id,
+                  label: `${account.provider} · ${maskIdentifier(account.accountIdentifier)}`,
+                }))}
+                selected={paidInto}
+                onSelect={(value) => {
+                  if (!submittedPlan) setPaidInto((current) => (current === value ? null : value));
+                }}
+              />
+              <Typography.Paragraph type="body-xs" color="muted">
+                Leave it out for cash or another account. Tap again to clear.
+              </Typography.Paragraph>
+            </View>
+          ) : null}
           <TextField isInvalid={referenceError !== undefined}>
             <Label>Transaction reference (optional)</Label>
             <Input

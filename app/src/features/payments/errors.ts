@@ -12,6 +12,8 @@ export const PAYMENT_ERROR_MESSAGES: Record<string, string> = {
   paid_at_in_future: 'The payment date cannot be in the future.',
   reference_too_long: 'Keep the reference under 100 characters.',
   expense_not_found: 'This expense no longer exists.',
+  account_not_shared:
+    'That account is no longer shared with this apartment. Choose another or leave it out.',
   payment_exceeds_debt: 'That is more than you owe now. Go back to see the latest amounts.',
   nothing_to_offset: 'There is nothing left to net off between you.',
   offset_exceeds_debt:

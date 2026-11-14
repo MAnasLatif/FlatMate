@@ -4,6 +4,7 @@ import { accountKeys } from '@/features/accounts/hooks';
 import { apartmentKeys } from '@/features/apartments/hooks';
 import { expenseKeys } from '@/features/expenses/hooks';
 import { notificationKeys } from '@/features/notifications/hooks';
+import { ACCOUNT_PAYMENTS_ROOT } from '@/features/payments/hooks';
 import { profileKeys } from '@/features/profile/hooks';
 import { settlementKeys } from '@/features/settlement/hooks';
 
@@ -46,7 +47,8 @@ const apartmentChanges: Record<ApartmentChangeKind, (scope: ApartmentScope) => Q
   adjustment: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
   expense: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
   offset: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
-  payment: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
+  // Account payment lists span apartments, so all of them are refreshed.
+  payment: ({ apartmentId }) => [expenseKeys.apartment(apartmentId), ACCOUNT_PAYMENTS_ROOT],
   settlement_period: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
   // Settings change names in lists, and the settlement day and objection window.
   apartment: ({ apartmentId }) => [

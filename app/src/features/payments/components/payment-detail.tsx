@@ -174,6 +174,12 @@ function PaymentContent({
           <Separator />
           <Detail label="Paid on" value={formatDate(payment.paidAt)} />
           <Detail label="Recorded on" value={formatDate(payment.createdAt)} />
+          {payment.paidTo ? (
+            <Detail
+              label="Paid into"
+              value={`${payment.paidTo.provider} · ${payment.paidTo.accountTitle} · ${payment.paidTo.identifierMasked}`}
+            />
+          ) : null}
           {payment.reference ? <Detail label="Reference" value={payment.reference} /> : null}
         </Card.Body>
       </Card>

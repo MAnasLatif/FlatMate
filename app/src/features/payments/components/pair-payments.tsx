@@ -1,19 +1,15 @@
 import { router } from 'expo-router';
-import { Button, Card, Chip, PressableFeedback, Separator, Typography } from 'heroui-native';
+import { Button, Card, Separator, Typography } from 'heroui-native';
 import { useMemo } from 'react';
-import { View } from 'react-native';
 
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { pairPosition } from '@/features/expenses/balances';
 import { usePairBalances } from '@/features/expenses/hooks';
 import { userErrorMessage } from '@/lib/errors';
-import { formatMinorUnits } from '@/lib/money';
-import { formatDate } from '@/lib/time';
 
-import type { Payment } from '../api';
 import { usePairPayments } from '../hooks';
-import { paymentStatus } from '../rules';
+import { PaymentRow } from './payment-row';
 
 /** Payments between the user and one person, and a way to pay them, for the pairwise ledger (SRS FR-06.3). */
 export function PairPayments({
@@ -88,38 +84,5 @@ export function PairPayments({
         ) : null}
       </Card.Body>
     </Card>
-  );
-}
-
-function PaymentRow({
-  payment,
-  description,
-  onPress,
-}: {
-  payment: Payment;
-  description: string;
-  onPress: () => void;
-}) {
-  const status = paymentStatus(payment.status);
-  const amount = `${formatMinorUnits(payment.amountMinor)} ${payment.currency}`;
-  return (
-    <PressableFeedback
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${description} ${amount}, ${status.label}`}
-      className="flex-row items-center gap-3"
-    >
-      <View className="flex-1 gap-0.5">
-        <Typography.Paragraph type="body-sm">
-          {description} {amount}
-        </Typography.Paragraph>
-        <Typography.Paragraph type="body-xs" color="muted">
-          {formatDate(payment.paidAt)}
-        </Typography.Paragraph>
-      </View>
-      <Chip size="sm" variant="soft" color={status.color}>
-        {status.label}
-      </Chip>
-    </PressableFeedback>
   );
 }

@@ -21,6 +21,19 @@ export type Payment = {
   finalizedAt: string | null;
   expenseId: string | null;
   createdAt: string;
+  /** The recipient's account the payer said they paid into, as it was then; null if not given. */
+  paidTo: PaidToAccount | null;
+};
+
+/**
+ * A snapshot of the account a payment went to. `accountId` is null once the
+ * account has been deleted; the rest stays as it was when the payment was made.
+ */
+export type PaidToAccount = {
+  accountId: string | null;
+  provider: string;
+  accountTitle: string;
+  identifierMasked: string;
 };
 
 /** The recipient's objection to a payment (decision record 0005). */
@@ -46,7 +59,7 @@ export type PaymentDetail = {
 export const PAIR_PAYMENTS_PAGE_SIZE = 20;
 
 const PAYMENT_COLUMNS =
-  'id, apartment_id, payer_id, recipient_id, amount_minor, currency, paid_at, reference, status, finalize_after, finalized_at, expense_id, created_at';
+  'id, apartment_id, payer_id, recipient_id, amount_minor, currency, paid_at, reference, status, finalize_after, finalized_at, expense_id, created_at, receiving_account_id, paid_to_provider, paid_to_title, paid_to_identifier_masked';
 
 type PaymentRow = Omit<Tables<'payments'>, 'client_request_id'>;
 
@@ -65,6 +78,18 @@ function toPayment(row: PaymentRow): Payment {
     finalizedAt: row.finalized_at,
     expenseId: row.expense_id,
     createdAt: row.created_at,
+    // The database keeps the snapshot all or nothing.
+    paidTo:
+      row.paid_to_provider !== null &&
+      row.paid_to_title !== null &&
+      row.paid_to_identifier_masked !== null
+        ? {
+            accountId: row.receiving_account_id,
+            provider: row.paid_to_provider,
+            accountTitle: row.paid_to_title,
+            identifierMasked: row.paid_to_identifier_masked,
+          }
+        : null,
   };
 }
 
@@ -145,6 +170,8 @@ export type RecordPaymentInput = {
   expenseId: string | null;
   /** One id per payment being recorded, so a retry cannot record two. */
   requestId: string;
+  /** The recipient's shared account the payer paid into, if they chose one. */
+  receivingAccountId: string | null;
 };
 
 export async function recordPayment(input: RecordPaymentInput): Promise<string> {
@@ -156,9 +183,31 @@ export async function recordPayment(input: RecordPaymentInput): Promise<string> 
     p_reference: input.reference ?? undefined,
     p_expense_id: input.expenseId ?? undefined,
     p_client_request_id: input.requestId,
+    p_receiving_account_id: input.receivingAccountId ?? undefined,
   });
   if (error) throw error;
   return data;
+}
+
+export const ACCOUNT_PAYMENTS_PAGE_SIZE = 20;
+
+/**
+ * Payments made into one of the signed-in user's accounts, newest first. Row
+ * security limits payments to the payer, the recipient and apartment admins.
+ */
+export async function fetchAccountPaymentsPage(
+  accountId: string,
+  page: number,
+): Promise<Payment[]> {
+  const from = page * ACCOUNT_PAYMENTS_PAGE_SIZE;
+  const { data, error } = await supabase
+    .from('payments')
+    .select(PAYMENT_COLUMNS)
+    .eq('receiving_account_id', accountId)
+    .order('paid_at', { ascending: false })
+    .range(from, from + ACCOUNT_PAYMENTS_PAGE_SIZE - 1);
+  if (error) throw error;
+  return data.map(toPayment);
 }
 
 /** Offsets what the two owe each other; the net between them does not change. */
