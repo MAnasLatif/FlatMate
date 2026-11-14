@@ -98,7 +98,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-03.8 Optional apartment-level approval requirement can be configured for specific scenarios; otherwise expenses are auto-accepted on save. *Deferred beyond the MVP (section 12, item 1).*
 
 ### FR-04 Recurring Expenses
-- FR-04.1 Admin-only recurring template management; multiple admins may act.
+- FR-04.1 Admin-only recurring template management; multiple admins may act. Recurring expenses are added and managed from the apartment's settings screen, which only admins reach; the Add (+) flow creates one-time expenses only.
 - FR-04.2 Fixed: predetermined amount and recurrence schedule (e.g. monthly rent), automatically instantiate once per cycle.
 - FR-04.3 Variable: expected monthly arrival day (e.g. electricity on the 5th); notify admins to enter actual amount, optional proof and due date. Do not create a financial charge with an invented amount.
 - FR-04.4 Each template has independent split rules, included/excluded members, and optional percentage/custom allocations; admins can override splits for one generated month without rewriting the template.
