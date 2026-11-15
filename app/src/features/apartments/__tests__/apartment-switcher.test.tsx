@@ -61,9 +61,11 @@ describe('ApartmentSwitcher', () => {
     await renderWithProviders(<ApartmentSwitcher apartmentId={FLAT} />);
 
     expect(
-      await screen.findByRole('button', { name: 'Flat 4B. Switch apartment, new' }),
+      await screen.findByRole('button', { name: 'Flat 4B. Switch apartment, 1 new' }),
     ).toBeOnTheScreen();
-    expect(screen.getByTestId('unread-dot', { includeHiddenElements: true })).toBeOnTheScreen();
+    expect(screen.getByTestId('unread-badge', { includeHiddenElements: true })).toHaveTextContent(
+      '1',
+    );
   });
 
   it('leaves out what is new in the open apartment, which shows its own dots', async () => {
@@ -71,6 +73,6 @@ describe('ApartmentSwitcher', () => {
     await renderWithProviders(<ApartmentSwitcher apartmentId={FLAT} />);
 
     expect(await screen.findByText('Flat 4B')).toBeOnTheScreen();
-    expect(screen.queryByTestId('unread-dot', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByTestId('unread-badge', { includeHiddenElements: true })).toBeNull();
   });
 });

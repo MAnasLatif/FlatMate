@@ -39,6 +39,11 @@ export function useHasUnread(match: UnreadMatch): boolean {
   return useIsUnread()(match);
 }
 
+/** How many unread notifications match, for the number on an icon's badge. */
+export function useUnreadCount(match: UnreadMatch): number {
+  return useUnreadNotifications().data?.filter(match).length ?? 0;
+}
+
 export function useMarkRead(userId: string) {
   const queryClient = useQueryClient();
   const key = notificationKeys.unread(userId);

@@ -12,8 +12,8 @@ import {
 } from '@/components/screen-transitions';
 import { ApartmentSwitcher } from '@/features/apartments/components/apartment-switcher';
 import { useApartmentId } from '@/features/apartments/hooks';
-import { UnreadDot, withUnread } from '@/features/notifications/components/unread-dot';
-import { useHasUnread } from '@/features/notifications/hooks';
+import { UnreadBadge, withUnread } from '@/features/notifications/components/unread-dot';
+import { useUnreadCount } from '@/features/notifications/hooks';
 import { unreadMatches } from '@/features/notifications/unread';
 import { HeaderBack } from '@/components/header-back';
 import { ProfileTabIcon } from '@/features/profile/components/profile-tab-icon';
@@ -112,7 +112,7 @@ function TabIcon({
 function HeaderActions({ apartmentId }: { apartmentId: string }) {
   const iconColor = useThemeColor('foreground');
   // Joins, exits and requests to join are on the members screen, so their dot is here.
-  const unread = useHasUnread(unreadMatches.members(apartmentId));
+  const unread = useUnreadCount(unreadMatches.members(apartmentId));
 
   return (
     <View className="flex-row items-center gap-4 pr-4">
@@ -124,8 +124,9 @@ function HeaderActions({ apartmentId }: { apartmentId: string }) {
         accessibilityLabel={withUnread('Members', unread)}
         hitSlop={8}
       >
-        <Ionicons name="people-outline" size={HEADER_ICON_SIZE} color={iconColor} />
-        {unread ? <UnreadDot overlay /> : null}
+        <UnreadBadge count={unread}>
+          <Ionicons name="people-outline" size={HEADER_ICON_SIZE} color={iconColor} />
+        </UnreadBadge>
       </PressableFeedback>
     </View>
   );

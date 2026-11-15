@@ -3,8 +3,8 @@ import { PressableFeedback, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
 import { AppLogo } from '@/components/app-logo';
-import { UnreadDot, withUnread } from '@/features/notifications/components/unread-dot';
-import { useHasUnread } from '@/features/notifications/hooks';
+import { UnreadBadge, withUnread } from '@/features/notifications/components/unread-dot';
+import { useUnreadCount } from '@/features/notifications/hooks';
 import { unreadMatches } from '@/features/notifications/unread';
 
 import { useApartment, useMyApartments } from '../hooks';
@@ -12,8 +12,8 @@ import { useApartment, useMyApartments } from '../hooks';
 /**
  * The top bar's title: FlatMate's logo and name, as on the home screen, with
  * the open apartment's name under it. Tapping it opens the list of the user's
- * apartments, where they pick another (SRS section 3.1). A red dot on the
- * logo means another of their apartments has something new.
+ * apartments, where they pick another (SRS section 3.1). A red badge on the
+ * logo counts what is new in their other apartments.
  */
 export function ApartmentSwitcher({ apartmentId }: { apartmentId: string }) {
   const apartment = useApartment(apartmentId);
@@ -21,7 +21,7 @@ export function ApartmentSwitcher({ apartmentId }: { apartmentId: string }) {
   const others = (useMyApartments().data ?? [])
     .map((item) => item.apartment.id)
     .filter((id) => id !== apartmentId);
-  const unread = useHasUnread(unreadMatches.inApartments(others));
+  const unread = useUnreadCount(unreadMatches.inApartments(others));
 
   return (
     <PressableFeedback
@@ -30,10 +30,9 @@ export function ApartmentSwitcher({ apartmentId }: { apartmentId: string }) {
       accessibilityLabel={withUnread(`${name}. Switch apartment`, unread)}
       className="flex-row items-center gap-2"
     >
-      <View>
+      <UnreadBadge count={unread}>
         <AppLogo size={44} />
-        {unread ? <UnreadDot overlay /> : null}
-      </View>
+      </UnreadBadge>
       <View>
         <Typography.Heading type="h5" numberOfLines={1}>
           FlatMate
