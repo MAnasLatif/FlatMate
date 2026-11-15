@@ -1,8 +1,5 @@
 import { Redirect } from 'expo-router';
-import { Typography } from 'heroui-native';
-import { View } from 'react-native';
 
-import { AppLogo } from '@/components/app-logo';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import { JoinOrCreate } from '@/features/apartments/components/join-or-create';
@@ -29,7 +26,7 @@ export default function HomeScreen() {
 
   if (apartments.data && apartments.data.length > 0) {
     // Wait for the remembered apartment, so the app does not open one and then jump.
-    if (lastApartmentId === undefined) return <Screen>{null}</Screen>;
+    if (lastApartmentId === undefined) return <Screen padTop={false}>{null}</Screen>;
     const apartmentId = startingApartment(
       apartments.data.map((item) => item.apartment.id),
       lastApartmentId,
@@ -42,16 +39,10 @@ export default function HomeScreen() {
   return (
     <Screen
       freshness={apartments}
+      padTop={false}
       refreshing={apartments.isRefetching}
       onRefresh={() => void apartments.refetch()}
     >
-      <View className="flex-row items-center gap-2">
-        <AppLogo size={44} />
-        <Typography.Heading type="h3" accessibilityRole="header">
-          FlatMate
-        </Typography.Heading>
-      </View>
-
       <MyJoinRequests />
 
       {apartments.isPending ? (

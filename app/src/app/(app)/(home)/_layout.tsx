@@ -1,7 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { Tabs } from 'expo-router/tabs';
-import { useThemeColor } from 'heroui-native';
+import { Typography, useThemeColor } from 'heroui-native';
+import { View } from 'react-native';
+
+import { AppLogo } from '@/components/app-logo';
 
 import { TAB_ICON_BOX, TAB_ICON_SIZE, tabTransition } from '@/components/screen-transitions';
 import { HeaderBack } from '@/components/header-back';
@@ -31,6 +34,10 @@ export default function HomeTabsLayout() {
         name="index"
         options={{
           title: 'Apartments',
+          // A fixed top bar, as inside an apartment, so it stays while the page scrolls.
+          headerShown: true,
+          headerTitle: () => <HomeTitle />,
+          headerTitleAlign: 'left',
           tabBarAccessibilityLabel: 'Apartments',
           tabBarIcon: ({ focused }) => (
             <Ionicons
@@ -53,5 +60,16 @@ export default function HomeTabsLayout() {
         }}
       />
     </Tabs>
+  );
+}
+
+function HomeTitle() {
+  return (
+    <View className="flex-row items-center gap-2">
+      <AppLogo size={44} />
+      <Typography.Heading type="h5" accessibilityRole="header">
+        FlatMate
+      </Typography.Heading>
+    </View>
   );
 }
