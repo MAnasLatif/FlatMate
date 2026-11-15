@@ -8,7 +8,7 @@ How FlatMate tells people about changes, and how to set up push notifications fo
 flowchart LR
   RPC["A change, such as post_expense"] --> AUDIT[("audit_events")]
   AUDIT -->|trigger, same transaction| NOTIF[("notifications<br/>one row per person")]
-  NOTIF -->|inbox, RLS| APP["App inbox"]
+  NOTIF -->|unread, RLS| APP["Red dots in the app"]
   CRON["pg_cron, every 10 s<br/>while anything is due"] -->|pg_net + delivery secret| FN["Edge Function<br/>deliver-push"]
   FN -->|claim_pushes / report_pushes| NOTIF
   FN -->|HTTPS| EXPO["Expo push service"]
@@ -16,9 +16,9 @@ flowchart LR
 ```
 
 - Every notifiable change already writes an `audit_events` row. A trigger turns it into one `notifications` row per person to tell, in the same transaction, never including whoever made the change. The rules are in `private.notification_recipients` in `supabase/migrations/20261114104853_add_notifications.sql`.
-- The **inbox** in the app reads those rows. Each person can read only their own, and the inbox updates live through the user's change-event topic ([decision 0007](decisions/0007-offline-reading-and-live-sync.md)).
+- There is **no inbox**. The app reads the unread rows and puts a red dot on the place each one is about: an expense, Settle up, the members icon, or another apartment in the switcher. Opening that place marks them read ([decision 0008](decisions/0008-unread-dots-instead-of-an-inbox.md)). Each person can read only their own rows, and the dots update live through the user's change-event topic ([decision 0007](decisions/0007-offline-reading-and-live-sync.md)).
 - **Push** is a queue. While anything is due, pg_cron calls the `deliver-push` Edge Function, which claims a batch, sends it to Expo, and reports Expo's answer. Failed pushes are retried up to five times with growing delays, tokens of uninstalled apps are deleted, and pushes older than a day are skipped.
-- **Push text is generic** ("An expense that includes you was added."), because it shows on lock screens. It never contains names, amounts or account details. The inbox, behind sign-in, says who did what.
+- **Push text is generic** ("An expense that includes you was added."), because it shows on lock screens. It never contains names, amounts or account details. The app, behind sign-in, shows the record itself.
 - **Opening a notification** loads it under the user's own access and then opens its record. That screen checks access again, so a record the user may no longer see shows as not available (FR-09.3).
 
 Expo's push service delivers to Android through Firebase Cloud Messaging (FCM), which is why Android needs a Firebase project. FlatMate uses nothing else from Firebase.
@@ -156,7 +156,7 @@ Under **Realtime** settings, turn off **Allow public access** (`supabase/README.
 
 1. Open the new build on the phone and sign in. Allow notifications when Android asks.
 2. On a second device, sign in as a flatmate in the same apartment and add an expense that includes the first person.
-3. Within about 10 seconds the first phone shows "An expense that includes you was added." Tapping it opens the expense. The bell in the top bar shows the unread count, and the inbox lists it.
+3. Within about 10 seconds the first phone shows "An expense that includes you was added." Before tapping it, the expense's row on the dashboard has a red dot. Tapping the push opens the expense and the dot goes.
 
 ## Troubleshooting
 

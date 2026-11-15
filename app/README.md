@@ -94,7 +94,7 @@ Loaded data is saved on the device (`src/lib/saved-cache.ts`), so it stays reada
 
 The app is event-driven ([decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md)). `src/lib/realtime-topic.ts` joins a private Realtime topic; `src/features/sync/` holds the router: `changes.ts` maps each kind of change event to the cache keys it makes stale, and `hooks.ts` listens on the user's topic while signed in (`(app)/_layout.tsx`) and on the open apartment's topic while it is open (`apartments/[apartmentId]/_layout.tsx`). On (re)joining a topic it refreshes what may have missed an event; when a membership ends it stops listening and drops that apartment's unshown money data.
 
-Notifications live in `src/features/notifications/`: the inbox at `/notifications`, the bell with the unread count in the top bars, registering the device for push after sign-in, and opening the record a tapped push is about. Sign-out removes the device first. Android push needs a Firebase file at build time, through `GOOGLE_SERVICES_JSON`; the setup is in [docs/NOTIFICATIONS.md](../docs/NOTIFICATIONS.md).
+Notifications live in `src/features/notifications/`: the red dots for unread notifications (`unread.ts` says which place each belongs to and which screen clears it, [decision 0008](../docs/decisions/0008-unread-dots-instead-of-an-inbox.md)), registering the device for push after sign-in, and opening the record a tapped push is about. Sign-out removes the device first. Android push needs a Firebase file at build time, through `GOOGLE_SERVICES_JSON`; the setup is in [docs/NOTIFICATIONS.md](../docs/NOTIFICATIONS.md).
 
 ## Rules specific to this folder
 

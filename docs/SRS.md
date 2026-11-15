@@ -50,7 +50,8 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 7. Subsequent launches: show apartment list/selector as agreed, not a forced auto-entry to one apartment.
 
 ### 3.2 Apartment dashboard
-- Top bar: apartment name + dropdown on one side; members icon and notification entry on the other. Location subtitle is optional and admin-controlled.
+- Top bar: apartment name + dropdown on one side; members icon on the other. Location subtitle is optional and admin-controlled.
+- No notification inbox: a red dot marks each place with an unread notification (an expense, Settle up, the members icon, another apartment in the switcher) and opening that place clears it ([decision 0008](decisions/0008-unread-dots-instead-of-an-inbox.md)).
 - Summary: `You'll Receive`, `You Owe`, `Net Balance`, and the user's share of expenses for the selected month.
 - Expense feed with month selector, search/filter, status indicators, and detail navigation.
 - Bottom navigation **left Expenses List | center Add (+) | right Profile**. The apartment dashboard/list is the main content area.
@@ -67,7 +68,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - Expense objection/change request; dispute detail; resolution/adjustment.
 - Recurring templates; fixed schedule; variable-bill prompt and amount entry.
 - Settlement overview, preview, payment allocation, settlement history, carry-forward.
-- Notifications/inbox; reminders; reports and PDF export.
+- Unread markers (no inbox); reminders; reports and PDF export.
 - Admin settings: members, roles, permissions, invites, dates, categories, budgets, visibility, approval rules.
 - Optional advanced: security deposits, shared inventory, room occupancy/splits, offline drafts.
 
