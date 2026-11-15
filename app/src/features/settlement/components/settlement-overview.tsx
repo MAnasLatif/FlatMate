@@ -8,6 +8,9 @@ import { Screen } from '@/components/screen';
 import { useApartment } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { useRefreshMoney } from '@/features/expenses/hooks';
+import { UnreadDot } from '@/features/notifications/components/unread-dot';
+import { useIsUnread, useMarkSeen } from '@/features/notifications/hooks';
+import { type UnreadMatch, unreadMatches } from '@/features/notifications/unread';
 import { userErrorMessage } from '@/lib/errors';
 import { formatMinorUnits } from '@/lib/money';
 import { formatDate } from '@/lib/time';
@@ -28,6 +31,8 @@ export function SettlementOverview({ apartmentId }: { apartmentId: string }) {
   const history = useClosedPeriods(apartmentId);
   const refreshMoney = useRefreshMoney(apartmentId);
   const closed = useMemo(() => history.data?.pages.flat() ?? [], [history.data]);
+  const isUnread = useIsUnread();
+  useMarkSeen(preview.data ? seenHere(apartmentId, preview.data.rows) : null);
   // Former members cannot list current members, so names may come from profiles.
   const nameOf = useNameOf(apartmentId, [
     ...(preview.data?.rows.map((row) => row.counterpartyId) ?? []),
@@ -95,6 +100,7 @@ export function SettlementOverview({ apartmentId }: { apartmentId: string }) {
                 <PreviewLine
                   row={row}
                   name={nameOf(row.counterpartyId)}
+                  unread={isUnread(unreadMatches.withMember(apartmentId, row.counterpartyId))}
                   money={money}
                   onPress={() =>
                     router.push({
@@ -166,14 +172,31 @@ export function SettlementOverview({ apartmentId }: { apartmentId: string }) {
   );
 }
 
+/**
+ * What this screen clears when it opens: a closed period, and payments and
+ * ledger entries with anyone who has no line here, whose dots would otherwise
+ * lead nowhere. The rest stay marked on each person's line.
+ */
+function seenHere(apartmentId: string, rows: PreviewRow[]): UnreadMatch {
+  const listed = new Set(rows.map((row) => row.counterpartyId));
+  const inSettlement = unreadMatches.settlement(apartmentId);
+  return (item) =>
+    inSettlement(item) &&
+    (item.recordType === 'settlement' ||
+      item.counterpartyId === null ||
+      !listed.has(item.counterpartyId));
+}
+
 function PreviewLine({
   row,
   name,
+  unread,
   money,
   onPress,
 }: {
   row: PreviewRow;
   name: string;
+  unread: boolean;
   money: (amountMinor: number) => string;
   onPress: () => void;
 }) {
@@ -189,15 +212,22 @@ function PreviewLine({
     <PressableFeedback
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityHint="Shows what is behind it and how to settle"
+      accessibilityHint={
+        unread
+          ? 'New. Shows what is behind it and how to settle'
+          : 'Shows what is behind it and how to settle'
+      }
       className="gap-1"
     >
-      <Typography.Paragraph
-        className={net > 0 ? 'text-success' : net < 0 ? 'text-danger' : undefined}
-        weight="semibold"
-      >
-        {summary}
-      </Typography.Paragraph>
+      <View className="flex-row items-center gap-2">
+        {unread ? <UnreadDot /> : null}
+        <Typography.Paragraph
+          className={net > 0 ? 'shrink text-success' : net < 0 ? 'shrink text-danger' : 'shrink'}
+          weight="semibold"
+        >
+          {summary}
+        </Typography.Paragraph>
+      </View>
       <Typography.Paragraph type="body-xs" color="muted">
         You owe {money(row.oweMinor)} · {name} owes you {money(row.owedMinor)}
       </Typography.Paragraph>

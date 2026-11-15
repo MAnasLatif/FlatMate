@@ -6,6 +6,9 @@ import { LoadError, loadingError, LoadingRows } from '@/components/query-states'
 import { Screen } from '@/components/screen';
 import { useApartment } from '@/features/apartments/hooks';
 import { useRefreshMoney } from '@/features/expenses/hooks';
+import { UnreadDot, withUnread } from '@/features/notifications/components/unread-dot';
+import { useHasUnread } from '@/features/notifications/hooks';
+import { unreadMatches } from '@/features/notifications/unread';
 import { userErrorMessage } from '@/lib/errors';
 import { formatMinorUnits } from '@/lib/money';
 import { formatDate } from '@/lib/time';
@@ -38,6 +41,7 @@ export function SettleWith({
   const apartment = useApartment(apartmentId);
   const obligations = usePairObligations(apartmentId, memberId);
   const refreshMoney = useRefreshMoney(apartmentId);
+  const paymentsUnread = useHasUnread(unreadMatches.withMember(apartmentId, memberId));
 
   if (apartment.isPending || obligations.isPending) {
     return (
@@ -115,8 +119,10 @@ export function SettleWith({
             params: { apartmentId, memberId },
           })
         }
+        accessibilityLabel={withUnread(`Payments and everything else with ${name}`, paymentsUnread)}
       >
-        Payments and everything else with {name}
+        <Button.Label>Payments and everything else with {name}</Button.Label>
+        {paymentsUnread ? <UnreadDot /> : null}
       </Button>
     </Screen>
   );

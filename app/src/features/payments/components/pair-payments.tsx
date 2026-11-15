@@ -6,6 +6,8 @@ import { LoadError, LoadingRows } from '@/components/query-states';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { pairPosition } from '@/features/expenses/balances';
 import { usePairBalances } from '@/features/expenses/hooks';
+import { useIsUnread } from '@/features/notifications/hooks';
+import { unreadMatches } from '@/features/notifications/unread';
 import { userErrorMessage } from '@/lib/errors';
 
 import { usePairPayments } from '../hooks';
@@ -24,6 +26,7 @@ export function PairPayments({
   const userId = useCurrentUserId();
   const payments = usePairPayments(apartmentId, counterpartyId);
   const balances = usePairBalances(apartmentId);
+  const isUnread = useIsUnread();
   const owe = balances.data
     ? pairPosition(balances.data.find((balance) => balance.counterpartyId === counterpartyId))
         .oweMinor
@@ -64,6 +67,7 @@ export function PairPayments({
               key={payment.id}
               payment={payment}
               description={payment.payerId === userId ? `You paid ${name}` : `${name} paid you`}
+              unread={isUnread(unreadMatches.payment(apartmentId, payment.id))}
               onPress={() =>
                 router.push({
                   pathname: '/apartments/[apartmentId]/payments/[paymentId]',

@@ -7,6 +7,9 @@ import { FreshnessBanner } from '@/components/freshness-banner';
 import { LoadError, LoadingRows, PendingSkeleton } from '@/components/query-states';
 import type { Apartment } from '@/features/apartments/api';
 import { useApartment } from '@/features/apartments/hooks';
+import { UnreadDot, withUnread } from '@/features/notifications/components/unread-dot';
+import { useIsUnread } from '@/features/notifications/hooks';
+import { unreadMatches } from '@/features/notifications/unread';
 import { userErrorMessage } from '@/lib/errors';
 import { formatMinorUnits } from '@/lib/money';
 import { formatMonth, monthStart, todayInTimeZone } from '@/lib/time';
@@ -25,6 +28,8 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
   const refreshMoney = useRefreshMoney(apartment.id);
   const apartmentQuery = useApartment(apartment.id);
   const [refreshing, setRefreshing] = useState(false);
+  const isUnread = useIsUnread();
+  const settlementUnread = isUnread(unreadMatches.settlement(apartment.id));
 
   // Pages are fetched by offset, so an expense added while scrolling can appear twice.
   const items = useMemo(() => uniqueById(expenses.data?.pages.flat() ?? []), [expenses.data]);
@@ -53,6 +58,7 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
       renderItem={({ item }) => (
         <ExpenseRow
           expense={item}
+          unread={isUnread(unreadMatches.expenseRow(apartment.id, item.id))}
           onPress={() =>
             router.push({
               pathname: '/apartments/[apartmentId]/expenses/[expenseId]',
@@ -77,8 +83,10 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
                 params: { apartmentId: apartment.id },
               })
             }
+            accessibilityLabel={withUnread('Settle up', settlementUnread)}
           >
-            Settle up
+            <Button.Label>Settle up</Button.Label>
+            {settlementUnread ? <UnreadDot /> : null}
           </Button>
           <MonthSelector month={month} latestMonth={latestMonth} onChange={setMonth} />
           <MonthlyShare apartmentId={apartment.id} month={month} currency={apartment.currency} />

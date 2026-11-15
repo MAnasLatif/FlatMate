@@ -10,10 +10,11 @@ import {
   TAB_ICON_SIZE,
   tabTransition,
 } from '@/components/screen-transitions';
-import { useCurrentUserId } from '@/features/auth/session-provider';
-import { NotificationBell } from '@/features/notifications/components/notification-bell';
 import { ApartmentSwitcher } from '@/features/apartments/components/apartment-switcher';
 import { useApartmentId } from '@/features/apartments/hooks';
+import { UnreadDot, withUnread } from '@/features/notifications/components/unread-dot';
+import { useHasUnread } from '@/features/notifications/hooks';
+import { unreadMatches } from '@/features/notifications/unread';
 import { HeaderBack } from '@/components/header-back';
 import { ProfileTabIcon } from '@/features/profile/components/profile-tab-icon';
 import { SignOutButton } from '@/features/profile/components/sign-out-button';
@@ -110,20 +111,21 @@ function TabIcon({
 
 function HeaderActions({ apartmentId }: { apartmentId: string }) {
   const iconColor = useThemeColor('foreground');
-  const userId = useCurrentUserId();
+  // Joins, exits and requests to join are on the members screen, so their dot is here.
+  const unread = useHasUnread(unreadMatches.members(apartmentId));
 
   return (
     <View className="flex-row items-center gap-4 pr-4">
-      <NotificationBell userId={userId} />
       <PressableFeedback
         onPress={() =>
           router.push({ pathname: '/apartments/[apartmentId]/members', params: { apartmentId } })
         }
         accessibilityRole="button"
-        accessibilityLabel="Members"
+        accessibilityLabel={withUnread('Members', unread)}
         hitSlop={8}
       >
         <Ionicons name="people-outline" size={HEADER_ICON_SIZE} color={iconColor} />
+        {unread ? <UnreadDot overlay /> : null}
       </PressableFeedback>
     </View>
   );

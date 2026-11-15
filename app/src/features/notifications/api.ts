@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
+import { placeUnread, type UnreadNotification } from './unread';
+
 /** Where opening a notification goes; the screen there checks access again (FR-09.3). */
 export type NotificationRecordType =
   | 'expense'
@@ -11,88 +13,97 @@ export type NotificationRecordType =
   | 'apartment'
   | 'join_request';
 
-export type NotificationItem = {
+/** What a notification is about: enough to open it, and nothing that names anyone. */
+export type NotificationTarget = {
   id: string;
   apartmentId: string;
-  /** Null when the apartment can no longer be seen. */
-  apartmentName: string | null;
-  /** What happened, such as 'expense.created'. */
-  type: string;
   recordType: NotificationRecordType;
   recordId: string | null;
-  /** Null when the person who acted can no longer be seen, or it was the app itself. */
-  actorName: string | null;
-  createdAt: string;
-  readAt: string | null;
 };
 
-export const NOTIFICATIONS_PAGE_SIZE = 30;
+/**
+ * The most unread notifications loaded at once. Someone who stays away long
+ * enough to pass it sees the newest ones marked; the rest stay unread.
+ */
+export const UNREAD_LIMIT = 500;
 
-const COLUMNS =
-  'id, apartment_id, type, record_type, record_id, created_at, read_at, apartment:apartments(name), actor:profiles!notifications_actor_id_fkey(display_name)';
+const TARGET_COLUMNS = 'id, apartment_id, record_type, record_id';
 
-type Row = {
+type TargetRow = {
   id: string;
   apartment_id: string;
-  type: string;
   record_type: string;
   record_id: string | null;
-  created_at: string;
-  read_at: string | null;
-  apartment: { name: string } | null;
-  actor: { display_name: string | null } | null;
 };
 
-function toItem(row: Row): NotificationItem {
+function toTarget(row: TargetRow): NotificationTarget {
   return {
     id: row.id,
     apartmentId: row.apartment_id,
-    apartmentName: row.apartment?.name ?? null,
-    type: row.type,
     recordType: row.record_type as NotificationRecordType,
     recordId: row.record_id,
-    actorName: row.actor?.display_name ?? null,
-    createdAt: row.created_at,
-    readAt: row.read_at,
   };
 }
 
-/** One page of the signed-in user's notifications, newest first. RLS returns only theirs. */
-export async function fetchNotificationsPage(page: number): Promise<NotificationItem[]> {
-  const from = page * NOTIFICATIONS_PAGE_SIZE;
-  const { data, error } = await supabase
-    .from('notifications')
-    .select(COLUMNS)
-    .order('created_at', { ascending: false })
-    .order('id', { ascending: false })
-    .range(from, from + NOTIFICATIONS_PAGE_SIZE - 1);
-  if (error) throw error;
-  return data.map(toItem);
-}
-
 /** One notification, or null when it is not the user's or no longer exists. */
-export async function fetchNotification(id: string): Promise<NotificationItem | null> {
+export async function fetchNotificationTarget(id: string): Promise<NotificationTarget | null> {
   const { data, error } = await supabase
     .from('notifications')
-    .select(COLUMNS)
+    .select(TARGET_COLUMNS)
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
-  return data ? toItem(data) : null;
+  return data ? toTarget(data) : null;
 }
 
-export async function fetchUnreadCount(): Promise<number> {
-  const { count, error } = await supabase
+/**
+ * The signed-in user's unread notifications, newest first, each with what is
+ * needed to mark it where it shows: the expense a dispute is about, and the
+ * other person in a payment. RLS returns only the user's own notifications,
+ * and only the disputes and payments they may see.
+ */
+export async function fetchUnreadNotifications(userId: string): Promise<UnreadNotification[]> {
+  const { data, error } = await supabase
     .from('notifications')
-    .select('id', { count: 'exact', head: true })
-    .is('read_at', null);
+    .select(TARGET_COLUMNS)
+    .is('read_at', null)
+    .order('created_at', { ascending: false })
+    .limit(UNREAD_LIMIT);
   if (error) throw error;
-  return count ?? 0;
+  const targets = data.map(toTarget);
+
+  const idsOf = (type: NotificationRecordType) => [
+    ...new Set(
+      targets.flatMap((item) => (item.recordType === type && item.recordId ? [item.recordId] : [])),
+    ),
+  ];
+  const disputeIds = idsOf('dispute');
+  const paymentIds = idsOf('payment');
+  const [disputes, payments] = await Promise.all([
+    disputeIds.length > 0
+      ? supabase.from('disputes').select('id, expense_id').in('id', disputeIds)
+      : null,
+    paymentIds.length > 0
+      ? supabase.from('payments').select('id, payer_id, recipient_id').in('id', paymentIds)
+      : null,
+  ]);
+  if (disputes?.error) throw disputes.error;
+  if (payments?.error) throw payments.error;
+
+  return placeUnread(targets, {
+    userId,
+    disputes: (disputes?.data ?? []).map((row) => ({ id: row.id, expenseId: row.expense_id })),
+    payments: (payments?.data ?? []).map((row) => ({
+      id: row.id,
+      payerId: row.payer_id,
+      recipientId: row.recipient_id,
+    })),
+  });
 }
 
-/** Marks the given notifications read, or all of them. */
-export async function markNotificationsRead(ids?: string[]): Promise<void> {
-  const { error } = await supabase.rpc('mark_notifications_read', ids ? { p_ids: ids } : {});
+/** Marks the given notifications read. */
+export async function markNotificationsRead(ids: string[]): Promise<void> {
+  const { error } = await supabase.rpc('mark_notifications_read', { p_ids: ids });
   if (error) throw error;
 }
 

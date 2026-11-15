@@ -23,9 +23,6 @@ jest.mock('expo-router', () => {
 jest.mock('@/features/auth/session-provider', () => ({
   useCurrentUserId: () => '11111111-1111-1111-1111-111111111111',
 }));
-jest.mock('@/features/notifications/components/notification-bell', () => ({
-  NotificationBell: () => null,
-}));
 jest.mock('@/features/settlement/components/past-apartments', () => ({
   PastApartments: () => null,
 }));

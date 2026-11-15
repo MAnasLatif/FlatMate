@@ -10,7 +10,8 @@ import { MyJoinRequests } from '@/features/apartments/components/my-join-request
 import { useMyApartments } from '@/features/apartments/hooks';
 import { startingApartment, useLastApartment } from '@/features/apartments/last-apartment';
 import { useCurrentUserId } from '@/features/auth/session-provider';
-import { NotificationBell } from '@/features/notifications/components/notification-bell';
+import { useMarkSeen } from '@/features/notifications/hooks';
+import { unreadMatches } from '@/features/notifications/unread';
 import { PastApartments } from '@/features/settlement/components/past-apartments';
 import { userErrorMessage } from '@/lib/errors';
 
@@ -23,6 +24,8 @@ export default function HomeScreen() {
   const userId = useCurrentUserId();
   const apartments = useMyApartments();
   const lastApartmentId = useLastApartment(userId);
+  // A declined request to join opens here, where the user's requests are.
+  useMarkSeen(unreadMatches.joinRequests());
 
   if (apartments.data && apartments.data.length > 0) {
     // Wait for the remembered apartment, so the app does not open one and then jump.
@@ -42,14 +45,11 @@ export default function HomeScreen() {
       refreshing={apartments.isRefetching}
       onRefresh={() => void apartments.refetch()}
     >
-      <View className="flex-row items-center justify-between">
-        <View className="flex-row items-center gap-2">
-          <AppLogo size={44} />
-          <Typography.Heading type="h3" accessibilityRole="header">
-            FlatMate
-          </Typography.Heading>
-        </View>
-        <NotificationBell userId={userId} />
+      <View className="flex-row items-center gap-2">
+        <AppLogo size={44} />
+        <Typography.Heading type="h3" accessibilityRole="header">
+          FlatMate
+        </Typography.Heading>
       </View>
 
       <MyJoinRequests />

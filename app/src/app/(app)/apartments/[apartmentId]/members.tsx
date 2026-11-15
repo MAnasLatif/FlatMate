@@ -29,6 +29,8 @@ import { useCurrentUserId } from '@/features/auth/session-provider';
 import type { PairBalance } from '@/features/expenses/api';
 import { PairBalanceLine } from '@/features/expenses/components/pair-balance-line';
 import { usePairBalances } from '@/features/expenses/hooks';
+import { useMarkSeen } from '@/features/notifications/hooks';
+import { unreadMatches } from '@/features/notifications/unread';
 import { ProfileAvatar } from '@/features/profile/components/profile-avatar';
 import { useIsOnline } from '@/lib/network';
 import { userErrorMessage } from '@/lib/errors';
@@ -45,6 +47,7 @@ export default function MembersScreen() {
   const apartment = useApartment(apartmentId);
   const balances = usePairBalances(apartmentId);
   const actions = useMemberActions(apartmentId);
+  useMarkSeen(unreadMatches.members(apartmentId));
 
   if (members.isPending) {
     return (

@@ -1,7 +1,7 @@
 import { screen, userEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
-import { describeNotification, notificationHref } from '@/features/notifications/describe';
+import { notificationHref } from '@/features/notifications/href';
 import { renderWithProviders } from '@/test/render';
 
 import {
@@ -131,13 +131,7 @@ describe('answering requests', () => {
 });
 
 describe('join request notifications', () => {
-  it('words each kind and sends a declined one home', () => {
-    expect(describeNotification({ type: 'join_request.requested', actorName: 'Zubair' })).toBe(
-      'Zubair asked to join the apartment.',
-    );
-    expect(describeNotification({ type: 'join_request.approved', actorName: 'Anas' })).toBe(
-      'Anas let you into the apartment.',
-    );
+  it('sends a declined one home', () => {
     expect(
       notificationHref({ recordType: 'join_request', recordId: REQUEST, apartmentId: FLAT }),
     ).toBe('/');

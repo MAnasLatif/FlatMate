@@ -9,12 +9,18 @@ import type { MyApartment } from '@/features/apartments/api';
 import { JoinOrCreate } from '@/features/apartments/components/join-or-create';
 import { MyJoinRequests } from '@/features/apartments/components/my-join-requests';
 import { useMyApartments } from '@/features/apartments/hooks';
+import { UnreadDot, withUnread } from '@/features/notifications/components/unread-dot';
+import { useIsUnread, useMarkSeen } from '@/features/notifications/hooks';
+import { unreadMatches } from '@/features/notifications/unread';
 import { PastApartments } from '@/features/settlement/components/past-apartments';
 import { userErrorMessage } from '@/lib/errors';
 
 /** Every apartment the user is in, reached from the apartment switcher. */
 export default function MyApartmentsScreen() {
   const apartments = useMyApartments();
+  const isUnread = useIsUnread();
+  // A declined request to join is shown here too, with the user's other requests.
+  useMarkSeen(unreadMatches.joinRequests());
 
   return (
     <Screen
@@ -36,7 +42,11 @@ export default function MyApartmentsScreen() {
       ) : (
         <View className="gap-3">
           {apartments.data.map((item) => (
-            <ApartmentCard key={item.apartment.id} item={item} />
+            <ApartmentCard
+              key={item.apartment.id}
+              item={item}
+              unread={isUnread(unreadMatches.inApartments([item.apartment.id]))}
+            />
           ))}
         </View>
       )}
@@ -65,7 +75,7 @@ export default function MyApartmentsScreen() {
   );
 }
 
-function ApartmentCard({ item }: { item: MyApartment }) {
+function ApartmentCard({ item, unread }: { item: MyApartment; unread: boolean }) {
   const mutedColor = useThemeColor('muted');
   const { apartment } = item;
 
@@ -81,12 +91,15 @@ function ApartmentCard({ item }: { item: MyApartment }) {
         });
       }}
       accessibilityRole="button"
-      accessibilityLabel={`Open ${apartment.name}`}
+      accessibilityLabel={withUnread(`Open ${apartment.name}`, unread)}
     >
       <Card>
         <Card.Body className="flex-row items-center gap-3">
           <View className="flex-1 gap-1">
-            <Card.Title>{apartment.name}</Card.Title>
+            <View className="flex-row items-center gap-2">
+              <Card.Title>{apartment.name}</Card.Title>
+              {unread ? <UnreadDot /> : null}
+            </View>
             {apartment.show_location && apartment.location ? (
               <Card.Description>{apartment.location}</Card.Description>
             ) : null}

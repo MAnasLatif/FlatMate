@@ -3,6 +3,8 @@ import { router } from 'expo-router';
 
 import type { Apartment } from '@/features/apartments/api';
 import { fetchApartment } from '@/features/apartments/api';
+import { fetchUnreadNotifications } from '@/features/notifications/api';
+import type { UnreadNotification } from '@/features/notifications/unread';
 import { addMonths, formatMonth, monthStart, todayInTimeZone } from '@/lib/time';
 import { renderWithProviders } from '@/test/render';
 
@@ -21,6 +23,13 @@ jest.mock('../api', () => ({
   fetchExpensesPage: jest.fn(),
   fetchMyBalances: jest.fn(),
   fetchMyMonthlyShare: jest.fn(),
+}));
+jest.mock('@/features/auth/session-provider', () => ({
+  useCurrentUserId: () => '11111111-1111-1111-1111-111111111111',
+}));
+jest.mock('@/features/notifications/api', () => ({
+  ...jest.requireActual('@/features/notifications/api'),
+  fetchUnreadNotifications: jest.fn(),
 }));
 jest.mock('@/features/apartments/api', () => ({
   ...jest.requireActual('@/features/apartments/api'),
@@ -69,6 +78,7 @@ beforeEach(() => {
   balances.mockResolvedValue([]);
   monthlyShare.mockResolvedValue(0);
   expensesPage.mockResolvedValue([]);
+  jest.mocked(fetchUnreadNotifications).mockResolvedValue([]);
 });
 
 it('shows what the user will receive, owes and nets to, marked provisional (SRS 5.1)', async () => {
@@ -125,6 +135,54 @@ it('opens an expense from the feed', async () => {
     pathname: '/apartments/[apartmentId]/expenses/[expenseId]',
     params: { apartmentId: apartment.id, expenseId: 'e1' },
   });
+});
+
+function unread(overrides: Partial<UnreadNotification>): UnreadNotification {
+  return {
+    id: 'n1',
+    apartmentId: apartment.id,
+    recordType: 'expense',
+    recordId: 'e1',
+    expenseId: null,
+    counterpartyId: null,
+    ...overrides,
+  };
+}
+
+it('marks with a red dot the expenses and the Settle up button that have something new', async () => {
+  expensesPage.mockResolvedValue([
+    expense({ id: 'e1', title: 'Cleaning' }),
+    expense({ id: 'e2', title: 'Water' }),
+    expense({ id: 'e3', title: 'Gas' }),
+  ]);
+  jest.mocked(fetchUnreadNotifications).mockResolvedValue([
+    unread({ id: 'n1', recordType: 'expense', recordId: 'e1' }),
+    // A dispute marks the expense it is about.
+    unread({ id: 'n2', recordType: 'dispute', recordId: 'd1', expenseId: 'e3' }),
+    unread({ id: 'n3', recordType: 'payment', recordId: 'p1', counterpartyId: 'zubair' }),
+  ]);
+  await renderWithProviders(<Dashboard apartment={apartment} />);
+
+  expect(await screen.findByRole('button', { name: 'Settle up, new' })).toBeOnTheScreen();
+  expect(screen.getAllByTestId('unread-dot', { includeHiddenElements: true })).toHaveLength(3);
+  expect(screen.getByRole('button', { name: /Cleaning/ }).props.accessibilityHint).toBe(
+    'New. Opens the expense',
+  );
+  expect(screen.getByRole('button', { name: /Water/ }).props.accessibilityHint).toBe(
+    'Opens the expense',
+  );
+  expect(screen.getByRole('button', { name: /Gas/ }).props.accessibilityHint).toBe(
+    'New. Opens the expense',
+  );
+});
+
+it('shows no dots when nothing is unread', async () => {
+  expensesPage.mockResolvedValue([expense({ id: 'e1', title: 'Cleaning' })]);
+  await renderWithProviders(<Dashboard apartment={apartment} />);
+
+  expect(await screen.findByRole('button', { name: /Cleaning/ })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Settle up' })).toBeOnTheScreen();
+  expect(screen.queryByTestId('unread-dot', { includeHiddenElements: true })).toBeNull();
 });
 
 it('steps back a month but not past the current one', async () => {

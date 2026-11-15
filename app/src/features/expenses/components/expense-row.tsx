@@ -1,18 +1,25 @@
 import { Card, PressableFeedback, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
+import { UnreadDot } from '@/features/notifications/components/unread-dot';
 import { formatMinorUnits } from '@/lib/money';
 import { formatDate } from '@/lib/time';
 
 import type { ExpenseListItem } from '../api';
 import { ExpenseStatusChips } from './expense-status';
 
-/** One expense in the feed: what it was, when, how much, and its status. Opens its details. */
+/**
+ * One expense in the feed: what it was, when, how much, and its status. Opens
+ * its details. A red dot means a notification about it, or a dispute on it, is
+ * unread.
+ */
 export function ExpenseRow({
   expense,
+  unread = false,
   onPress,
 }: {
   expense: ExpenseListItem;
+  unread?: boolean;
   onPress: () => void;
 }) {
   const details = [
@@ -28,15 +35,22 @@ export function ExpenseRow({
     <PressableFeedback
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityHint="Opens the expense"
+      accessibilityHint={unread ? 'New. Opens the expense' : 'Opens the expense'}
       className="rounded-3xl"
     >
       <Card>
         <Card.Body className="flex-row items-center gap-3">
           <View className="flex-1 gap-1">
-            <Typography.Paragraph numberOfLines={1} color={isVoid ? 'muted' : 'default'}>
-              {expense.title}
-            </Typography.Paragraph>
+            <View className="flex-row items-center gap-2">
+              {unread ? <UnreadDot /> : null}
+              <Typography.Paragraph
+                numberOfLines={1}
+                color={isVoid ? 'muted' : 'default'}
+                className="shrink"
+              >
+                {expense.title}
+              </Typography.Paragraph>
+            </View>
             <Typography.Paragraph type="body-xs" color="muted" numberOfLines={1}>
               {details.join(' · ')}
             </Typography.Paragraph>

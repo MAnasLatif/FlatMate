@@ -7,11 +7,14 @@ import { SharedAccounts } from '@/features/accounts/components/shared-accounts';
 import { useApartment, useApartmentId, useMembers } from '@/features/apartments/hooks';
 import { PairLedger } from '@/features/expenses/components/pair-ledger';
 import { PairPayments } from '@/features/payments/components/pair-payments';
+import { useMarkSeen } from '@/features/notifications/hooks';
+import { unreadMatches } from '@/features/notifications/unread';
 import { userErrorMessage } from '@/lib/errors';
 
 export default function PairLedgerScreen() {
   const apartmentId = useApartmentId();
   const { memberId } = useLocalSearchParams<{ memberId: string }>();
+  useMarkSeen(unreadMatches.ledgerWith(apartmentId, memberId));
   const apartment = useApartment(apartmentId);
   const members = useMembers(apartmentId);
 

@@ -7,6 +7,9 @@ import { useMembers } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { useExpenseDetail } from '@/features/expenses/hooks';
 import { memberLabel } from '@/features/expenses/member-label';
+import { UnreadDot, withUnread } from '@/features/notifications/components/unread-dot';
+import { useIsUnread } from '@/features/notifications/hooks';
+import { unreadMatches } from '@/features/notifications/unread';
 import { userErrorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/time';
 
@@ -26,6 +29,7 @@ export function ExpenseDisputes({
   const disputes = useExpenseDisputes(apartmentId, expenseId);
   const expense = useExpenseDetail(apartmentId, expenseId);
   const members = useMembers(apartmentId);
+  const isUnread = useIsUnread();
 
   // The expense screen shows its own loading and error states for the expense and members.
   if (disputes.isPending || !expense.data || !members.data) return null;
@@ -67,6 +71,7 @@ export function ExpenseDisputes({
             key={dispute.id}
             dispute={dispute}
             raiserName={nameOf(dispute.raisedBy)}
+            unread={isUnread(unreadMatches.dispute(apartmentId, dispute.id))}
             onPress={() => open(dispute.id)}
           />
         ))}
@@ -91,10 +96,12 @@ export function ExpenseDisputes({
 function DisputeRow({
   dispute,
   raiserName,
+  unread,
   onPress,
 }: {
   dispute: Dispute;
   raiserName: string;
+  unread: boolean;
   onPress: () => void;
 }) {
   const status = disputeStatus(dispute);
@@ -102,9 +109,10 @@ function DisputeRow({
     <PressableFeedback
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Dispute by ${raiserName}, ${status.label}`}
+      accessibilityLabel={withUnread(`Dispute by ${raiserName}, ${status.label}`, unread)}
       className="flex-row items-center gap-3"
     >
+      {unread ? <UnreadDot /> : null}
       <View className="flex-1 gap-0.5">
         <Typography.Paragraph type="body-sm">
           {raiserName} {dispute.kind === 'decline' ? 'declined it' : 'proposed another share'}
