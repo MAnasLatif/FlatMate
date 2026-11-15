@@ -159,6 +159,7 @@ export type Database = {
         Row: {
           apartment_id: string;
           can_add_expense: boolean;
+          hidden_at: string | null;
           id: string;
           joined_at: string;
           left_at: string | null;
@@ -170,6 +171,7 @@ export type Database = {
         Insert: {
           apartment_id: string;
           can_add_expense?: boolean;
+          hidden_at?: string | null;
           id?: string;
           joined_at?: string;
           left_at?: string | null;
@@ -180,6 +182,7 @@ export type Database = {
         Update: {
           apartment_id?: string;
           can_add_expense?: boolean;
+          hidden_at?: string | null;
           id?: string;
           joined_at?: string;
           left_at?: string | null;
@@ -1578,6 +1581,59 @@ export type Database = {
           },
         ];
       };
+      rejoin_invites: {
+        Row: {
+          apartment_id: string;
+          created_at: string;
+          decided_at: string | null;
+          id: string;
+          invited_by: string | null;
+          state: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          created_at?: string;
+          decided_at?: string | null;
+          id?: string;
+          invited_by?: string | null;
+          state?: string;
+          user_id: string;
+        };
+        Update: {
+          apartment_id?: string;
+          created_at?: string;
+          decided_at?: string | null;
+          id?: string;
+          invited_by?: string | null;
+          state?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'rejoin_invites_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rejoin_invites_invited_by_fkey';
+            columns: ['invited_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rejoin_invites_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       settlement_balances: {
         Row: {
           disputed_minor: number;
@@ -1709,6 +1765,7 @@ export type Database = {
       };
     };
     Functions: {
+      accept_rejoin_invite: { Args: { p_invite_id: string }; Returns: string };
       add_category: { Args: { p_apartment_id: string; p_name: string }; Returns: string };
       add_dispute_evidence: {
         Args: { p_dispute_id: string; p_storage_path: string };
@@ -1725,6 +1782,7 @@ export type Database = {
       approve_join_request: { Args: { p_request_id: string }; Returns: undefined };
       archive_category: { Args: { p_category_id: string }; Returns: undefined };
       cancel_join_request: { Args: { p_request_id: string }; Returns: undefined };
+      cancel_rejoin_invite: { Args: { p_invite_id: string }; Returns: undefined };
       claim_pushes: {
         Args: { p_limit?: number };
         Returns: {
@@ -1752,6 +1810,7 @@ export type Database = {
       };
       decline_join_request: { Args: { p_request_id: string }; Returns: undefined };
       decline_payment: { Args: { p_payment_id: string; p_reason: string }; Returns: string };
+      decline_rejoin_invite: { Args: { p_invite_id: string }; Returns: string };
       edit_expense: {
         Args: {
           p_amount_minor: number;
@@ -1840,6 +1899,24 @@ export type Database = {
           title: string;
         }[];
       };
+      get_my_rejoin_invites: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          apartment_id: string;
+          apartment_name: string;
+          created_at: string;
+          id: string;
+          invited_by_name: string;
+        }[];
+      };
+      get_rejoin_invites: {
+        Args: { p_apartment_id: string };
+        Returns: {
+          created_at: string;
+          id: string;
+          user_id: string;
+        }[];
+      };
       get_settlement_preview: {
         Args: { p_apartment_id: string };
         Returns: {
@@ -1864,6 +1941,11 @@ export type Database = {
           provider: string;
         }[];
       };
+      hide_former_member: {
+        Args: { p_apartment_id: string; p_user_id: string };
+        Returns: undefined;
+      };
+      invite_back: { Args: { p_apartment_id: string; p_user_id: string }; Returns: string };
       join_apartment: { Args: { p_code: string }; Returns: Json };
       leave_apartment: { Args: { p_apartment_id: string }; Returns: undefined };
       mark_notifications_read: { Args: { p_ids?: string[] }; Returns: number };
