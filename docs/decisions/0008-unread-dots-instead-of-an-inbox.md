@@ -13,7 +13,7 @@ On 2026-11-15 the owner asked to remove the inbox completely. Unread notificatio
 
 **No inbox, no bell.** The `/notifications` screen and the bell are removed. The `notifications` table, push delivery and opening a tapped push are unchanged.
 
-**A red dot marks each place with something unread.** The app loads the user's unread notifications (at most 500, newest first) and places each one: the expense a dispute is about comes from `disputes`, and the other person in a payment from `payments`, both read under RLS. Each place picks its notifications with a matcher in `app/src/features/notifications/unread.ts`:
+**A red dot marks each place with something unread.** On an icon it is a badge with the number unread, kept inside the icon's own padded box so it is never clipped. The app loads the user's unread notifications (at most 500, newest first) and places each one: the expense a dispute is about comes from `disputes`, and the other person in a payment from `payments`, both read under RLS. Each place picks its notifications with a matcher in `app/src/features/notifications/unread.ts`:
 
 | Notification about | Dot on | Cleared when the user opens |
 |---|---|---|
@@ -22,9 +22,9 @@ On 2026-11-15 the owner asked to remove the inbox completely. Unread notificatio
 | A payment | Settle up, the person's line in the settlement, "Payments and everything else", the payment's row | The payment |
 | An offset or adjustment | Settle up, the person's line, "Payments and everything else" | The ledger with that person |
 | A closed period | Settle up | The settlement screen |
-| Members and requests to join | The members icon | The members screen |
+| Members and requests to join | The members icon, with a count | The members screen |
 | The apartment, such as being let in | (opens there) | The dashboard |
-| Anything in another apartment | The apartment switcher's logo, and the apartment in My Apartments | (cleared as above, inside it) |
+| Anything in another apartment | The apartment switcher's logo, with a count, and the apartment in My Apartments | (cleared as above, inside it) |
 | A declined request to join | (opens there) | The home screen or My Apartments |
 
 The settlement screen also clears payments and ledger entries with anyone who has no line there, so no dot is left pointing nowhere.
