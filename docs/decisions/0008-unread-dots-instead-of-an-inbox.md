@@ -26,6 +26,7 @@ On 2026-11-15 the owner asked to remove the inbox completely. Unread notificatio
 | The apartment, such as being let in | (opens there) | The dashboard |
 | Anything in another apartment | The apartment switcher's logo, with a count, and the apartment in My Apartments | (cleared as above, inside it) |
 | A declined request to join | (opens there) | The home screen or My Apartments |
+| An invitation back to an apartment | The apartment switcher's logo, with a count | My Apartments, where it is answered ([decision 0009](0009-former-members-hiding-and-inviting-back.md)) |
 
 The settlement screen also clears payments and ledger entries with anyone who has no line there, so no dot is left pointing nowhere.
 

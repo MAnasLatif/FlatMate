@@ -84,7 +84,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-02.1 Create apartment with unique identifier and join code; creator becomes admin.
 - FR-02.2 A valid code sends a request to join; invalid/revoked/expired codes fail safely. Any current admin approves or declines the request, and the first to act decides; the person joins only when approved. The person sees their pending requests and can cancel them, and may ask again after a decline (join-code rate limits still apply). Admins are notified of requests, and the person of the decision. Admin can rotate/revoke codes.
 - FR-02.3 Multiple memberships per user; all apartment balances and settings remain isolated.
-- FR-02.4 Member may leave; admin may remove member. Historical transactions remain immutable/auditable; outstanding dues and disputes remain attached to the former member.
+- FR-02.4 Member may leave; admin may remove member. Historical transactions remain immutable/auditable; outstanding dues and disputes remain attached to the former member. An admin may remove a former member from the members list, which hides them there and changes no record, and may invite a former member back; accepting makes them a member again ([decision 0009](decisions/0009-former-members-hiding-and-inviting-back.md)).
 - FR-02.5 Track join/leave effective dates. Do not automatically include a member in expenses outside their eligible occupancy interval; explicit overrides require permission and history.
 - FR-02.6 Admin may promote/demote admins and configure expense-creation rights.
 

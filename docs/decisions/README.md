@@ -28,3 +28,4 @@ Records are not edited after they are accepted, apart from their status. To chan
 | [0006](0006-settlement-periods.md) | Settlement periods and adjustments | Accepted |
 | [0007](0007-offline-reading-and-live-sync.md) | Offline reading and live sync | Accepted |
 | [0008](0008-unread-dots-instead-of-an-inbox.md) | Unread dots instead of an inbox | Accepted |
+| [0009](0009-former-members-hiding-and-inviting-back.md) | Former members: hiding and inviting back | Accepted |
