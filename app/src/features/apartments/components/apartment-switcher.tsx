@@ -13,7 +13,7 @@ import { useApartment, useMyApartments } from '../hooks';
  * The top bar's title: FlatMate's logo and name, as on the home screen, with
  * the open apartment's name under it. Tapping it opens the list of the user's
  * apartments, where they pick another (SRS section 3.1). A red badge on the
- * logo counts what is new in their other apartments.
+ * logo counts what is new in their other apartments, and invitations back.
  */
 export function ApartmentSwitcher({ apartmentId }: { apartmentId: string }) {
   const apartment = useApartment(apartmentId);
@@ -21,7 +21,9 @@ export function ApartmentSwitcher({ apartmentId }: { apartmentId: string }) {
   const others = (useMyApartments().data ?? [])
     .map((item) => item.apartment.id)
     .filter((id) => id !== apartmentId);
-  const unread = useUnreadCount(unreadMatches.inApartments(others));
+  const inOthers = unreadMatches.inApartments(others);
+  const invitedBack = unreadMatches.rejoinInvites();
+  const unread = useUnreadCount((item) => inOthers(item) || invitedBack(item));
 
   return (
     <PressableFeedback

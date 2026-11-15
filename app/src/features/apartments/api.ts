@@ -25,9 +25,14 @@ export type Member = {
   joinedAt: string;
   leftAt: string | null;
   leftReason: 'left' | 'removed' | null;
+  /** Set when an admin removed this former member from the list. Their records stay. */
+  hiddenAt: string | null;
   displayName: string | null;
   avatarPath: string | null;
 };
+
+/** How long a join code works, in days. */
+export const INVITE_VALID_DAYS = 7;
 
 export type Invite = Pick<
   Tables<'apartment_invites'>,
@@ -71,7 +76,7 @@ export async function fetchMembers(apartmentId: string): Promise<Member[]> {
   const { data, error } = await supabase
     .from('apartment_members')
     .select(
-      'id, user_id, role, can_add_expense, joined_at, left_at, left_reason, profile:profiles(display_name, avatar_path)',
+      'id, user_id, role, can_add_expense, joined_at, left_at, left_reason, hidden_at, profile:profiles(display_name, avatar_path)',
     )
     .eq('apartment_id', apartmentId)
     .order('joined_at', { ascending: true });
@@ -85,6 +90,7 @@ export async function fetchMembers(apartmentId: string): Promise<Member[]> {
     leftAt: row.left_at,
     leftReason:
       row.left_reason === 'left' || row.left_reason === 'removed' ? row.left_reason : null,
+    hiddenAt: row.hidden_at,
     displayName: row.profile?.display_name ?? null,
     avatarPath: row.profile?.avatar_path ?? null,
   }));
@@ -245,6 +251,72 @@ export async function removeMember(apartmentId: string, userId: string): Promise
     p_user_id: userId,
   });
   if (error) throw error;
+}
+
+/** Hides a former member from the apartment's list. Their records and balances stay. */
+export async function hideFormerMember(apartmentId: string, userId: string): Promise<void> {
+  const { error } = await supabase.rpc('hide_former_member', {
+    p_apartment_id: apartmentId,
+    p_user_id: userId,
+  });
+  if (error) throw error;
+}
+
+/** Invites a former member back. Asking again while one waits returns that one. */
+export async function inviteBack(apartmentId: string, userId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('invite_back', {
+    p_apartment_id: apartmentId,
+    p_user_id: userId,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function cancelRejoinInvite(inviteId: string): Promise<void> {
+  const { error } = await supabase.rpc('cancel_rejoin_invite', { p_invite_id: inviteId });
+  if (error) throw error;
+}
+
+/** An invitation waiting for a former member's answer, for the apartment's admins. */
+export type RejoinInvite = { id: string; userId: string; createdAt: string };
+
+export async function fetchRejoinInvites(apartmentId: string): Promise<RejoinInvite[]> {
+  const { data, error } = await supabase.rpc('get_rejoin_invites', {
+    p_apartment_id: apartmentId,
+  });
+  if (error) throw error;
+  return data.map((row) => ({ id: row.id, userId: row.user_id, createdAt: row.created_at }));
+}
+
+/** An invitation to the signed-in user to rejoin an apartment they left. */
+export type MyRejoinInvite = {
+  id: string;
+  apartmentId: string;
+  apartmentName: string;
+  invitedByName: string | null;
+  createdAt: string;
+};
+
+export async function fetchMyRejoinInvites(): Promise<MyRejoinInvite[]> {
+  const { data, error } = await supabase.rpc('get_my_rejoin_invites');
+  if (error) throw error;
+  return data.map((row) => ({
+    id: row.id,
+    apartmentId: row.apartment_id,
+    apartmentName: row.apartment_name,
+    invitedByName: row.invited_by_name,
+    createdAt: row.created_at,
+  }));
+}
+
+/** Accepts or declines an invitation. Answers with the apartment, which accepting joins. */
+export async function answerRejoinInvite(inviteId: string, accept: boolean): Promise<string> {
+  const { data, error } = await supabase.rpc(
+    accept ? 'accept_rejoin_invite' : 'decline_rejoin_invite',
+    { p_invite_id: inviteId },
+  );
+  if (error) throw error;
+  return data;
 }
 
 export async function leaveApartment(apartmentId: string): Promise<void> {

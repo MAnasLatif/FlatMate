@@ -5,11 +5,13 @@ import { useCurrentUserId } from '@/features/auth/session-provider';
 
 import {
   addCategory,
+  answerRejoinInvite,
   type ApartmentSettingsInput,
   archiveCategory,
   createApartment,
   createInvite,
   cancelJoinRequest,
+  cancelRejoinInvite,
   decideJoinRequest,
   fetchActiveInvites,
   fetchApartment,
@@ -18,6 +20,10 @@ import {
   fetchMembers,
   fetchMyApartments,
   fetchMyJoinRequests,
+  fetchMyRejoinInvites,
+  fetchRejoinInvites,
+  hideFormerMember,
+  inviteBack,
   joinApartment,
   leaveApartment,
   type Member,
@@ -38,6 +44,8 @@ export const apartmentKeys = {
   categories: (apartmentId: string) => ['apartments', apartmentId, 'categories'] as const,
   joinRequests: (apartmentId: string) => ['apartments', apartmentId, 'join-requests'] as const,
   myJoinRequests: (userId: string) => ['apartments', 'join-requests', userId] as const,
+  rejoinInvites: (apartmentId: string) => ['apartments', apartmentId, 'rejoin-invites'] as const,
+  myRejoinInvites: (userId: string) => ['apartments', 'rejoin-invites', userId] as const,
 };
 
 /** The apartment id from the route, for screens inside an apartment. */
@@ -174,6 +182,58 @@ export function useMemberActions(apartmentId: string) {
   });
 
   return { setRole, setCanAddExpense, remove };
+}
+
+/** Invitations to rejoin that wait for an answer, for the apartment's admins. */
+export function useRejoinInvites(apartmentId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: apartmentKeys.rejoinInvites(apartmentId),
+    queryFn: () => fetchRejoinInvites(apartmentId),
+    enabled,
+  });
+}
+
+/** An admin's actions on a former member: invite them back, or hide them from the list. */
+export function useFormerMemberActions(apartmentId: string) {
+  const queryClient = useQueryClient();
+  const refresh = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: apartmentKeys.rejoinInvites(apartmentId) }),
+      queryClient.invalidateQueries({ queryKey: apartmentKeys.members(apartmentId) }),
+    ]);
+  const inviteBackMutation = useMutation({
+    mutationFn: (userId: string) => inviteBack(apartmentId, userId),
+    onSuccess: refresh,
+  });
+  const cancelInvite = useMutation({ mutationFn: cancelRejoinInvite, onSuccess: refresh });
+  const hide = useMutation({
+    mutationFn: (userId: string) => hideFormerMember(apartmentId, userId),
+    onSuccess: refresh,
+  });
+  return { inviteBack: inviteBackMutation, cancelInvite, hide };
+}
+
+/** Invitations to the signed-in user to rejoin apartments they left. */
+export function useMyRejoinInvites() {
+  const userId = useCurrentUserId();
+  return useQuery({
+    queryKey: apartmentKeys.myRejoinInvites(userId),
+    queryFn: fetchMyRejoinInvites,
+  });
+}
+
+export function useAnswerRejoinInvite() {
+  const queryClient = useQueryClient();
+  const userId = useCurrentUserId();
+  return useMutation({
+    mutationFn: (input: { inviteId: string; accept: boolean }) =>
+      answerRejoinInvite(input.inviteId, input.accept),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: apartmentKeys.myRejoinInvites(userId) }),
+        queryClient.invalidateQueries({ queryKey: apartmentKeys.mine(userId) }),
+      ]),
+  });
 }
 
 export function useLeaveApartment(apartmentId: string) {

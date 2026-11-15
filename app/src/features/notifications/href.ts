@@ -50,6 +50,9 @@ export function notificationHref(
     // A declined request: the apartment is not open to them, so go home.
     case 'join_request':
       return '/';
+    // An invitation back is answered in the user's list of apartments.
+    case 'rejoin_invite':
+      return '/apartments';
   }
   return { pathname: '/apartments/[apartmentId]', params: { apartmentId } };
 }

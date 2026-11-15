@@ -8,6 +8,7 @@ import { Screen } from '@/components/screen';
 import type { MyApartment } from '@/features/apartments/api';
 import { JoinOrCreate } from '@/features/apartments/components/join-or-create';
 import { MyJoinRequests } from '@/features/apartments/components/my-join-requests';
+import { MyRejoinInvites } from '@/features/apartments/components/my-rejoin-invites';
 import { useMyApartments } from '@/features/apartments/hooks';
 import { UnreadDot, withUnread } from '@/features/notifications/components/unread-dot';
 import { useIsUnread, useMarkSeen } from '@/features/notifications/hooks';
@@ -19,8 +20,8 @@ import { userErrorMessage } from '@/lib/errors';
 export default function MyApartmentsScreen() {
   const apartments = useMyApartments();
   const isUnread = useIsUnread();
-  // A declined request to join is shown here too, with the user's other requests.
-  useMarkSeen(unreadMatches.joinRequests());
+  // A declined request to join, or an invitation back, is shown here too.
+  useMarkSeen(unreadMatches.requestsAndInvites());
 
   return (
     <Screen
@@ -28,6 +29,7 @@ export default function MyApartmentsScreen() {
       refreshing={apartments.isRefetching}
       onRefresh={() => void apartments.refetch()}
     >
+      <MyRejoinInvites />
       <MyJoinRequests />
 
       {apartments.isPending ? (

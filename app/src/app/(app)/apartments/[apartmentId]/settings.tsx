@@ -9,7 +9,7 @@ import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
-import type { Apartment, Category } from '@/features/apartments/api';
+import { type Apartment, type Category, INVITE_VALID_DAYS } from '@/features/apartments/api';
 import {
   ApartmentFormFields,
   type ApartmentFormInput,
@@ -29,8 +29,6 @@ import {
 import { apartmentFormSchema, categoryNameSchema } from '@/features/apartments/schemas';
 import { userErrorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/time';
-
-const INVITE_VALID_DAYS = 7;
 
 export default function ApartmentSettingsScreen() {
   const apartmentId = useApartmentId();

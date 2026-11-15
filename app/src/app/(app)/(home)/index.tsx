@@ -4,6 +4,7 @@ import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import { JoinOrCreate } from '@/features/apartments/components/join-or-create';
 import { MyJoinRequests } from '@/features/apartments/components/my-join-requests';
+import { MyRejoinInvites } from '@/features/apartments/components/my-rejoin-invites';
 import { useMyApartments } from '@/features/apartments/hooks';
 import { startingApartment, useLastApartment } from '@/features/apartments/last-apartment';
 import { useCurrentUserId } from '@/features/auth/session-provider';
@@ -21,8 +22,8 @@ export default function HomeScreen() {
   const userId = useCurrentUserId();
   const apartments = useMyApartments();
   const lastApartmentId = useLastApartment(userId);
-  // A declined request to join opens here, where the user's requests are.
-  useMarkSeen(unreadMatches.joinRequests());
+  // A declined request to join, or an invitation back, opens here, where the user answers it.
+  useMarkSeen(unreadMatches.requestsAndInvites());
 
   if (apartments.data && apartments.data.length > 0) {
     // Wait for the remembered apartment, so the app does not open one and then jump.
@@ -43,6 +44,7 @@ export default function HomeScreen() {
       refreshing={apartments.isRefetching}
       onRefresh={() => void apartments.refetch()}
     >
+      <MyRejoinInvites />
       <MyJoinRequests />
 
       {apartments.isPending ? (

@@ -49,11 +49,15 @@ export function placeUnread(
  * a dot always leads somewhere that clears it.
  */
 export const unreadMatches = {
-  /** Anything in one of the given apartments: for the apartment list and switcher. */
+  /**
+   * Anything in one of the given apartments: for the apartment list and
+   * switcher. An invitation back is about an apartment the user is not in, so
+   * it never counts here.
+   */
   inApartments:
     (apartmentIds: readonly string[]): UnreadMatch =>
     (item) =>
-      apartmentIds.includes(item.apartmentId),
+      item.recordType !== 'rejoin_invite' && apartmentIds.includes(item.apartmentId),
 
   /** An expense row: the expense itself, or a dispute about it. */
   expenseRow:
@@ -128,6 +132,13 @@ export const unreadMatches = {
     (item) =>
       item.apartmentId === apartmentId && item.recordType === 'apartment',
 
-  /** A declined request to join, cleared where the user's requests are listed. */
-  joinRequests: (): UnreadMatch => (item) => item.recordType === 'join_request',
+  /**
+   * A declined request to join, or an invitation back to an apartment, cleared
+   * where the user's requests and invitations are listed.
+   */
+  requestsAndInvites: (): UnreadMatch => (item) =>
+    item.recordType === 'join_request' || item.recordType === 'rejoin_invite',
+
+  /** An invitation back, which the apartment switcher counts with other apartments. */
+  rejoinInvites: (): UnreadMatch => (item) => item.recordType === 'rejoin_invite',
 };

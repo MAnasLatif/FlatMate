@@ -54,6 +54,7 @@ function member(userId: string, displayName: string, leftAt: string | null = nul
     joinedAt: '2026-11-01T00:00:00Z',
     leftAt,
     leftReason: leftAt ? 'left' : null,
+    hiddenAt: null,
     displayName,
     avatarPath: null,
   };

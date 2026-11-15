@@ -11,7 +11,8 @@ export type NotificationRecordType =
   | 'members'
   | 'settlement'
   | 'apartment'
-  | 'join_request';
+  | 'join_request'
+  | 'rejoin_invite';
 
 /** What a notification is about: enough to open it, and nothing that names anyone. */
 export type NotificationTarget = {

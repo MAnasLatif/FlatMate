@@ -26,6 +26,7 @@ describe('apartment change events', () => {
       'member',
       'offset',
       'payment',
+      'rejoin_invite',
       'settlement_period',
       'profile',
       'account',

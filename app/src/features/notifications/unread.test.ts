@@ -108,7 +108,7 @@ describe('unreadMatches', () => {
     expect(unreadMatches.apartment(APT)(item({ recordType: 'apartment' }))).toBe(true);
     expect(unreadMatches.apartment(APT)(item({ recordType: 'members' }))).toBe(false);
     expect(
-      unreadMatches.joinRequests()(item({ recordType: 'join_request', apartmentId: 'x' })),
+      unreadMatches.requestsAndInvites()(item({ recordType: 'join_request', apartmentId: 'x' })),
     ).toBe(true);
   });
 });

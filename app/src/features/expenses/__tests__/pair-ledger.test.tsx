@@ -28,6 +28,15 @@ jest.mock('@/features/apartments/api', () => ({
   ...jest.requireActual('@/features/apartments/api'),
   fetchApartment: jest.fn(),
   fetchMembers: jest.fn(),
+  fetchRejoinInvites: jest.fn(async () => []),
+}));
+// The screen's top-bar buttons render in place, so the tests can press them.
+jest.mock('expo-router/stack', () => ({
+  __esModule: true,
+  default: {
+    Screen: ({ options }: { options?: { headerRight?: () => unknown } }) =>
+      options?.headerRight?.() ?? null,
+  },
 }));
 jest.mock('@/features/auth/session-provider', () => ({
   useCurrentUserId: () => '11111111-1111-1111-1111-111111111111',
@@ -136,6 +145,7 @@ describe('Members directory', () => {
     joinedAt: '2026-11-01T00:00:00Z',
     leftAt,
     leftReason: leftAt ? 'left' : null,
+    hiddenAt: null,
     displayName,
     avatarPath: null,
   });
@@ -161,19 +171,49 @@ describe('Members directory', () => {
       screen.getByText('you owe 150.00 PKR, they owe 66.67 PKR · provisional'),
     ).toBeOnTheScreen();
     expect(screen.getByText('some held by a dispute')).toBeOnTheScreen();
-    expect(screen.queryByRole('button', { name: 'Balance with Anas' })).not.toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Open Anas' })).not.toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: 'Balance with Zubair' }));
+    await user.press(screen.getByRole('button', { name: 'Open Zubair' }));
     expect(router.push).toHaveBeenCalledWith({
       pathname: '/apartments/[apartmentId]/ledger/[memberId]',
       params: { apartmentId: APARTMENT, memberId: ZUBAIR },
     });
 
-    await user.press(screen.getByRole('button', { name: 'Balance with Ajmal' }));
+    await user.press(screen.getByRole('button', { name: 'Open Ajmal' }));
     expect(router.push).toHaveBeenLastCalledWith({
       pathname: '/apartments/[apartmentId]/ledger/[memberId]',
       params: { apartmentId: APARTMENT, memberId: AJMAL },
     });
+  });
+
+  it('leaves out former members an admin removed from the list, and those who came back', async () => {
+    jest
+      .mocked(fetchMembers)
+      .mockResolvedValue([
+        member(ANAS, 'Anas'),
+        member(ZUBAIR, 'Zubair'),
+        { ...member(AJMAL, 'Ajmal', '2026-11-10T00:00:00Z'), hiddenAt: '2026-11-12T00:00:00Z' },
+        { ...member(ZUBAIR, 'Zubair', '2026-11-05T00:00:00Z'), membershipId: 'm-old' },
+      ]);
+    await renderWithProviders(<MembersScreen />);
+
+    expect(await screen.findByRole('button', { name: 'Open Zubair' })).toBeOnTheScreen();
+    expect(screen.queryByText('Former members')).not.toBeOnTheScreen();
+    expect(screen.queryByText('Ajmal')).not.toBeOnTheScreen();
+  });
+
+  it('gives admins a way to send an invite, and members none', async () => {
+    jest
+      .mocked(fetchMembers)
+      .mockResolvedValue([{ ...member(ANAS, 'Anas'), role: 'admin' }, member(ZUBAIR, 'Zubair')]);
+    await renderWithProviders(<MembersScreen />);
+    expect(await screen.findByRole('button', { name: 'Send invite' })).toBeOnTheScreen();
+  });
+
+  it('shows no invite button to a member who is not an admin', async () => {
+    await renderWithProviders(<MembersScreen />);
+    expect(await screen.findByText('Zubair')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Send invite' })).not.toBeOnTheScreen();
   });
 
   it('still lists the members when balances cannot be loaded', async () => {

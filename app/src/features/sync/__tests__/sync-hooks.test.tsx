@@ -37,6 +37,7 @@ function member(leftAt: string | null): Member {
     joinedAt: '2026-11-01T00:00:00Z',
     leftAt,
     leftReason: leftAt ? 'removed' : null,
+    hiddenAt: null,
     displayName: 'Anas',
     avatarPath: null,
   };

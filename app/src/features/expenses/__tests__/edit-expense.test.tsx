@@ -71,6 +71,7 @@ function member(userId: string, displayName: string, role: Member['role'] = 'mem
     joinedAt: '2026-11-01T00:00:00Z',
     leftAt: null,
     leftReason: null,
+    hiddenAt: null,
     displayName,
     avatarPath: null,
   };

@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
+import Stack from 'expo-router/stack';
 import {
   Button,
   Card,
@@ -11,19 +12,21 @@ import {
   useThemeColor,
 } from 'heroui-native';
 import type { ReactNode } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import type { Member } from '@/features/apartments/api';
 import { JoinRequests } from '@/features/apartments/components/join-requests';
+import { SendInviteButton } from '@/features/apartments/components/send-invite-button';
 import { APARTMENT_ERROR_MESSAGES } from '@/features/apartments/errors';
 import {
   useApartment,
   useApartmentId,
   useMemberActions,
   useMembers,
+  useRejoinInvites,
 } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import type { PairBalance } from '@/features/expenses/api';
@@ -68,14 +71,73 @@ export default function MembersScreen() {
   }
 
   const current = members.data.filter((member) => member.leftAt === null);
-  const former = members.data.filter((member) => member.leftAt !== null);
+  const currentIds = new Set(current.map((member) => member.userId));
   const viewerIsAdmin = current.some(
     (member) => member.userId === userId && member.role === 'admin',
   );
+  // Someone who came back is listed once, as a member; an admin may have
+  // removed someone from this list, which hides them here and nowhere else.
+  const former = latestFormer(
+    members.data.filter(
+      (member) =>
+        member.leftAt !== null && member.hiddenAt === null && !currentIds.has(member.userId),
+    ),
+  );
 
+  return (
+    <>
+      <Stack.Screen
+        options={{
+          headerRight: viewerIsAdmin
+            ? () => (
+                <SendInviteButton
+                  apartmentId={apartmentId}
+                  apartmentName={apartment.data?.name ?? 'our apartment'}
+                />
+              )
+            : undefined,
+        }}
+      />
+      <MembersList
+        apartmentId={apartmentId}
+        userId={userId}
+        members={members}
+        current={current}
+        former={former}
+        viewerIsAdmin={viewerIsAdmin}
+        actions={actions}
+        balances={balances}
+        currency={apartment.data?.currency}
+      />
+    </>
+  );
+}
+
+function MembersList({
+  apartmentId,
+  userId,
+  members,
+  current,
+  former,
+  viewerIsAdmin,
+  actions,
+  balances,
+  currency,
+}: {
+  apartmentId: string;
+  userId: string;
+  members: ReturnType<typeof useMembers>;
+  current: Member[];
+  former: Member[];
+  viewerIsAdmin: boolean;
+  actions: ReturnType<typeof useMemberActions>;
+  balances: ReturnType<typeof usePairBalances>;
+  currency: string | undefined;
+}) {
+  const invites = useRejoinInvites(apartmentId, viewerIsAdmin && former.length > 0);
+  const invited = new Set(invites.data?.map((invite) => invite.userId));
   const actionError =
     actions.setRole.error ?? actions.setCanAddExpense.error ?? actions.remove.error;
-  const currency = apartment.data?.currency;
   const balanceOf = (memberId: string) =>
     balances.data?.find((balance) => balance.counterpartyId === memberId);
   // The balance shows once the balances and the currency have loaded.
@@ -156,6 +218,13 @@ export default function MembersScreen() {
                     {showBalances && member.userId !== userId ? (
                       <PairBalanceLine balance={balanceOf(member.userId)} currency={currency} />
                     ) : null}
+                    {invited.has(member.userId) ? (
+                      <View className="flex-row">
+                        <Chip size="sm" variant="secondary">
+                          Invited back
+                        </Chip>
+                      </View>
+                    ) : null}
                   </View>
                 </OpensLedger>
               </Card.Body>
@@ -178,7 +247,10 @@ export default function MembersScreen() {
   );
 }
 
-/** The part of a member's row that opens the pairwise ledger, when there is one to open. */
+/**
+ * The part of a member's row that opens their page: the balance with them,
+ * and for an admin, the actions on them in the page's top bar.
+ */
 function OpensLedger({
   name,
   onPress,
@@ -188,15 +260,17 @@ function OpensLedger({
   onPress: (() => void) | undefined;
   children: ReactNode;
 }) {
+  const chevronColor = useThemeColor('muted');
   if (!onPress) return <View className="flex-1 flex-row items-center gap-3">{children}</View>;
   return (
     <PressableFeedback
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Balance with ${name}`}
+      accessibilityLabel={`Open ${name}`}
       className="flex-1 flex-row items-center gap-3"
     >
       {children}
+      <Ionicons name="chevron-forward" size={20} color={chevronColor} />
     </PressableFeedback>
   );
 }
@@ -225,21 +299,6 @@ function MemberRow({
     actions.setRole.isPending || actions.setCanAddExpense.isPending || actions.remove.isPending;
   const isOnline = useIsOnline();
 
-  const confirmRemove = () => {
-    Alert.alert(
-      `Remove ${name}?`,
-      'They will lose access to the apartment. What they owe and are owed is recorded and stays, and they can still settle it.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => actions.remove.mutate(member.userId),
-        },
-      ],
-    );
-  };
-
   return (
     <Card>
       <Card.Body className="flex-row items-center gap-3">
@@ -267,11 +326,13 @@ function MemberRow({
             </View>
           </View>
         </OpensLedger>
-        {viewerIsAdmin ? (
+        {/* An admin's own settings stay here; the actions on anyone else are
+            in the top bar of that person's page. */}
+        {viewerIsAdmin && isViewer ? (
           <Menu>
             <Menu.Trigger
               accessibilityRole="button"
-              accessibilityLabel={`Actions for ${name}`}
+              accessibilityLabel="Your actions"
               isDisabled={isBusy || !isOnline}
             >
               <Ionicons name="ellipsis-horizontal" size={22} color={iconColor} />
@@ -287,13 +348,7 @@ function MemberRow({
                     })
                   }
                 >
-                  <Menu.ItemTitle>
-                    {member.role === 'admin'
-                      ? isViewer
-                        ? 'Step down as admin'
-                        : 'Remove admin role'
-                      : 'Make admin'}
-                  </Menu.ItemTitle>
+                  <Menu.ItemTitle>Step down as admin</Menu.ItemTitle>
                 </Menu.Item>
                 <Menu.Item
                   onPress={() =>
@@ -307,11 +362,6 @@ function MemberRow({
                     {member.canAddExpense ? 'Stop adding expenses' : 'Allow adding expenses'}
                   </Menu.ItemTitle>
                 </Menu.Item>
-                {isViewer ? null : (
-                  <Menu.Item variant="danger" onPress={confirmRemove}>
-                    <Menu.ItemTitle>Remove from apartment</Menu.ItemTitle>
-                  </Menu.Item>
-                )}
               </Menu.Content>
             </Menu.Portal>
           </Menu>
@@ -319,4 +369,14 @@ function MemberRow({
       </Card.Body>
     </Card>
   );
+}
+
+/** One row per former member: the most recent time they left. */
+function latestFormer(members: Member[]): Member[] {
+  const latest = new Map<string, Member>();
+  for (const member of members) {
+    const seen = latest.get(member.userId);
+    if (!seen || (member.leftAt ?? '') > (seen.leftAt ?? '')) latest.set(member.userId, member);
+  }
+  return members.filter((member) => latest.get(member.userId) === member);
 }
