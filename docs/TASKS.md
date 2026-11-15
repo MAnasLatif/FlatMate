@@ -2,7 +2,7 @@
 
 Everything that remains to take FlatMate from its current state to a released app, in the order it should be done. It is derived from the [SRS](SRS.md): every functional requirement (FR) and acceptance criterion (AC) is covered by a task below.
 
-Last reviewed: 2026-11-14.
+Last reviewed: 2026-11-15.
 
 ## How to use this list
 
@@ -132,6 +132,13 @@ These follow [decision 0007](decisions/0007-offline-reading-and-live-sync.md). T
 - [ ] **1.43.1 Push on a device.** Set up Firebase, the FCM key in EAS, the `GOOGLE_SERVICES_JSON` file variable, the Edge Function secret and the Vault secrets as in `docs/NOTIFICATIONS.md`, rebuild, and check that a flatmate's new expense arrives as a push that opens the expense. *(Owner: Firebase and Expo accounts, a device.)*
 - [x] **1.43.2 Unread dots instead of the inbox.** Remove the bell and the inbox. A red dot marks each place with an unread notification, and opening it marks it read. *(FR-09.3)* See [decision 0008](decisions/0008-unread-dots-instead-of-an-inbox.md).
 - [x] **1.43.3 Former members and invites.** Admins manage a person from their page, send invites from the members screen, remove a former member from the list (records stay), and invite a former member back. *(FR-02.2, FR-02.4)* See [decision 0009](decisions/0009-former-members-hiding-and-inviting-back.md).
+- [x] **1.43.4 Email codes.** Custom SMTP through Resend, and 6-digit code templates for sign-up, password reset and email change, pushed to the hosted project without its local-only settings (`supabase/README.md`). Sign-in links use PKCE with SHA-256 through `expo-crypto`. *(FR-01.1)*
+- [x] **1.43.5 Profile screen.** One page instead of cards: the photo opens a sheet to change or remove it, the name saves itself, email changes with a code from both addresses, the password changes in its own screen, and sign-out sits in the header, confirmed in a sheet. *(FR-01.1, FR-01.2)*
+- [x] **1.43.6 Bank and wallet accounts.** A plain list showing the owner the full numbers, swiped right to edit and left to delete; a details screen with Edit, Delete, Make preferred and the payments made into the account. Recording a payment can name the account it went into, kept as a snapshot. *(FR-01.3, FR-01.4, FR-07.3)*
+- [x] **1.43.7 Joining with approval.** A join code sends a request; any admin lets the person in or declines from the members screen; the person sees and can cancel pending requests; both sides are notified. The code field has Paste and shows errors only after Join. *(FR-02.2)*
+- [x] **1.43.8 Apartment setup and navigation.** Creating picks the currency from every currency with its symbol and a search, takes the time zone from the phone, and shows a location when one is given; editing has the same fields with the currency locked. The app opens in the apartment last opened on the device; My Apartments opens from the top bar's title, with a settings gear for admins. Icon-only bottom bars, also before joining an apartment. *(FR-02.1, SRS 3.1 and 3.2, AC-13)*
+- [x] **1.43.9 Expense form.** Dates from a calendar; any number of receipts, from the camera or the gallery, as the fourth field; who will pay an unpaid bill, told and suggested as the payer; what an Other expense was; no due date once paid; no preview; notes last. *(FR-03.1, FR-03.2, FR-03.5)*
+- [x] **1.43.10 Keyboard and failed loads.** Every screen makes room for the keyboard on Android and scrolls the field being typed in above it; a failed load is retried by tapping it.
 - [ ] **1.44 MVP acceptance pass.** Walk through AC-01 to AC-13 on an Android device, review every RLS policy and the Realtime topic policy, and check loading, empty, error and offline states on every screen. Fix what fails.
 
 ## Phase 2: Automation and reporting
