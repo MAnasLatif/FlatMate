@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as Clipboard from 'expo-clipboard';
-import { Button, Card, Input, Separator, TextField, Typography } from 'heroui-native';
+import { router } from 'expo-router';
+import { Button, Card, Input, Separator, Tabs, TextField, Typography } from 'heroui-native';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Alert, Share, View } from 'react-native';
@@ -15,6 +16,7 @@ import {
   type ApartmentFormInput,
   type ApartmentFormOutput,
 } from '@/features/apartments/components/apartment-form-fields';
+import { JoinRequests } from '@/features/apartments/components/join-requests';
 import { APARTMENT_ERROR_MESSAGES } from '@/features/apartments/errors';
 import {
   useActiveInvites,
@@ -63,13 +65,73 @@ export default function ApartmentSettingsScreen() {
     );
   }
 
+  return <SettingsTabs apartment={apartment.data} freshness={apartment} />;
+}
+
+type SettingsTab = 'general' | 'members' | 'expenses';
+
+/**
+ * The settings in tabs, with the tab bar fixed above the page that scrolls.
+ * Recurring expenses join as a fourth tab when they are built (task 2.4).
+ */
+function SettingsTabs({
+  apartment,
+  freshness,
+}: {
+  apartment: Apartment;
+  freshness: ReturnType<typeof useApartment>;
+}) {
+  const [tab, setTab] = useState<SettingsTab>('general');
+
   return (
-    <Screen freshness={apartment} padTop={false}>
-      <DetailsSection apartment={apartment.data} />
-      <Separator />
-      <InvitesSection apartmentId={apartmentId} apartmentName={apartment.data.name} />
-      <CategoriesSection apartmentId={apartmentId} />
-    </Screen>
+    <Tabs
+      value={tab}
+      onValueChange={(value) => setTab(value as SettingsTab)}
+      variant="secondary"
+      className="flex-1 bg-background"
+    >
+      <Tabs.List className="px-5">
+        <Tabs.ScrollView scrollAlign="center">
+          <Tabs.Indicator />
+          <Tabs.Trigger value="general">
+            <Tabs.Label>General settings</Tabs.Label>
+          </Tabs.Trigger>
+          <Tabs.Trigger value="members">
+            <Tabs.Label>Manage members</Tabs.Label>
+          </Tabs.Trigger>
+          <Tabs.Trigger value="expenses">
+            <Tabs.Label>Expense control</Tabs.Label>
+          </Tabs.Trigger>
+        </Tabs.ScrollView>
+      </Tabs.List>
+      <Tabs.Content value="general" className="flex-1">
+        <Screen freshness={freshness} padTop={false}>
+          <DetailsSection apartment={apartment} />
+        </Screen>
+      </Tabs.Content>
+      <Tabs.Content value="members" className="flex-1">
+        <Screen padTop={false}>
+          <JoinRequests apartmentId={apartment.id} />
+          <InvitesSection apartmentId={apartment.id} apartmentName={apartment.name} />
+          <Button
+            variant="secondary"
+            onPress={() =>
+              router.push({
+                pathname: '/apartments/[apartmentId]/members',
+                params: { apartmentId: apartment.id },
+              })
+            }
+          >
+            Members and former members
+          </Button>
+        </Screen>
+      </Tabs.Content>
+      <Tabs.Content value="expenses" className="flex-1">
+        <Screen padTop={false}>
+          <CategoriesSection apartmentId={apartment.id} />
+        </Screen>
+      </Tabs.Content>
+    </Tabs>
   );
 }
 
