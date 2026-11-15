@@ -43,10 +43,10 @@ flowchart LR
 | Responsibility | Where | Notes |
 |---|---|---|
 | Screens, navigation, forms | `app/` | Presents data and collects input. Holds no authority over money or permissions. |
-| Identity and sessions | Supabase Auth | Email and password, and Google sign-in. |
+| Identity and sessions | Supabase Auth | Email and password, and Google sign-in. Sign-up, password reset and email change are confirmed with 6-digit codes, sent through custom SMTP (Resend) from the templates in `supabase/templates/`. Sign-in links use PKCE with a SHA-256 challenge (`app/src/lib/web-crypto.ts` supplies the hash on the phone). |
 | Authorization | PostgreSQL row-level security | Every apartment-scoped table checks membership and role. |
 | Financial operations | Postgres functions called by RPC | Transactional: posting expenses, payments, reversals, dispute resolution, settlement. |
-| Split validation and rounding | Database | The app previews. The server decides. |
+| Split validation and rounding | Database | The app checks the form as it is filled in. The server decides. |
 | Receipts and payment proofs | Supabase Storage | Private buckets, accessed with signed URLs. |
 | Scheduled work | pg_cron jobs calling Postgres functions | Objection-window deadlines and settlement periods today; recurring charges and reminders later. Idempotent and timezone-aware. |
 | Change events | Realtime Broadcast, sent by `private.emit_change` from database triggers | One event for every visible change, on an apartment or user topic, with no data in it. The app's event router refetches through RLS. |
@@ -88,11 +88,11 @@ The app has four layers, and data only moves through them in this order:
 
 **Reads** are table selects filtered by RLS, or read-only functions for figures computed on the server, such as balances. **Writes** to financial and apartment data always go through a function that runs as one transaction. The only tables clients write directly, under RLS, are personal ones: their own profile name and photo, their receiving accounts and which apartments those are shared with. A function that fails raises a stable key such as `not_admin`, which the app turns into a sentence.
 
-**Cache keys** group everything about one apartment's money under `['money', apartmentId]`, so a single invalidation after any financial change refreshes balances, lists and detail screens together. Apartment, member and settings data sit under `['apartments', apartmentId]`.
+**Cache keys** group everything about one apartment's money under `['money', apartmentId]`, so a single invalidation after any financial change refreshes balances, lists and detail screens together. Apartment, member and settings data sit under `['apartments', apartmentId]`, including its pending join requests; the user's own requests sit under `['apartments', 'join-requests', userId]`. Payments made into one of the user's accounts can come from several apartments, so they sit under `['account-payments', accountId]`, and every payment event refreshes them.
 
 **Event-driven sync (decision 0007).** Every write that changes data another member, or the same user on another device, can see sends a change event. The app never polls.
 
-- Events go out as private Realtime Broadcast messages through one database function, `private.emit_change`, on two kinds of topic: `apartment:<id>` for an apartment's active members, and `user:<id>` for one person's own changes across apartments, such as being removed or editing their receiving accounts.
+- Events go out as private Realtime Broadcast messages through one database function, `private.emit_change`, on two kinds of topic: `apartment:<id>` for an apartment's active members, and `user:<id>` for one person's own changes across apartments, such as being removed, a join request being answered, or editing their receiving accounts.
 - Apartment changes already write an `audit_events` row in the same transaction, including changes made by scheduled jobs; a trigger on that table emits the event. Personal tables that clients write directly have their own triggers.
 - An event names only the kind of record that changed. The app's event router (`app/src/features/sync/`) maps each kind to the cache keys it invalidates, and the data is refetched through RLS.
 - A failed send never rolls back the write. After a reconnect, or when the app returns to the foreground, the router refreshes everything under its topics instead of trusting that no event was missed.
@@ -118,7 +118,7 @@ sequenceDiagram
 
 ## Data isolation
 
-Each apartment is its own tenant. Apartment-owned tables carry an `apartment_id`, and RLS policies restrict access to current members with the right role. Two kinds of data have stricter per-user rules: receiving-account details, which are private unless the owner shares them, and notifications.
+Each apartment is its own tenant. Apartment-owned tables carry an `apartment_id`, and RLS policies restrict access to current members with the right role. Two kinds of data have stricter per-user rules: receiving-account details, which are private unless the owner shares them, and notifications. Join requests have no direct table access: the person who asked and the apartment's admins reach them only through functions that check who is asking, since the person is not a member yet.
 
 ## Environments
 
