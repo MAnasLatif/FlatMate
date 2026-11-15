@@ -23,7 +23,6 @@ export default function AppLayout() {
         name="change-password"
         options={{ title: 'Change password', ...modalTransition }}
       />
-      <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Stack.Screen name="apartments/new" options={{ title: 'New apartment' }} />
       <Stack.Screen name="apartments/join" options={{ title: 'Join an apartment' }} />
       <Stack.Screen name="accounts/[accountId]" options={{ title: 'Account' }} />

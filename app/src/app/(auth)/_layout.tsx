@@ -3,7 +3,7 @@ import Stack from 'expo-router/stack';
 import { pushTransition } from '@/components/screen-transitions';
 
 export const unstable_settings = {
-  initialRouteName: 'sign-in',
+  anchor: 'sign-in',
 };
 
 export default function AuthLayout() {

@@ -20,7 +20,7 @@ import { ProfileTabIcon } from '@/features/profile/components/profile-tab-icon';
 import { SignOutButton } from '@/features/profile/components/sign-out-button';
 
 export const unstable_settings = {
-  initialRouteName: 'index',
+  anchor: 'index',
 };
 
 export default function ApartmentTabsLayout() {
@@ -29,6 +29,8 @@ export default function ApartmentTabsLayout() {
 
   return (
     <Tabs
+      // Back from another tab returns to the expenses.
+      backBehavior="initialRoute"
       screenOptions={{
         ...tabTransition,
         headerTitle: () => <ApartmentSwitcher apartmentId={apartmentId} />,
