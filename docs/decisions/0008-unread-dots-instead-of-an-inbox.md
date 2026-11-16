@@ -9,6 +9,8 @@ Task 1.43 built a notification inbox: a bell in the top bar with an unread count
 
 On 2026-11-15 the owner asked to remove the inbox completely. Unread notifications should be shown as a red dot on the thing they are about, and following the dots should lead to the place the notification came from, as in messaging apps.
 
+**Update 2026-11-16.** The owner removed the dashboard's Settle up button. The dots listed below on "Settle up" no longer have a place on the dashboard; the settlement screen and the ledger with each person still show theirs. A closed period's notification is still opened from its push.
+
 ## Decision
 
 **No inbox, no bell.** The `/notifications` screen and the bell are removed. The `notifications` table, push delivery and opening a tapped push are unchanged.
