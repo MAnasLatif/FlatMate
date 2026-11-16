@@ -159,6 +159,19 @@ describe('EditExpense', () => {
     expect(router.back).not.toHaveBeenCalled();
   });
 
+  it('names the split fields "Your …" for the signed-in member and "Name\'s …" for others', async () => {
+    await renderWithProviders(<EditExpense apartmentId={APARTMENT} expenseId={EXPENSE} />);
+    const user = userEvent.setup();
+
+    await user.press(await screen.findByRole('tab', { name: 'By %' }));
+    expect(screen.getByLabelText('Your percentage')).toBeOnTheScreen();
+    expect(screen.getByLabelText("Zubair's percentage")).toBeOnTheScreen();
+
+    await user.press(screen.getByRole('tab', { name: 'By amount' }));
+    expect(screen.getByLabelText('Your amount, in PKR')).toBeOnTheScreen();
+    expect(screen.getByLabelText("Zubair's amount, in PKR")).toBeOnTheScreen();
+  });
+
   it('does not let a member edit an expense someone else added', async () => {
     mockCurrentUser = ZUBAIR;
     await renderWithProviders(<EditExpense apartmentId={APARTMENT} expenseId={EXPENSE} />);
