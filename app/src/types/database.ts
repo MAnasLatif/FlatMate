@@ -1976,6 +1976,7 @@ export type Database = {
         };
         Returns: string;
       };
+      prepare_invite_email: { Args: { p_apartment_id: string; p_email: string }; Returns: Json };
       raise_dispute: {
         Args: {
           p_client_request_id?: string;
