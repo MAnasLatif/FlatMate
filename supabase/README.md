@@ -56,13 +56,17 @@ In every hosted project, turn off **Allow public access** under Realtime setting
 
 A trigger on `audit_events` creates one `notifications` row per person to tell (`private.notification_recipients`), and pg_cron calls the `deliver-push` Edge Function in `functions/` while pushes are due. The function needs the `PUSH_DELIVERY_SECRET` secret, and the database needs the Vault secrets `project_url` and `push_delivery_secret`; until both are set nothing is pushed, and the app's unread dots still work. Setup, local and hosted, and troubleshooting: [docs/NOTIFICATIONS.md](../docs/NOTIFICATIONS.md). Tests: `tests/database/notifications_test.sql`.
 
+## Join codes
+
+Each apartment has one join code at a time ([decision 0011](../docs/decisions/0011-one-join-code-per-apartment.md)). `get_join_code` returns it to an admin, making it the first time, and `change_join_code` replaces it, stopping every older code. It does not expire: joining with it only asks to join, an admin approves every request, and wrong guesses are rate-limited. Admins can read the code; joining matches on its hash. `create_invite` stays for app versions that still call it. Tests: `tests/database/join_code_test.sql`, `invites_test.sql`.
+
 ## Repeatable expenses
 
 Admins manage `recurring_templates` through the `*_recurring_template` functions; only admins can read them. Every 15 minutes the `charge-repeatable-expenses` cron job calls `private.charge_due_recurring`, which opens one `recurring_instances` row per template and billing period (the month for monthly repeats, the day for daily and weekly ones) once its bill date has come in the apartment's timezone. A fixed template is charged at once as an unpaid bill with its split. A variable one, or a fixed one whose split names someone who has left, waits for an admin, who is notified (`recurring_bill.amount_needed`, `recurring_bill.needs_review`) and enters it with `post_recurring_bill` or skips it. The unique period per template makes the job safe to run twice. Tests: `tests/database/repeatable_expenses_test.sql`.
 
 ## Invite emails
 
-Admins can email a join code from the app ([decision 0010](../docs/decisions/0010-invite-emails.md)). The `send-invite-email` Edge Function calls `private.prepare_invite_email` as the signed-in admin, which checks the address, applies the daily limits and creates the code, then sends the email through Resend. If sending fails, the code is revoked. Only a hash of the address is stored. Tests: `tests/database/invite_emails_test.sql`.
+Admins can email a join code from the app ([decision 0010](../docs/decisions/0010-invite-emails.md)). The `send-invite-email` Edge Function calls `private.prepare_invite_email` as the signed-in admin, which checks the address, applies the daily limits and gives the apartment's join code, then sends the email through Resend. The code is the one admins also copy and share, so a failed email leaves it as it is. Only a hash of the address is stored. Tests: `tests/database/invite_emails_test.sql`.
 
 **Local:** add these lines to `supabase/functions/.env` and serve the functions with `npx supabase@3.1.0 functions serve --env-file supabase/functions/.env`. Emails appear in Mailpit at http://127.0.0.1:54324.
 

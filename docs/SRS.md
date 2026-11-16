@@ -81,7 +81,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-01.4 Account visibility defaults to private; only explicitly shared receiving accounts are visible to other eligible apartment members. The owner sees their accounts with the full number, in a list that opens each account's details (with Edit and Delete, Make preferred, and the payments made into it); swiping a row right edits it and left asks to delete it.
 
 ### FR-02 Apartment Lifecycle
-- FR-02.1 Create apartment with unique identifier and join code; creator becomes admin.
+- FR-02.1 Create apartment with unique identifier and join code; creator becomes admin. An apartment has one join code at a time, which does not expire; admins copy, share or email it and can change it ([decision 0011](decisions/0011-one-join-code-per-apartment.md)).
 - FR-02.2 A valid code sends a request to join; invalid/revoked/expired codes fail safely. Any current admin approves or declines the request, and the first to act decides; the person joins only when approved. The person sees their pending requests and can cancel them, and may ask again after a decline (join-code rate limits still apply). Admins are notified of requests, and the person of the decision. Admin can rotate/revoke codes. An admin can also type an email address and have FlatMate email a code, limited to 20 emails a day per admin and 3 a day per address per apartment; the address is not stored ([decision 0010](decisions/0010-invite-emails.md)).
 - FR-02.3 Multiple memberships per user; all apartment balances and settings remain isolated.
 - FR-02.4 Member may leave; admin may remove member. Historical transactions remain immutable/auditable; outstanding dues and disputes remain attached to the former member. An admin may remove a former member from the members list, which hides them there and changes no record, and may invite a former member back; accepting makes them a member again ([decision 0009](decisions/0009-former-members-hiding-and-inviting-back.md)).
@@ -315,7 +315,7 @@ Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 1
 16. **Who will pay an unpaid bill — decided.** Naming a collector only records who is responsible and notifies them. It creates no debt; balances still change only when the bill is paid (FR-03.2, item 5).
 17. **Payments name the account they went into — decided.** Optional when recording a payment; the payment keeps a snapshot of the account so history survives edits and deletion (FR-07.3).
 18. **Repeatable bills are not categories — decided.** Rent, utilities and internet are set up as repeatable expenses, so new apartments no longer start with those categories and existing apartments archive them; expenses filed under them keep their category. A repeatable expense repeats daily, weekly, every 2 weeks, monthly, every 3 months or yearly (FR-04.2).
-19. **Admins see working join codes — decided.** New join codes are kept readable as well as hashed, so an apartment's admins can see and share each code that still works in the settings; nobody else can read them. Joining still matches on the hash. Codes made before this change stay hidden.
+19. **One join code per apartment — decided.** Each apartment has one join code at a time. It does not expire, and admins can see it, copy, share or email it, and change it, which stops the old one. Only admins can read it; joining matches on its hash. See decision record 0011.
 
 
 ## 13. Suggested First Implementation Tasks
