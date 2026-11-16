@@ -50,10 +50,10 @@ describe('MonthSelector', () => {
     expect(screen.getByRole('button', { name: 'Previous month' })).toBeEnabled();
   });
 
-  it('cannot step before January of last year', async () => {
+  it('hides the back arrow at January of last year', async () => {
     await renderWithProviders(<Harness initial="2025-01-01" />);
 
-    expect(screen.getByRole('button', { name: 'Previous month' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Previous month' })).not.toBeOnTheScreen();
   });
 });
 

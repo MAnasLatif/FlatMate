@@ -29,7 +29,6 @@ export function MonthSelector({
   latestMonth: string;
   onChange: (month: string) => void;
 }) {
-  const iconColor = useThemeColor('foreground');
   const [isOpen, setOpen] = useState(false);
   // Each opening starts the wheels again on the month being shown.
   const [openCount, setOpenCount] = useState(0);
@@ -37,42 +36,32 @@ export function MonthSelector({
   const earliestMonth = `${latestYear - YEARS_SHOWN + 1}-01-01`;
 
   return (
-    <View className="flex-row items-center justify-between">
-      <Button
-        isIconOnly
-        size="sm"
-        variant="ghost"
-        onPress={() => onChange(addMonths(month, -1))}
-        isDisabled={month <= earliestMonth}
-        accessibilityLabel="Previous month"
-        // A small button is 40dp; this makes the touch area the 48dp minimum.
-        hitSlop={4}
-      >
-        <Ionicons name="chevron-back" size={20} color={iconColor} />
-      </Button>
-      <PressableFeedback
-        onPress={() => {
-          setOpenCount((count) => count + 1);
-          setOpen(true);
-        }}
-        accessibilityRole="button"
-        accessibilityLabel={`Showing ${formatMonth(month)}`}
-        accessibilityHint="Opens a month and year picker"
-        className="min-h-12 justify-center rounded-full px-3"
-      >
-        <Typography.Heading type="h6">{formatMonth(month)}</Typography.Heading>
-      </PressableFeedback>
-      <Button
-        isIconOnly
-        size="sm"
-        variant="ghost"
-        onPress={() => onChange(addMonths(month, 1))}
-        isDisabled={month >= latestMonth}
-        accessibilityLabel="Next month"
-        hitSlop={4}
-      >
-        <Ionicons name="chevron-forward" size={20} color={iconColor} />
-      </Button>
+    <>
+      {/* The sheet stays outside this row, so it takes no room in it. */}
+      <View className="flex-row items-center justify-between">
+        <MonthArrow
+          direction="back"
+          isHidden={month <= earliestMonth}
+          onPress={() => onChange(addMonths(month, -1))}
+        />
+        <PressableFeedback
+          onPress={() => {
+            setOpenCount((count) => count + 1);
+            setOpen(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`Showing ${formatMonth(month)}`}
+          accessibilityHint="Opens a month and year picker"
+          className="min-h-12 justify-center rounded-full px-3"
+        >
+          <Typography.Heading type="h6">{formatMonth(month)}</Typography.Heading>
+        </PressableFeedback>
+        <MonthArrow
+          direction="forward"
+          isHidden={month >= latestMonth}
+          onPress={() => onChange(addMonths(month, 1))}
+        />
+      </View>
 
       {/* Always mounted: a sheet mounted already open does not appear. */}
       <BottomSheet isOpen={isOpen} onOpenChange={setOpen}>
@@ -92,7 +81,42 @@ export function MonthSelector({
           </BottomSheet.Content>
         </BottomSheet.Portal>
       </BottomSheet>
-    </View>
+    </>
+  );
+}
+
+/**
+ * A step to the previous or next month. Where there is nothing further it is
+ * hidden, keeping its space so the month stays centred.
+ */
+function MonthArrow({
+  direction,
+  isHidden,
+  onPress,
+}: {
+  direction: 'back' | 'forward';
+  isHidden: boolean;
+  onPress: () => void;
+}) {
+  const iconColor = useThemeColor('foreground');
+  // A small icon button is 40dp across.
+  if (isHidden) return <View className="size-10" />;
+  return (
+    <Button
+      isIconOnly
+      size="sm"
+      variant="ghost"
+      onPress={onPress}
+      accessibilityLabel={direction === 'back' ? 'Previous month' : 'Next month'}
+      // This makes the touch area the 48dp minimum.
+      hitSlop={4}
+    >
+      <Ionicons
+        name={direction === 'back' ? 'chevron-back' : 'chevron-forward'}
+        size={20}
+        color={iconColor}
+      />
+    </Button>
   );
 }
 

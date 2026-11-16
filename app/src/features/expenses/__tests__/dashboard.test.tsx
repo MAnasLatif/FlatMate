@@ -268,12 +268,12 @@ it('shows no dots when nothing is unread', async () => {
   expect(screen.queryByTestId('unread-dot', { includeHiddenElements: true })).toBeNull();
 });
 
-it('steps back a month but not past the current one', async () => {
+it('steps back a month, with no forward arrow on the current one', async () => {
   await renderWithProviders(<Dashboard apartment={apartment} />);
   const user = userEvent.setup();
 
   expect(await screen.findByText(`No expenses in ${formatMonth(thisMonth)}`)).toBeOnTheScreen();
-  expect(screen.getByRole('button', { name: 'Next month' })).toBeDisabled();
+  expect(screen.queryByRole('button', { name: 'Next month' })).not.toBeOnTheScreen();
 
   await user.press(screen.getByRole('button', { name: 'Previous month' }));
 
@@ -287,7 +287,7 @@ it('steps back a month but not past the current one', async () => {
     0,
   );
   expect(monthlyShare).toHaveBeenCalledWith(apartment.id, lastMonth);
-  expect(screen.getByRole('button', { name: 'Next month' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Next month' })).toBeOnTheScreen();
 });
 
 it('offers a retry when the balances cannot be loaded', async () => {
