@@ -1,25 +1,16 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams } from 'expo-router';
-import {
-  Button,
-  Card,
-  PressableFeedback,
-  Separator,
-  Tabs,
-  Typography,
-  useThemeColor,
-} from 'heroui-native';
+import { Card, PressableFeedback, Tabs, Typography, useThemeColor } from 'heroui-native';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Alert, Share, View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
-import { type Apartment, type Category, INVITE_VALID_DAYS } from '@/features/apartments/api';
+import type { Apartment, Category } from '@/features/apartments/api';
 import {
   ApartmentFormFields,
   type ApartmentFormInput,
@@ -174,7 +165,7 @@ function MembersTab({
       <OnlineButton variant="secondary" onPress={() => setAddingMember(true)}>
         Add member
       </OnlineButton>
-      <InvitesSection apartmentId={apartmentId} apartmentName={apartmentName} />
+      <InvitesSection apartmentId={apartmentId} />
       <AddMemberSheet
         apartmentId={apartmentId}
         apartmentName={apartmentName}
@@ -230,113 +221,62 @@ function DetailsSection({ apartment }: { apartment: Apartment }) {
   );
 }
 
-function InvitesSection({
-  apartmentId,
-  apartmentName,
-}: {
-  apartmentId: string;
-  apartmentName: string;
-}) {
+/**
+ * Join codes that still work, each a card that can be deleted. Codes are
+ * created and shared from Add member, so nothing shows while none works.
+ */
+function InvitesSection({ apartmentId }: { apartmentId: string }) {
   const invites = useActiveInvites(apartmentId, true);
   const danger = useThemeColor('danger');
-  const { create, revoke } = useInviteActions(apartmentId);
-  const [newCode, setNewCode] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  const shareCode = (code: string) =>
-    Share.share({
-      message: `Join ${apartmentName} on FlatMate with this code: ${code}. It works for ${INVITE_VALID_DAYS} days.`,
-    });
+  const { revoke } = useInviteActions(apartmentId);
 
   const confirmRevoke = (inviteId: string) => {
-    Alert.alert('Revoke this code?', 'Nobody will be able to join with it any more.', [
+    Alert.alert('Delete this code?', 'Nobody will be able to join with it any more.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Revoke', style: 'destructive', onPress: () => revoke.mutate(inviteId) },
+      { text: 'Delete', style: 'destructive', onPress: () => revoke.mutate(inviteId) },
     ]);
   };
 
-  const error = create.error ?? revoke.error;
+  if (!invites.data || invites.data.length === 0) return null;
 
   return (
-    <Card>
-      <Card.Body className="gap-4">
-        <Card.Title>Join codes</Card.Title>
-        <Card.Description>
-          Share a code with someone to let them join. Each code works for {INVITE_VALID_DAYS} days.
-        </Card.Description>
-        <FormAlert
-          message={
-            error
-              ? userErrorMessage(error, 'Could not update the codes.', APARTMENT_ERROR_MESSAGES)
-              : null
-          }
-        />
-
-        {newCode ? (
-          <View className="gap-3 rounded-xl bg-surface-secondary p-4">
-            <Typography.Paragraph type="body-sm" color="muted">
-              New code. Copy or share it now: it will not be shown again.
-            </Typography.Paragraph>
-            <Typography.Heading type="h3" className="text-center" selectable>
-              {newCode}
-            </Typography.Heading>
-            <View className="flex-row gap-2">
-              <Button
-                className="flex-1"
-                variant="secondary"
-                onPress={() => void Clipboard.setStringAsync(newCode).then(() => setCopied(true))}
-              >
-                {copied ? 'Copied' : 'Copy'}
-              </Button>
-              <Button className="flex-1" onPress={() => void shareCode(newCode)}>
-                Share
-              </Button>
+    <View className="gap-3">
+      <View className="gap-1">
+        <Typography.Heading type="h6">Join codes</Typography.Heading>
+        <Typography.Paragraph type="body-xs" color="muted">
+          Codes that still work. Delete one to stop anyone joining with it.
+        </Typography.Paragraph>
+      </View>
+      <FormAlert
+        message={
+          revoke.error
+            ? userErrorMessage(revoke.error, 'Could not delete the code.', APARTMENT_ERROR_MESSAGES)
+            : null
+        }
+      />
+      {invites.data.map((invite) => (
+        <Card key={invite.id}>
+          <Card.Body className="flex-row items-center gap-2">
+            <View className="flex-1 gap-1">
+              <Typography.Paragraph>Expires {formatDate(invite.expires_at)}</Typography.Paragraph>
+              <Typography.Paragraph type="body-xs" color="muted">
+                Created {formatDate(invite.created_at)}
+              </Typography.Paragraph>
             </View>
-          </View>
-        ) : null}
-
-        <OnlineButton
-          variant={newCode ? 'secondary' : 'primary'}
-          onPress={() =>
-            create.mutate(INVITE_VALID_DAYS, {
-              onSuccess: (code) => {
-                setNewCode(code);
-                setCopied(false);
-              },
-            })
-          }
-          isDisabled={create.isPending}
-        >
-          {create.isPending ? 'Creating…' : 'Create a join code'}
-        </OnlineButton>
-
-        {invites.data && invites.data.length > 0 ? (
-          <View className="gap-2">
-            <Separator />
-            <Typography.Paragraph type="body-sm" color="muted">
-              Codes that still work
-            </Typography.Paragraph>
-            {invites.data.map((invite) => (
-              <View key={invite.id} className="flex-row items-center justify-between gap-3">
-                <Typography.Paragraph type="body-sm" className="flex-1">
-                  Created {formatDate(invite.created_at)}, expires {formatDate(invite.expires_at)}
-                </Typography.Paragraph>
-                <OnlineButton
-                  isIconOnly
-                  size="sm"
-                  variant="ghost"
-                  onPress={() => confirmRevoke(invite.id)}
-                  isDisabled={revoke.isPending}
-                  accessibilityLabel={`Revoke the code created ${formatDate(invite.created_at)}`}
-                >
-                  <Ionicons name="close-circle-outline" size={22} color={danger} />
-                </OnlineButton>
-              </View>
-            ))}
-          </View>
-        ) : null}
-      </Card.Body>
-    </Card>
+            <OnlineButton
+              isIconOnly
+              size="sm"
+              variant="ghost"
+              onPress={() => confirmRevoke(invite.id)}
+              isDisabled={revoke.isPending}
+              accessibilityLabel={`Delete the code that expires ${formatDate(invite.expires_at)}`}
+            >
+              <Ionicons name="trash-outline" size={22} color={danger} />
+            </OnlineButton>
+          </Card.Body>
+        </Card>
+      ))}
+    </View>
   );
 }
 

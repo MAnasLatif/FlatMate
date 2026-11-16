@@ -1,4 +1,5 @@
-import { screen, userEvent } from '@testing-library/react-native';
+import { screen, userEvent, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 
 import SettingsScreen from '@/app/(app)/apartments/[apartmentId]/settings';
@@ -8,10 +9,12 @@ import {
   addCategory,
   type Apartment,
   fetchApartment,
+  fetchActiveInvites,
   fetchCategories,
   fetchMembers,
   type Member,
   renameCategory,
+  revokeInvite,
 } from '../api';
 
 const FLAT = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -28,6 +31,7 @@ jest.mock('../api', () => ({
   fetchApartment: jest.fn(),
   fetchMembers: jest.fn(),
   fetchActiveInvites: jest.fn(async () => []),
+  revokeInvite: jest.fn(async () => undefined),
   fetchJoinRequests: jest.fn(async () => []),
   fetchCategories: jest.fn(async () => []),
   addCategory: jest.fn(async () => undefined),
@@ -76,8 +80,10 @@ it('opens on the general settings and moves between the tabs', async () => {
   expect(screen.queryByText('Join codes')).not.toBeOnTheScreen();
 
   await user.press(screen.getByText('Manage members'));
-  expect(await screen.findByText('Join codes')).toBeOnTheScreen();
   expect(await screen.findByText('Anas (you)')).toBeOnTheScreen();
+  // Codes are created from Add member; the list shows only while one works.
+  expect(screen.queryByText('Join codes')).not.toBeOnTheScreen();
+  expect(screen.queryByText('Create a join code')).not.toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Your actions' })).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Add member' })).toBeOnTheScreen();
   expect(screen.queryByText('Save settings')).not.toBeOnTheScreen();
@@ -130,4 +136,26 @@ it('keeps Other as it is: it cannot be renamed or archived', async () => {
   expect(screen.getByRole('button', { name: 'Archive Groceries' })).toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: 'Archive Other' })).not.toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: 'Other' })).not.toBeOnTheScreen();
+});
+
+it('lists the join codes that still work, each with a delete button', async () => {
+  jest.mocked(fetchActiveInvites).mockResolvedValue([
+    {
+      id: 'inv-1',
+      created_at: '2026-11-17T10:00:00Z',
+      expires_at: '2026-11-24T10:00:00Z',
+      created_by: ME,
+    },
+  ]);
+  const alert = jest.spyOn(Alert, 'alert');
+  await renderWithProviders(<SettingsScreen />);
+  const user = userEvent.setup();
+
+  await user.press(await screen.findByText('Manage members'));
+  expect(await screen.findByText('Join codes')).toBeOnTheScreen();
+  await user.press(screen.getByRole('button', { name: /^Delete the code that expires/ }));
+
+  const buttons = alert.mock.calls[0]?.[2] ?? [];
+  buttons.find((button) => button.text === 'Delete')?.onPress?.();
+  await waitFor(() => expect(jest.mocked(revokeInvite).mock.calls[0]?.[0]).toBe('inv-1'));
 });
