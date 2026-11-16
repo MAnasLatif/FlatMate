@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
-import { Button, Card, Chip, PressableFeedback, Separator, Typography } from 'heroui-native';
+import { Button, Card, PressableFeedback, Separator, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
 import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
+import { StatusChip } from '@/components/status-chip';
 import { useApartment } from '@/features/apartments/hooks';
 import { useRefreshMoney } from '@/features/expenses/hooks';
 import { UnreadDot, withUnread } from '@/features/notifications/components/unread-dot';
@@ -173,7 +174,7 @@ function ObligationList({
                       {state === 'partly settled' ? ` · ${money(remainingMinor)} left` : ''}
                     </Typography.Paragraph>
                   </View>
-                  <Chip size="sm" variant="soft" color={STATE_COLORS[state]}>
+                  <StatusChip size="sm" variant="soft" color={STATE_COLORS[state]}>
                     {state === 'settled'
                       ? 'Settled'
                       : state === 'held'
@@ -181,7 +182,7 @@ function ObligationList({
                         : state === 'open'
                           ? 'Open'
                           : 'Partly settled'}
-                  </Chip>
+                  </StatusChip>
                 </PressableFeedback>
               </View>
             );

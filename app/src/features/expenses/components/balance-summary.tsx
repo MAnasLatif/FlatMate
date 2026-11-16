@@ -1,8 +1,9 @@
-import { Card, Chip, Separator, Typography } from 'heroui-native';
+import { Card, Separator, Typography } from 'heroui-native';
 import { useMemo } from 'react';
 import { View } from 'react-native';
 
 import { LoadError, PendingSkeleton } from '@/components/query-states';
+import { StatusChip } from '@/components/status-chip';
 import { userErrorMessage } from '@/lib/errors';
 import { formatMinorUnits } from '@/lib/money';
 import { ordinal } from '@/lib/time';
@@ -129,9 +130,9 @@ function Figure({
       {caption ? <Typography.Paragraph type="body-xs">{caption}</Typography.Paragraph> : null}
       {isProvisional ? (
         <View className="flex-row">
-          <Chip size="sm" variant="soft" color="warning">
+          <StatusChip size="sm" variant="soft" color="warning">
             Provisional
-          </Chip>
+          </StatusChip>
         </View>
       ) : null}
     </View>

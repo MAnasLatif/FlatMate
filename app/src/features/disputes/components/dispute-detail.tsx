@@ -2,7 +2,6 @@ import { router } from 'expo-router';
 import {
   Button,
   Card,
-  Chip,
   Label,
   PressableFeedback,
   Separator,
@@ -20,6 +19,7 @@ import { PhotoPicker } from '@/components/photo-picker';
 import { PrivateImageThumbnail } from '@/components/private-image';
 import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
+import { StatusChip } from '@/components/status-chip';
 import type { Member } from '@/features/apartments/api';
 import { useMembers } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
@@ -149,9 +149,9 @@ function DisputeContent({
       <Card>
         <Card.Body className="gap-2">
           <View className="flex-row">
-            <Chip size="sm" variant="soft" color={status.color}>
+            <StatusChip size="sm" variant="soft" color={status.color}>
               {status.label}
-            </Chip>
+            </StatusChip>
           </View>
           <PressableFeedback
             onPress={() =>

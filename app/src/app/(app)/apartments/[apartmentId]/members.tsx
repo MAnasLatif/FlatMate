@@ -4,7 +4,6 @@ import Stack from 'expo-router/stack';
 import {
   Button,
   Card,
-  Chip,
   Menu,
   PressableFeedback,
   Separator,
@@ -17,6 +16,7 @@ import { View } from 'react-native';
 import { FormAlert } from '@/components/form/form-alert';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
+import { StatusChip } from '@/components/status-chip';
 import type { Member } from '@/features/apartments/api';
 import { JoinRequests } from '@/features/apartments/components/join-requests';
 import { SendInviteButton } from '@/features/apartments/components/send-invite-button';
@@ -220,9 +220,9 @@ function MembersList({
                     ) : null}
                     {invited.has(member.userId) ? (
                       <View className="flex-row">
-                        <Chip size="sm" variant="secondary">
+                        <StatusChip size="sm" variant="secondary">
                           Invited back
-                        </Chip>
+                        </StatusChip>
                       </View>
                     ) : null}
                   </View>
@@ -314,14 +314,14 @@ function MemberRow({
             ) : null}
             <View className="flex-row flex-wrap gap-2">
               {member.role === 'admin' ? (
-                <Chip size="sm" variant="secondary">
+                <StatusChip size="sm" variant="secondary">
                   Admin
-                </Chip>
+                </StatusChip>
               ) : null}
               {member.canAddExpense ? null : (
-                <Chip size="sm" variant="tertiary">
+                <StatusChip size="sm" variant="tertiary">
                   Cannot add expenses
-                </Chip>
+                </StatusChip>
               )}
             </View>
           </View>

@@ -1,9 +1,10 @@
 import * as Clipboard from 'expo-clipboard';
-import { Button, Card, Chip, Separator, Typography } from 'heroui-native';
+import { Button, Card, Separator, Typography } from 'heroui-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
 import { LoadError, LoadingRows } from '@/components/query-states';
+import { StatusChip } from '@/components/status-chip';
 import { userErrorMessage } from '@/lib/errors';
 
 import type { ReceivingAccount } from '../api';
@@ -76,9 +77,9 @@ function AccountRow({ account }: { account: ReceivingAccount }) {
           </Typography.Paragraph>
         </View>
         {account.isPreferred ? (
-          <Chip size="sm" variant="soft" color="accent">
+          <StatusChip size="sm" variant="soft" color="accent">
             Preferred
-          </Chip>
+          </StatusChip>
         ) : null}
       </View>
       <View className="flex-row gap-2">

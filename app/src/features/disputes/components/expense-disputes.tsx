@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
-import { Button, Card, Chip, PressableFeedback, Separator, Typography } from 'heroui-native';
+import { Button, Card, PressableFeedback, Separator, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
 import { LoadError } from '@/components/query-states';
+import { StatusChip } from '@/components/status-chip';
 import { useMembers } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { useExpenseDetail } from '@/features/expenses/hooks';
@@ -121,9 +122,9 @@ function DisputeRow({
           {formatDate(dispute.createdAt)}
         </Typography.Paragraph>
       </View>
-      <Chip size="sm" variant="soft" color={status.color}>
+      <StatusChip size="sm" variant="soft" color={status.color}>
         {status.label}
-      </Chip>
+      </StatusChip>
     </PressableFeedback>
   );
 }

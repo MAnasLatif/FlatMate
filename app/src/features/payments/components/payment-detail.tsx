@@ -1,14 +1,5 @@
 import { router } from 'expo-router';
-import {
-  Button,
-  Card,
-  Chip,
-  Label,
-  Separator,
-  TextArea,
-  TextField,
-  Typography,
-} from 'heroui-native';
+import { Button, Card, Label, Separator, TextArea, TextField, Typography } from 'heroui-native';
 import { type ReactNode, useState } from 'react';
 import { Alert, View } from 'react-native';
 
@@ -19,6 +10,7 @@ import { PhotoPicker } from '@/components/photo-picker';
 import { PrivateImageThumbnail } from '@/components/private-image';
 import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
+import { StatusChip } from '@/components/status-chip';
 import type { Apartment, Member } from '@/features/apartments/api';
 import { useApartment, useMembers } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
@@ -157,9 +149,9 @@ function PaymentContent({
           </Typography.Paragraph>
           <Typography.Heading type="h3">{money(payment.amountMinor)}</Typography.Heading>
           <View className="flex-row">
-            <Chip size="sm" variant="soft" color={status.color}>
+            <StatusChip size="sm" variant="soft" color={status.color}>
               {status.label}
-            </Chip>
+            </StatusChip>
           </View>
           <Typography.Paragraph type="body-sm" color="muted">
             {status.explanation}

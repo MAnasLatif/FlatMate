@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
-import { Button, Card, Chip, PressableFeedback, Separator, Typography } from 'heroui-native';
+import { Button, Card, PressableFeedback, Separator, Typography } from 'heroui-native';
 import { useMemo } from 'react';
 import { View } from 'react-native';
 
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
+import { StatusChip } from '@/components/status-chip';
 import { useApartment } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { useRefreshMoney } from '@/features/expenses/hooks';
@@ -233,9 +234,9 @@ function PreviewLine({
       </Typography.Paragraph>
       {held !== 0 ? (
         <View className="flex-row">
-          <Chip size="sm" variant="soft" color="danger">
+          <StatusChip size="sm" variant="soft" color="danger">
             {`${money(Math.abs(held))} held by disputes`}
-          </Chip>
+          </StatusChip>
         </View>
       ) : null}
     </PressableFeedback>
