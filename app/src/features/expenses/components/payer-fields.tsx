@@ -48,6 +48,7 @@ export function PayerFields({
             <TextField key={member.userId}>
               <Label>{memberLabel(member, currentUserId)} paid</Label>
               <Input
+                variant="secondary"
                 value={value.payerAmounts[member.userId] ?? ''}
                 onChangeText={(text) =>
                   onChange({ payerAmounts: { ...value.payerAmounts, [member.userId]: text } })

@@ -169,6 +169,7 @@ function EditExpenseForm({
       <TextField isInvalid={reasonError !== undefined}>
         <Label>Reason for the change (optional)</Label>
         <TextArea
+          variant="secondary"
           value={reason}
           onChangeText={setReason}
           placeholder="Wrong amount, someone else paid…"

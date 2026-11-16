@@ -52,6 +52,8 @@ export function TextInputField<TFieldValues extends FieldValues, TTransformed>({
     // autofill service, such as Google Password Manager.
     importantForAutofill:
       inputProps.autoComplete && inputProps.autoComplete !== 'off' ? ('yes' as const) : undefined,
+    // The grey style, used for every input in the app.
+    variant: 'secondary' as const,
     ...inputProps,
   };
 

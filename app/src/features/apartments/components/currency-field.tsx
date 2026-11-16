@@ -59,7 +59,7 @@ export function CurrencyField({
         accessibilityRole="button"
         accessibilityLabel={`Currency, ${selected ? `${selected.code} ${selected.name}` : 'not chosen'}`}
         accessibilityHint={isLocked ? undefined : 'Opens the list of currencies'}
-        className="min-h-12 flex-row items-center gap-3 rounded-field bg-field px-3"
+        className="min-h-12 flex-row items-center gap-3 rounded-field bg-default px-3"
       >
         {selected ? (
           <>
@@ -107,6 +107,7 @@ export function CurrencyField({
               <SearchField.Group>
                 <SearchField.SearchIcon />
                 <SearchField.Input
+                  variant="secondary"
                   placeholder="Search by name, code or symbol"
                   accessibilityLabel="Search currencies"
                   autoCorrect={false}

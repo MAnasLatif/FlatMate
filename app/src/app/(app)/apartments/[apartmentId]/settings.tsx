@@ -340,6 +340,7 @@ function CategoriesSection({ apartmentId }: { apartmentId: string }) {
         <Separator />
         <TextField isInvalid={newNameError !== undefined}>
           <Input
+            variant="secondary"
             value={newName}
             onChangeText={(text) => {
               setNewName(text);
@@ -399,6 +400,7 @@ function CategoryRow({ category, onRename, onArchive, isBusy }: CategoryRowProps
         <View className="flex-1">
           <TextField>
             <Input
+              variant="secondary"
               value={name}
               onChangeText={setName}
               autoFocus

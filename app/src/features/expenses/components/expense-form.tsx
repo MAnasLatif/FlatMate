@@ -74,6 +74,7 @@ function DetailsSection({
       <TextField isRequired isInvalid={error('title') !== undefined}>
         <Label>What was it for?</Label>
         <Input
+          variant="secondary"
           value={draft.title}
           onChangeText={(title) => update({ title })}
           placeholder="Cleaning, groceries, rent…"
@@ -85,6 +86,7 @@ function DetailsSection({
       <TextField isRequired isInvalid={error('amount') !== undefined}>
         <Label>Amount ({currency})</Label>
         <Input
+          variant="secondary"
           value={draft.amount}
           onChangeText={(amount) => update({ amount })}
           keyboardType="decimal-pad"
@@ -123,6 +125,7 @@ function DetailsSection({
             <TextField isInvalid={error('categoryDetail') !== undefined}>
               <Label>What was it?</Label>
               <Input
+                variant="secondary"
                 value={draft.categoryDetail}
                 onChangeText={(categoryDetail) => update({ categoryDetail })}
                 placeholder="Gas cylinder, repairs, a gift…"
@@ -151,6 +154,7 @@ function NotesSection({ draft, setDraft, result, showErrors }: ExpenseFormProps)
     <TextField isInvalid={error !== undefined}>
       <Label>Notes (optional)</Label>
       <TextArea
+        variant="secondary"
         value={draft.description}
         onChangeText={(description) => setDraft((current) => ({ ...current, description }))}
         accessibilityLabel="Notes"
@@ -322,6 +326,7 @@ function SplitSection({
               {included && draft.splitMethod === 'percentage' ? (
                 <TextField>
                   <Input
+                    variant="secondary"
                     value={draft.percentages[member.userId] ?? ''}
                     onChangeText={(text) =>
                       setDraft((current) => ({
@@ -338,6 +343,7 @@ function SplitSection({
               {included && draft.splitMethod === 'fixed' ? (
                 <TextField>
                   <Input
+                    variant="secondary"
                     value={draft.fixedAmounts[member.userId] ?? ''}
                     onChangeText={(text) =>
                       setDraft((current) => ({

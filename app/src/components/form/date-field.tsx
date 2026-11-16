@@ -78,7 +78,7 @@ export function DateField({
         accessibilityRole="button"
         accessibilityLabel={`${label}, ${value ? formatDate(value) : 'not chosen'}`}
         accessibilityHint="Opens a calendar"
-        className="min-h-12 flex-row items-center gap-3 rounded-field bg-field px-3"
+        className="min-h-12 flex-row items-center gap-3 rounded-field bg-default px-3"
       >
         <Ionicons name="calendar-outline" size={18} color={mutedColor} />
         <Typography.Paragraph color={value ? undefined : 'muted'} className="flex-1">

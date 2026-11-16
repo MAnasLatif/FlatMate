@@ -42,7 +42,7 @@ export function EmailCodeField({
           {({ slots }) => (
             <>
               {slots.map((slot) => (
-                <InputOTP.Slot key={slot.index} index={slot.index} />
+                <InputOTP.Slot key={slot.index} index={slot.index} variant="secondary" />
               ))}
             </>
           )}
