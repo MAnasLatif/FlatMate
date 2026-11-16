@@ -83,7 +83,9 @@ jobs:
         if: steps.check.outputs.ready == 'true'
         uses: supabase/setup-cli@v3
         with:
-          version: latest
+          # Keep in step with the version in supabase/README.md. CLI majors
+          # change defaults and remove commands, so upgrade deliberately.
+          version: 3.1.0
 
       - name: Start the database and apply migrations
         if: steps.check.outputs.ready == 'true'

@@ -2,11 +2,11 @@
 
 An open-source app for sharing flat expenses. Roommates record shared costs, split them fairly, see who owes whom, resolve disagreements, and settle up each month.
 
-> **Status: early development.** The mobile app has its foundation in place and runs, showing a single home screen. No feature is built yet, and the backend and website are not initialized. See the [roadmap](#roadmap).
+> **Status: Phase 1 (the financial MVP) nearly done.** The Android app and the Supabase backend run: accounts, apartments, expenses, disputes, payments, settlement, live sync, offline reading and notifications. Recurring bills, reports and the website come next. See the [roadmap](#roadmap) and [docs/TASKS.md](docs/TASKS.md).
 
 ## What it will do
 
-- **Multiple apartments.** Join or create several flats, each with its own members, settings and balances.
+- **Multiple apartments.** Join or create several flats, each with its own members, settings and balances. Joining with a code needs an admin's approval.
 - **Flexible splits.** Equal, percentage or fixed amounts, with members excluded where needed and more than one payer per expense.
 - **Clear balances.** What you owe, what you are owed, and the net with each flatmate, traceable to the expenses behind it.
 - **Recurring bills.** Fixed charges such as rent are created automatically. Variable ones such as electricity wait for the real amount.

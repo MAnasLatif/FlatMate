@@ -1,6 +1,6 @@
 # Architecture
 
-This is an overview of how FlatMate is put together. It describes the intended design at the start of development. The data model and several product rules are still proposals (see [SRS section 12](SRS.md#12-decisions-requiring-confirmation-before-coding)), so update this document as they are settled and built.
+This is an overview of how FlatMate is put together. The data model is built (decision records 0003 to 0006), and the product decisions it depends on are recorded in [SRS section 12](SRS.md#12-product-decisions). The offline reading and event-driven sync of [decision 0007](decisions/0007-offline-reading-and-live-sync.md) are built; parts marked *planned* are not yet. Update this document as they are.
 
 ## System overview
 
@@ -17,7 +17,9 @@ flowchart LR
     AUTH["Auth"]
     DB[("PostgreSQL<br/>RLS + functions")]
     STORE["Storage<br/>private buckets"]
-    EDGE["Edge Functions<br/>and scheduled jobs"]
+    RT["Realtime<br/>private Broadcast"]
+    CRON["pg_cron<br/>scheduled jobs"]
+    EDGE["Edge Function<br/>deliver-push"]
   end
 
   PUSH["Expo push service"]
@@ -26,7 +28,10 @@ flowchart LR
   APP -->|sign in| AUTH
   APP -->|queries and RPC under RLS| DB
   APP -->|signed URLs| STORE
-  APP -->|calls| EDGE
+  DB -->|change signals| RT
+  RT -->|apartment topic| APP
+  CRON --> DB
+  CRON -->|while pushes are due| EDGE
   EDGE --> DB
   EDGE --> PUSH
   PUSH --> APP
@@ -38,13 +43,15 @@ flowchart LR
 | Responsibility | Where | Notes |
 |---|---|---|
 | Screens, navigation, forms | `app/` | Presents data and collects input. Holds no authority over money or permissions. |
-| Identity and sessions | Supabase Auth | Email and password, and Google sign-in. |
+| Identity and sessions | Supabase Auth | Email and password, and Google sign-in. Sign-up, password reset and email change are confirmed with 6-digit codes, sent through custom SMTP (Resend) from the templates in `supabase/templates/`. Sign-in links use PKCE with a SHA-256 challenge (`app/src/lib/web-crypto.ts` supplies the hash on the phone). |
 | Authorization | PostgreSQL row-level security | Every apartment-scoped table checks membership and role. |
 | Financial operations | Postgres functions called by RPC | Transactional: posting expenses, payments, reversals, dispute resolution, settlement. |
-| Split validation and rounding | Database | The app previews. The server decides. |
+| Split validation and rounding | Database | The app checks the form as it is filled in. The server decides. |
 | Receipts and payment proofs | Supabase Storage | Private buckets, accessed with signed URLs. |
-| Scheduled work | Edge Functions and cron | Recurring charges, objection-window deadlines, reminders. Idempotent and timezone-aware. |
-| Push notifications | Edge Functions to the Expo push service | Notification text carries no account details. |
+| Scheduled work | pg_cron jobs calling Postgres functions | Objection-window deadlines and settlement periods today; recurring charges and reminders later. Idempotent and timezone-aware. |
+| Change events | Realtime Broadcast, sent by `private.emit_change` from database triggers | One event for every visible change, on an apartment or user topic, with no data in it. The app's event router refetches through RLS. |
+| Offline reading | Encrypted saved query cache on the phone (`app/src/lib/saved-cache.ts`) | A copy of what the user already loaded, never a source of truth. |
+| Notifications | A trigger on `audit_events` creates them; pg_cron calls the `deliver-push` Edge Function, which sends them through the Expo push service | Push text is generic and carries no names, amounts or account details; in the app, behind sign-in, a red dot marks the record each one is about ([decision 0008](decisions/0008-unread-dots-instead-of-an-inbox.md)). Setup: [NOTIFICATIONS.md](NOTIFICATIONS.md). |
 | Public marketing pages | `web/` | Static content and store links. No user data. |
 
 ## The trust boundary
@@ -68,9 +75,50 @@ These produce **ledger entries** between pairs of members, and every balance sho
 
 The complete set of rules is in [AGENTS.md](../AGENTS.md#money-and-ledger-rules), and the proposed tables are in [SRS section 6](SRS.md#6-supabase-data-architecture-proposed).
 
+## Data in the app
+
+The app has four layers, and data only moves through them in this order:
+
+| Layer | Where | Job |
+|---|---|---|
+| Screen | `app/src/app/` | Renders the loading, empty, error, offline and content states. Never queries. |
+| Hooks | `features/<feature>/hooks.ts` | TanStack Query: cache keys, `useQuery` and `useMutation`, and which queries to refresh after a write. |
+| Data access | `features/<feature>/api.ts` | supabase-js calls, typed by the generated `types/database.ts`, turning rows into app types. |
+| Infrastructure | `app/src/lib/` | The Supabase client, the query client, configuration, errors, money and time. |
+
+**Reads** are table selects filtered by RLS, or read-only functions for figures computed on the server, such as balances. **Writes** to financial and apartment data always go through a function that runs as one transaction. The only tables clients write directly, under RLS, are personal ones: their own profile name and photo, their receiving accounts and which apartments those are shared with. A function that fails raises a stable key such as `not_admin`, which the app turns into a sentence.
+
+**Cache keys** group everything about one apartment's money under `['money', apartmentId]`, so a single invalidation after any financial change refreshes balances, lists and detail screens together. Apartment, member and settings data sit under `['apartments', apartmentId]`, including its pending join requests; the user's own requests sit under `['apartments', 'join-requests', userId]`. Payments made into one of the user's accounts can come from several apartments, so they sit under `['account-payments', accountId]`, and every payment event refreshes them.
+
+**Event-driven sync (decision 0007).** Every write that changes data another member, or the same user on another device, can see sends a change event. The app never polls.
+
+- Events go out as private Realtime Broadcast messages through one database function, `private.emit_change`, on two kinds of topic: `apartment:<id>` for an apartment's active members, and `user:<id>` for one person's own changes across apartments, such as being removed, a join request being answered, or editing their receiving accounts.
+- Apartment changes already write an `audit_events` row in the same transaction, including changes made by scheduled jobs; a trigger on that table emits the event. Personal tables that clients write directly have their own triggers.
+- An event names only the kind of record that changed. The app's event router (`app/src/features/sync/`) maps each kind to the cache keys it invalidates, and the data is refetched through RLS.
+- A failed send never rolls back the write. After a reconnect, or when the app returns to the foreground, the router refreshes everything under its topics instead of trusting that no event was missed.
+- A database test fails if a function writes client-visible data without emitting an event, so new features stay covered.
+
+**Offline reading (decision 0007).** The query cache is saved on the phone, encrypted with a key held in the device keychain, per user, for up to 7 days, and deleted at sign-out. Without a connection, screens show the saved data with the time it was last updated. Anything that writes needs a connection.
+
+```mermaid
+sequenceDiagram
+  participant A as Member A's app
+  participant DB as Postgres
+  participant RT as Realtime
+  participant B as Member B's app
+  A->>DB: rpc post_expense (one transaction)
+  DB->>DB: expense, splits, ledger entries, audit_events row
+  DB-->>A: expense id
+  A->>A: invalidate ['money', apartment]
+  DB->>RT: emit_change: { kind: "expense" } on apartment:<id>
+  RT-->>B: change signal
+  B->>B: event router invalidates ['money', apartment]
+  B->>DB: refetch through RLS
+```
+
 ## Data isolation
 
-Each apartment is its own tenant. Apartment-owned tables carry an `apartment_id`, and RLS policies restrict access to current members with the right role. Two kinds of data have stricter per-user rules: receiving-account details, which are private unless the owner shares them, and notification inboxes.
+Each apartment is its own tenant. Apartment-owned tables carry an `apartment_id`, and RLS policies restrict access to current members with the right role. Two kinds of data have stricter per-user rules: receiving-account details, which are private unless the owner shares them, and notifications. Join requests have no direct table access: the person who asked and the apartment's admins reach them only through functions that check who is asking, since the person is not a member yet.
 
 ## Environments
 

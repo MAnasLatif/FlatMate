@@ -48,6 +48,7 @@ Thumbs.db
 # AI Agents
 .agents
 .claude
+.mcp.json
 
 # Archify diagram output
 .archify/

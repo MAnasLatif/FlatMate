@@ -24,5 +24,16 @@ updates:
       - dependency-name: 'typescript'
       - dependency-name: 'jest-expo'
       - dependency-name: 'eslint-config-expo'
+      # HeroUI Native declares these as peer dependencies with a fixed major.
+      # A new major breaks `npm ci` until HeroUI Native supports it.
+      - dependency-name: 'tailwind-variants'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'tailwind-merge'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@gorhom/bottom-sheet'
+        update-types: ['version-update:semver-major']
+      # The plugins inside eslint-config-expo decide which ESLint major works.
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
 
   # Add an npm entry for /web once it has a package.json.

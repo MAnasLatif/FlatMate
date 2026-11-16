@@ -1,8 +1,8 @@
 # FlatMate — Software Requirements Specification (SRS)
 
-**Version:** 1.0 (development baseline)  
-**Date:** 2026-11-12  
-**Status:** Draft for implementation; unresolved product decisions explicitly identified  
+**Version:** 1.1  
+**Date:** 2026-11-13  
+**Status:** Baseline for implementation. Product decisions are recorded in section 12; the few still open are marked there.  
 **Product:** Open-source shared-flat expense management application  
 **Platforms:** Android first, iOS supported from the same codebase  
 **Stack:** Expo, React Native, TypeScript, HeroUI Native, Expo Router, Supabase (Auth, PostgreSQL, Storage, Edge Functions), Expo Notifications
@@ -43,17 +43,18 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 ### 3.1 First-time and returning users
 1. Splash/session check.
 2. Unauthenticated: Login / Sign Up via email/password or Google (Supabase Auth); password recovery and verification as appropriate.
-3. Authenticated: **My Apartments** list of joined flats; `New Apartment` action.
-4. New Apartment screen: `Join by Code` (code input, Join) and `Create Apartment` (create flow).
-5. Create: apartment name, optional location and visibility, settlement day, default approval window (7 days), reminders, other settings; creator becomes admin.
-6. Select an apartment to enter its dashboard. The user can switch apartments from the top-bar apartment-name dropdown.
-7. Subsequent launches: show apartment list/selector as agreed, not a forced auto-entry to one apartment.
+3. Authenticated, in an apartment: the app opens the apartment last opened on that device (or the first), with its dashboard as the home. **My Apartments**, the list of joined flats with join and create actions, is reached from the apartment switcher.
+4. With no apartment, the home screen, with the bottom bar but no Add, shows `Join by Code` (code input with paste, Join) and a `Create new apartment` button that opens the create flow. Creating takes the time zone from the phone and the currency from a list; a location, when given, is shown to members.
+5. Create: apartment name, optional location (shown to members when given; there is no separate visibility switch), currency picked from a searchable list of every currency in circulation with its symbol (fixed afterwards), settlement day and default approval window (7 days). The time zone is taken from the phone. The creator becomes admin. Editing the apartment shows the same fields, with the currency locked and the time zone kept as it is.
+6. Tapping the top bar's title opens **My Apartments**; choosing one there replaces the open apartment, so Back does not return to it.
+7. Subsequent launches open the apartment last opened on that device, or the first one when the user has left it.
 
 ### 3.2 Apartment dashboard
-- Top bar: apartment name + dropdown on one side; members icon and notification entry on the other. Location subtitle is optional and admin-controlled.
+- Top bar: FlatMate's logo and name, with the open apartment's name under it (tapping either opens My Apartments); the notification bell and members icon on the other side. Apartment settings are not in the top bar.
+- No notification inbox: a red dot marks each place with an unread notification (an expense, Settle up, the members icon, another apartment in the switcher) and opening that place clears it ([decision 0008](decisions/0008-unread-dots-instead-of-an-inbox.md)).
 - Summary: `You'll Receive`, `You Owe`, `Net Balance`, and the user's share of expenses for the selected month.
 - Expense feed with month selector, search/filter, status indicators, and detail navigation.
-- Bottom navigation **left Profile | center Add (+) | right Expenses List**. The apartment dashboard/list is the main content area.
+- Bottom navigation **left Expenses List | center Add (+) | right Profile**, icons only and all the same size; Profile shows the user's photo, and only the open tab is coloured. The apartment dashboard/list is the main content area. The Profile tab has a plain header with a back arrow and sign-out instead of the apartment's top bar.
 - Member icon opens member directory; tapping a member opens a pairwise ledger.
 - Admin apartment settings accessible through a gear on an apartment in the selector and/or an appropriate admin entry.
 - Follow device light/dark appearance automatically.
@@ -67,38 +68,38 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - Expense objection/change request; dispute detail; resolution/adjustment.
 - Recurring templates; fixed schedule; variable-bill prompt and amount entry.
 - Settlement overview, preview, payment allocation, settlement history, carry-forward.
-- Notifications/inbox; reminders; reports and PDF export.
+- Unread markers (no inbox); reminders; reports and PDF export.
 - Admin settings: members, roles, permissions, invites, dates, categories, budgets, visibility, approval rules.
 - Optional advanced: security deposits, shared inventory, room occupancy/splits, offline drafts.
 
 ## 4. Functional Requirements
 
 ### FR-01 Authentication and Profiles
-- FR-01.1 Email/password signup/login and Google OAuth; session persistence and sign-out.
-- FR-01.2 Profile name, optional photo, account identity, notification preferences.
+- FR-01.1 Email/password signup/login and Google OAuth; session persistence and sign-out (confirmed first). Sign-up, password reset and email change are confirmed with 6-digit codes sent by email. Changing email needs a code from both the current and the new address. The password is changed in its own screen.
+- FR-01.2 Profile name, optional photo, account identity, notification preferences. The name saves itself shortly after typing stops, when the field is left, and when the screen closes; tapping the photo adds, changes or removes it.
 - FR-01.3 Each user may register multiple **receiving** accounts (bank name/provider, account title, account number/IBAN or wallet identifier, preferred flag, visibility). Copy details when authorized. Never request banking passwords, PINs or OTPs.
-- FR-01.4 Account visibility defaults to private; only explicitly shared receiving accounts are visible to other eligible apartment members.
+- FR-01.4 Account visibility defaults to private; only explicitly shared receiving accounts are visible to other eligible apartment members. The owner sees their accounts with the full number, in a list that opens each account's details (with Edit and Delete, Make preferred, and the payments made into it); swiping a row right edits it and left asks to delete it.
 
 ### FR-02 Apartment Lifecycle
 - FR-02.1 Create apartment with unique identifier and join code; creator becomes admin.
-- FR-02.2 Join with valid code; invalid/revoked/expired codes fail safely. Admin can rotate/revoke codes.
+- FR-02.2 A valid code sends a request to join; invalid/revoked/expired codes fail safely. Any current admin approves or declines the request, and the first to act decides; the person joins only when approved. The person sees their pending requests and can cancel them, and may ask again after a decline (join-code rate limits still apply). Admins are notified of requests, and the person of the decision. Admin can rotate/revoke codes.
 - FR-02.3 Multiple memberships per user; all apartment balances and settings remain isolated.
-- FR-02.4 Member may leave; admin may remove member. Historical transactions remain immutable/auditable; outstanding dues and disputes remain attached to the former member.
+- FR-02.4 Member may leave; admin may remove member. Historical transactions remain immutable/auditable; outstanding dues and disputes remain attached to the former member. An admin may remove a former member from the members list, which hides them there and changes no record, and may invite a former member back; accepting makes them a member again ([decision 0009](decisions/0009-former-members-hiding-and-inviting-back.md)).
 - FR-02.5 Track join/leave effective dates. Do not automatically include a member in expenses outside their eligible occupancy interval; explicit overrides require permission and history.
 - FR-02.6 Admin may promote/demote admins and configure expense-creation rights.
 
 ### FR-03 One-Time Expenses
-- FR-03.1 Eligible member creates expense with title, category, amount, currency, expense date, optional description, optional receipt/image.
-- FR-03.2 Indicate whether already paid or payable later. For unpaid obligations allow optional due date and designated recipient/payment account. A due date is optional for every expense.
+- FR-03.1 Eligible member creates expense with title, category, amount, currency, expense date (picked from a calendar), optional description (last on the form), and optional receipts: any number, each taken with the camera or picked from the gallery. For a catch-all category such as Other, the member says what it was ("Other · Gas cylinder").
+- FR-03.2 Indicate whether already paid or payable later. A bill payable later may have a due date and may name the member who will pay it (its collector), who is notified; naming them creates no debt, and they are suggested as the payer when the payment is recorded. An expense already paid has no due date and no collector.
 - FR-03.3 Support **one or more payers**, each with a contributed amount. Contributions must sum to the total paid amount. Unpaid portions must be explicitly represented.
 - FR-03.4 Split among selected apartment members: equal, percentage, or custom fixed amounts; exclude members. Validate sum of percentages = 100% and sum of fixed allocations = total, using deterministic rounding.
-- FR-03.5 Preview payer contributions, individual shares, and resulting pairwise balances before save.
+- FR-03.5 *Removed (2026-11-15, section 12, item 15).* The add and edit forms show no preview of who will owe whom; the expense detail shows the shares, payers and resulting debts once saved.
 - FR-03.6 Expense details display receipt, split, payer(s), payment state, due date, status, audit trail, and actions according to role.
 - FR-03.7 Edits to financially posted expenses must be versioned; settled historical records are corrected with explicit adjustment/reversal, not silent overwrite.
-- FR-03.8 Optional apartment-level approval requirement can be configured for specific scenarios; otherwise expenses are auto-accepted on save.
+- FR-03.8 Optional apartment-level approval requirement can be configured for specific scenarios; otherwise expenses are auto-accepted on save. *Deferred beyond the MVP (section 12, item 1).*
 
 ### FR-04 Recurring Expenses
-- FR-04.1 Admin-only recurring template management; multiple admins may act.
+- FR-04.1 Admin-only recurring template management; multiple admins may act. Recurring expenses are added and managed from the apartment's settings screen, which only admins reach; the Add (+) flow creates one-time expenses only.
 - FR-04.2 Fixed: predetermined amount and recurrence schedule (e.g. monthly rent), automatically instantiate once per cycle.
 - FR-04.3 Variable: expected monthly arrival day (e.g. electricity on the 5th); notify admins to enter actual amount, optional proof and due date. Do not create a financial charge with an invented amount.
 - FR-04.4 Each template has independent split rules, included/excluded members, and optional percentage/custom allocations; admins can override splits for one generated month without rewriting the template.
@@ -109,7 +110,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-05.1 **Default: auto-accepted immediately**, visible in balances and to all affected members. No mandatory Accept click.
 - FR-05.2 Affected member can `Decline` with mandatory reason, or `Request Adjustment` with proposed share and explanation.
 - FR-05.3 Notify expense creator. Creator may accept a proposed change (recalculate and record adjustment) or reject it (create unresolved settlement case).
-- FR-05.4 Only the disputed portion should be held from final settlement where mathematically feasible; when split redistribution affects all shares, hold the impacted allocation set. Uncontested obligations remain payable.
+- FR-05.4 Only the disputed portion should be held from final settlement where mathematically feasible; when split redistribution affects all shares, hold the impacted allocation set. Uncontested obligations remain payable. *Decided: a dispute holds every share of the disputed expense (section 12, item 2).*
 - FR-05.5 Configurable dispute/approval window, default **7 days**. If no objection, the provisional acceptance becomes final at the end of the window. An objection filed within the window pauses finalization for affected shares.
 - FR-05.6 Late objections after finalization may create a new adjustment case, not mutate a closed historical settlement.
 - FR-05.7 Every dispute includes initiator, reason, proposed value, evidence, state, responses, timestamps, and resolution history.
@@ -125,7 +126,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 ### FR-07 Payment Recording and Objections
 - FR-07.1 Start payment from a specific expense or a member ledger, for gross dues or a net amount after eligible offsets.
 - FR-07.2 Display only receiving accounts explicitly shared by the recipient; allow copy and optional external app/deep link when supported. The user performs the actual transfer outside FlatMate.
-- FR-07.3 User marks paid with amount, time, optional transaction reference, and optional proof; partial payments are supported.
+- FR-07.3 User marks paid with amount, time, optional transaction reference, optional proof, and optionally which of the recipient's shared accounts it went into; partial payments are supported. The payment keeps a snapshot of that account (provider, title, masked number), so later edits or deletion of the account do not change it. The account owner sees the payments made into each account.
 - FR-07.4 On marking paid, set `provisionally_confirmed` and immediately adjust **provisional** displayed balances. Notify recipient.
 - FR-07.5 Recipient may decline within default 7 days, with mandatory reason (e.g. not received). Mark payment `disputed`; reverse the provisional credit in outstanding balance while preserving the original evidence and transaction history.
 - FR-07.6 No objection by deadline: finalize as `confirmed_by_app_policy` (not bank-verified). Late objections become separate adjustment cases.
@@ -191,15 +192,16 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 | `apartments` | id, name, location_optional, show_location, timezone, settlement_day, approval_days, creator_id |
 | `apartment_members` | id, apartment_id, user_id, role, can_add_expense, joined_at, left_at, status |
 | `apartment_invites` | id, apartment_id, code_hash, expires_at, revoked_at, created_by |
+| `join_requests` | id, apartment_id, user_id, invite_id, state (pending, approved, declined, cancelled), decided_at, decided_by; one pending request per person and apartment |
 | `expense_categories` | id, apartment_id, name, archived_at |
-| `expenses` | id, apartment_id, title, amount_minor, currency, expense_date, paid_status, due_date, description, created_by, status, recurring_instance_id |
+| `expenses` | id, apartment_id, title, amount_minor, currency, expense_date, paid_status, due_date, description, category_id, category_detail (what Other was), collector_id (who will pay an unpaid bill), created_by, status, recurring_instance_id |
 | `expense_payers` | id, expense_id, payer_user_id, amount_minor |
 | `expense_splits` | id, expense_id, member_user_id, amount_minor, split_rule_snapshot, status |
 | `expense_attachments` | id, expense_id, storage_path, uploaded_by, type |
 | `recurring_templates` | id, apartment_id, title, fixed_or_variable, amount_minor_nullable, schedule, expected_bill_day, enabled, created_by |
 | `recurring_split_rules` | id, template_id, member_user_id, allocation_type, allocation_value, excluded |
 | `recurring_instances` | id, template_id, billing_period, expense_id_nullable, state, UNIQUE(template_id,billing_period) |
-| `payments` | id, apartment_id, sender_user_id, recipient_user_id, amount_minor, currency, reference, proof_path, status, idempotency_key, recorded_at, final_after |
+| `payments` | id, apartment_id, sender_user_id, recipient_user_id, amount_minor, currency, reference, proof_path, status, idempotency_key, recorded_at, final_after, receiving_account_id (cleared if the account is deleted) and a snapshot of it: paid_to_provider, paid_to_title, paid_to_identifier_masked |
 | `payment_allocations` | id, payment_id, obligation_reference, allocated_amount_minor |
 | `disputes` | id, apartment_id, subject_type, subject_id, raised_by, reason, proposed_amount_minor_nullable, state, created_at, resolved_at |
 | `dispute_events` | id, dispute_id, actor_id, action, payload, created_at |
@@ -241,6 +243,8 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 | Reliability | Transactional financial updates, idempotent jobs, retries without duplicates, backup/restore plan |
 | Accuracy | Exact minor-unit arithmetic, deterministic split rounding, conservation of allocations and ledger entries |
 | Performance | Paginated expense feeds; indexed apartment/member/date lookups; responsive mobile navigation |
+| Offline reading | Data the user has already loaded stays readable without a connection, marked with when it was last updated; the saved copy is encrypted and removed at sign-out; recording or changing anything needs a connection (offline drafts: FR-10.7) |
+| Freshness | Event-driven: while online, every change made by another member, by the same user on another device, or by a scheduled job appears on open screens within seconds, without a manual refresh or polling |
 | Accessibility | Screen-reader labels, dynamic font sizes where feasible, sufficient contrast |
 | Cross-platform | Android initial launch; iOS-ready implementation and device testing |
 | Open source | README, LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.md, .env.example, migration/seed scripts, test instructions |
@@ -248,9 +252,9 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ## 9. Primary End-to-End User Flows
 
-1. **New user:** launch → sign up/login → apartment selector → create/join → dashboard.
-2. **Returning multi-flat user:** launch → apartment list → select flat → switch via top bar.
-3. **One-time expense:** Add → details/payers → split/exclusions → preview → save → notify → ledger.
+1. **New user:** launch → sign up/login (6-digit email code) → join with a code (request, then an admin lets them in) or create → dashboard.
+2. **Returning multi-flat user:** launch → last opened flat → switch via top bar (or All apartments).
+3. **One-time expense:** Add → details, receipts, payers or who will pay → split/exclusions → save → notify → ledger.
 4. **Fixed recurring:** admin config → schedule → monthly instance → apply saved split → notify.
 5. **Variable recurring:** admin config expected day → reminder → enter actual amount/proof/due date → create instance → notify.
 6. **Expense objection:** auto-accepted → member declines/requests change → creator approves or rejects → adjustment or settlement case.
@@ -275,7 +279,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 - AC-10: Settlement date changes apply to the apartment only; unresolved dues carry forward; historical close remains traceable.
 - AC-11: Removed/leaving member cannot access current private apartment data but historical obligations remain auditable under defined access rules.
 - AC-12: Private bank accounts and attachments are inaccessible to unauthorized users.
-- AC-13: UI follows device theme and uses Profile | Add | Expenses bottom-navigation order.
+- AC-13: UI follows device theme and uses Expenses | Add | Profile bottom-navigation order.
 - AC-14: PDF statement includes monthly expense share, payments, receivables, payables, disputed and carry-forward amounts.
 
 ## 11. Recommended Delivery Phases
@@ -290,20 +294,27 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 **Phase 4 — Release:** Android QA/store publication, iOS QA/store publication, privacy policy, store disclosures, documentation and open-source contribution workflow.
 
-## 12. Decisions Requiring Confirmation Before Coding
+## 12. Product Decisions
 
-1. **Default vs optional approval:** Expenses are auto-accepted; a configurable explicit-approval policy was also suggested. Define precisely which apartment modes support it and how its 7-day timer interacts with objections.
-2. **Dispute effect:** Decide whether only the objecting member's share or all mathematically impacted shares are frozen; the system must not settle inconsistent totals.
-3. **Payment objection deadline:** Seven days is the agreed default. Define whether the window begins at payment record time or recipient notification delivery; recommend record time with reliable notification retries.
-4. **Post-deadline challenges:** Use adjustment case rather than retroactive mutation; specify admin mediation vs mutual approval.
-5. **Payable vendor bills:** Specify recipient type (roommate, landlord, utility provider) and whether third-party bills can be settled externally without an apartment member as creditor.
-6. **Bank account data:** Decide encryption/visibility policy and whether wallet-specific fields differ from bank accounts.
-7. **Currency:** Start with apartment currency (likely PKR), but specify whether multi-currency apartments and conversion are prohibited or supported.
-8. **Member privacy:** Define visibility of apartment-wide expense details versus pairwise private payment history.
-9. **Settlement period:** Define month boundaries, changes to settlement date mid-cycle, and handling of 29th–31st.
-10. **Open-source license:** Choose a license (e.g. MIT or Apache-2.0) after evaluating contributor and branding expectations; repository name is not guaranteed available.
-11. **Product name:** FlatMate is selected provisionally; verify trademark, app-store names and domains before publication.
-12. **HeroUI Native version:** Verify current official package/version, compatibility with chosen Expo SDK, and actual available components before locking dependencies.
+Items 1–9 and 12 were decided on 2026-11-13, and items 13–17 on 2026-11-14 and 15. Items 10 and 11 are still open, and part of item 6.
+
+1. **Explicit approval mode — decided.** Not part of the MVP. Every expense is accepted automatically, and affected members object within the window (FR-05). An optional approval mode (FR-03.8) may be reconsidered after release.
+2. **What a dispute holds — decided.** A dispute holds every share of the disputed expense until it is resolved, so settlement never sees inconsistent totals. Other expenses stay payable.
+3. **Payment objection window — decided.** The 7-day window starts when the payment is recorded, with reliable notification retries.
+4. **Objections after the deadline — decided.** They open an adjustment case and never change closed history. The two members involved agree on the adjustment; if they cannot, an admin of the apartment decides.
+5. **Who can be owed — decided.** Only apartment members can be creditors. A bill owed to a third party, such as a landlord or utility, becomes a debt to the member who pays it. Until a member pays it, it has no creditor and creates no reimbursement.
+6. **Receiving accounts — decided.** One table holds bank and wallet accounts. Accounts are private by default; the owner shares each one with specific apartments, and only current members of those apartments can see it. Account numbers are shown to flatmates masked until revealed; the owner sees their own in full. For the MVP they rely on the platform's encryption at rest and row-level security; no extra column encryption.
+7. **Currency — decided.** One currency per apartment, PKR by default. No multi-currency apartments and no conversion.
+8. **Member visibility — decided.** Every current member sees all of the apartment's expenses. A payment is visible to its payer, its recipient and the apartment's admins. A former member sees only the records they were part of.
+9. **Settlement period — decided.** A period runs from the settlement day to the day before the next settlement day. A settlement day of 29, 30 or 31 falls on the last day of shorter months. A change to the settlement day takes effect from the next period.
+10. **Open-source license — open.** The repository currently uses MIT; MIT or Apache-2.0 remain the options. Decide before the open-source launch.
+11. **Product name — open in part.** The store identifiers are `com.manaslatif.flatmate` on Android and iOS. Trademark, store-name and domain checks for "FlatMate" are still to be done before publication.
+12. **HeroUI Native version — decided.** HeroUI Native 1.x runs on Expo SDK 58. See decision record 0002 in `docs/decisions/`.
+13. **Joining needs approval — decided.** A join code sends a request; any current admin lets the person in or declines, and the first to act decides (FR-02.2).
+14. **Recurring expenses live in settings — decided.** Admins add and manage them from the apartment's settings; the Add (+) flow is for one-time expenses (FR-04.1).
+15. **No expense preview — decided.** The add and edit forms do not preview who will owe whom (FR-03.5).
+16. **Who will pay an unpaid bill — decided.** Naming a collector only records who is responsible and notifies them. It creates no debt; balances still change only when the bill is paid (FR-03.2, item 5).
+17. **Payments name the account they went into — decided.** Optional when recording a payment; the payment keeps a snapshot of the account so history survives edits and deletion (FR-07.3).
 
 
 ## 13. Suggested First Implementation Tasks
@@ -320,4 +331,4 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ---
 
-**Document control:** Requirements reflect the product discussion as of 2026-11-12. Sections marked proposed or requiring confirmation are not settled technical contracts. Keep schema changes in versioned migrations and update this SRS when decisions change.
+**Document control:** Requirements reflect the product discussion as of 2026-11-12, with the decisions in section 12 recorded on 2026-11-13. Sections marked proposed or requiring confirmation are not settled technical contracts. Keep schema changes in versioned migrations and update this SRS when decisions change.

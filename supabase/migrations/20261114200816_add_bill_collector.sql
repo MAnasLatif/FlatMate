@@ -1,0 +1,353 @@
+-- A bill that is not paid yet can name who will pay it: its collector. It is
+-- only a label of responsibility, with a notification; nobody owes anything
+-- until the bill is paid, as before, and the app suggests the collector as the
+-- payer then. A paid expense has no collector to set.
+
+alter table public.expenses
+  add column collector_id uuid references public.profiles (id) on delete set null;
+
+-- Adding a bill can name its collector in the same call, so the two are saved together.
+drop function public.post_expense(uuid, text, bigint, date, text, jsonb, jsonb, uuid, text, date, uuid);
+drop function private.post_expense(uuid, text, bigint, date, text, jsonb, jsonb, uuid, text, date, uuid);
+
+CREATE FUNCTION private.post_expense(p_apartment_id uuid, p_title text, p_amount_minor bigint, p_expense_date date, p_split_method text, p_participants jsonb, p_payers jsonb, p_category_id uuid, p_description text, p_due_date date, p_client_request_id uuid, p_collector_id uuid)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  author uuid := private.require_user();
+  apartment public.apartments;
+  existing uuid;
+  new_expense uuid;
+  is_paid boolean := coalesce(jsonb_array_length(p_payers), 0) > 0;
+begin
+  if not exists (
+    select 1 from public.apartment_members
+    where apartment_id = p_apartment_id and user_id = author and left_at is null and can_add_expense
+  ) then
+    raise exception 'not_allowed_to_add_expense' using errcode = '42501';
+  end if;
+
+  -- A retried request returns what the first one created.
+  if p_client_request_id is not null then
+    select id into existing from public.expenses
+    where apartment_id = p_apartment_id and client_request_id = p_client_request_id;
+    if existing is not null then
+      return existing;
+    end if;
+  end if;
+
+  select * into apartment from public.apartments where id = p_apartment_id;
+  if private.in_closed_period(p_apartment_id, p_expense_date) then
+    raise exception 'period_closed' using errcode = 'P0001';
+  end if;
+
+  if p_category_id is not null and not exists (
+    select 1 from public.expense_categories
+    where id = p_category_id and apartment_id = p_apartment_id and archived_at is null
+  ) then
+    raise exception 'invalid_category' using errcode = '22023';
+  end if;
+  if p_due_date is not null and p_due_date < p_expense_date then
+    raise exception 'due_date_before_expense_date' using errcode = '22023';
+  end if;
+
+  -- Validates the split before anything is written.
+  perform count(*) from private.compute_shares(p_amount_minor, p_split_method, p_participants);
+  perform private.require_current_members(p_apartment_id, p_participants, 'participant_not_member');
+  if is_paid then
+    perform private.require_valid_payers(p_payers, p_amount_minor);
+    perform private.require_current_members(p_apartment_id, p_payers, 'payer_not_member');
+  end if;
+  -- Who will pay a bill that is not paid yet; a paid expense has no collector.
+  if p_collector_id is not null then
+    if is_paid then
+      raise exception 'collector_for_paid_expense' using errcode = '22023';
+    end if;
+    if not private.is_current_member_of(p_apartment_id, p_collector_id) then
+      raise exception 'collector_not_member' using errcode = '22023';
+    end if;
+  end if;
+
+  insert into public.expenses (
+    apartment_id, title, description, category_id, amount_minor, currency, expense_date, due_date,
+    paid_status, finalize_after, created_by, client_request_id, collector_id
+  )
+  values (
+    p_apartment_id, btrim(p_title), nullif(btrim(p_description), ''), p_category_id, p_amount_minor,
+    apartment.currency, p_expense_date, p_due_date,
+    case when is_paid then 'paid' else 'unpaid' end,
+    now() + make_interval(days => apartment.approval_days),
+    author, p_client_request_id, p_collector_id
+  )
+  returning id into new_expense;
+
+  insert into public.expense_revisions (expense_id, revision, amount_minor, split_method, created_by)
+  values (new_expense, 1, p_amount_minor, p_split_method, author);
+
+  insert into public.expense_splits (expense_id, revision, user_id, amount_minor, basis_points)
+  select new_expense, 1, share.user_id, share.amount_minor,
+    case when p_split_method = 'percentage' then (
+      select (p ->> 'basis_points')::integer from jsonb_array_elements(p_participants) p
+      where (p ->> 'user_id')::uuid = share.user_id
+    ) end
+  from private.compute_shares(p_amount_minor, p_split_method, p_participants) share;
+
+  if is_paid then
+    insert into public.expense_payers (expense_id, revision, user_id, amount_minor)
+    select new_expense, 1, (payer ->> 'user_id')::uuid, (payer ->> 'amount_minor')::bigint
+    from jsonb_array_elements(p_payers) payer;
+
+    perform private.post_charges(new_expense, 1);
+  end if;
+
+  -- One statement, so the apartment gets one change event for both rows.
+  insert into public.audit_events (apartment_id, actor_id, entity_type, entity_id, action, details)
+  select p_apartment_id, author, 'expense', new_expense, row.action, row.details
+  from (values
+    ('created', jsonb_build_object('amount_minor', p_amount_minor, 'paid', is_paid, 'revision', 1), true),
+    ('collector_set', jsonb_build_object('collector_id', p_collector_id), p_collector_id is not null)
+  ) as row(action, details, wanted)
+  where row.wanted;
+
+  return new_expense;
+end;
+$function$;
+
+revoke execute on function private.post_expense(uuid, text, bigint, date, text, jsonb, jsonb, uuid, text, date, uuid, uuid) from public;
+grant execute on function private.post_expense(uuid, text, bigint, date, text, jsonb, jsonb, uuid, text, date, uuid, uuid) to authenticated;
+
+-- The new argument defaults to null, so an app that does not send it keeps working.
+create function public.post_expense(
+  p_apartment_id uuid,
+  p_title text,
+  p_amount_minor bigint,
+  p_expense_date date,
+  p_split_method text,
+  p_participants jsonb,
+  p_payers jsonb,
+  p_category_id uuid default null,
+  p_description text default null,
+  p_due_date date default null,
+  p_client_request_id uuid default null,
+  p_collector_id uuid default null
+)
+returns uuid
+language sql
+security invoker
+set search_path = ''
+as $$
+  select private.post_expense(
+    p_apartment_id, p_title, p_amount_minor, p_expense_date, p_split_method, p_participants,
+    p_payers, p_category_id, p_description, p_due_date, p_client_request_id, p_collector_id
+  );
+$$;
+
+revoke execute on function public.post_expense(uuid, text, bigint, date, text, jsonb, jsonb, uuid, text, date, uuid, uuid) from public, anon;
+grant execute on function public.post_expense(uuid, text, bigint, date, text, jsonb, jsonb, uuid, text, date, uuid, uuid) to authenticated;
+
+-- Changing the collector later: the person who added the bill or an admin,
+-- while it is still unpaid. Null clears it.
+create function private.set_bill_collector(p_expense_id uuid, p_collector_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  me uuid := private.require_user();
+  expense public.expenses;
+begin
+  select * into expense from public.expenses where id = p_expense_id for update;
+  if expense.id is null or not private.is_active_member(expense.apartment_id) then
+    raise exception 'expense_not_found' using errcode = 'P0002';
+  end if;
+  if expense.created_by <> me and not private.is_apartment_admin(expense.apartment_id) then
+    raise exception 'not_allowed' using errcode = '42501';
+  end if;
+  if expense.paid_status <> 'unpaid' or expense.status = 'void' then
+    raise exception 'collector_for_paid_expense' using errcode = '22023';
+  end if;
+  if p_collector_id is not null and not private.is_current_member_of(expense.apartment_id, p_collector_id) then
+    raise exception 'collector_not_member' using errcode = '22023';
+  end if;
+  if expense.collector_id is not distinct from p_collector_id then
+    return;
+  end if;
+
+  update public.expenses set collector_id = p_collector_id where id = expense.id;
+
+  insert into public.audit_events (apartment_id, actor_id, entity_type, entity_id, action, details)
+  values (expense.apartment_id, me, 'expense', expense.id, 'collector_set',
+          jsonb_build_object('collector_id', p_collector_id));
+end;
+$$;
+
+revoke execute on function private.set_bill_collector(uuid, uuid) from public;
+grant execute on function private.set_bill_collector(uuid, uuid) to authenticated;
+
+create function public.set_bill_collector(p_expense_id uuid, p_collector_id uuid)
+returns void
+language sql
+security invoker
+set search_path = ''
+as $$ select private.set_bill_collector(p_expense_id, p_collector_id) $$;
+
+revoke execute on function public.set_bill_collector(uuid, uuid) from public, anon;
+grant execute on function public.set_bill_collector(uuid, uuid) to authenticated;
+
+-- Notifications ---------------------------------------------------------------------------
+
+-- The collector also hears about later changes to the bill.
+create or replace function private.expense_people(p_expense_id uuid)
+returns table (user_id uuid)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select created_by from public.expenses where id = p_expense_id
+  union
+  select user_id from public.expense_splits where expense_id = p_expense_id
+  union
+  select user_id from public.expense_payers where expense_id = p_expense_id
+  union
+  select collector_id from public.expenses where id = p_expense_id and collector_id is not null;
+$$;
+
+create or replace function private.notification_recipients(e public.audit_events)
+returns table (user_id uuid, type text, record_type text, record_id uuid)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  kind text := e.entity_type || '.' || e.action;
+  payment public.payments;
+begin
+  if kind in ('expense.created', 'expense.edited', 'expense.voided', 'expense.bill_paid') then
+    return query
+    select p.user_id, kind, 'expense'::text, e.entity_id
+    from private.expense_people(e.entity_id) p
+    where private.is_current_member_of(e.apartment_id, p.user_id);
+
+  elsif kind in ('expense.dispute_raised', 'expense.dispute_accepted', 'expense.dispute_rejected',
+                 'expense.dispute_decided', 'expense.dispute_withdrawn') then
+    return query
+    select p.user_id, kind, 'dispute'::text, (e.details ->> 'dispute_id')::uuid
+    from private.expense_people(e.entity_id) p
+    where private.is_current_member_of(e.apartment_id, p.user_id);
+
+  elsif e.entity_type = 'payment' then
+    select * into payment from public.payments where id = e.entity_id;
+    return query
+    select person, kind, 'payment'::text, payment.id
+    from unnest(case e.action
+      when 'recorded' then array[payment.recipient_id]
+      when 'proof_added' then array[payment.recipient_id]
+      when 'declined' then array[payment.payer_id]
+      when 'decline_withdrawn' then array[payment.payer_id]
+      when 'confirmed_by_app_policy' then array[payment.payer_id]
+      when 'voided' then array[payment.payer_id, payment.recipient_id]
+      else array[]::uuid[]
+    end) person
+    where person is not null;
+
+  elsif kind = 'offset.netted_off' then
+    -- Each side lands on their ledger with the other.
+    return query
+    select o.counterparty_id, kind, 'ledger'::text, o.initiator_id from public.offsets o where o.id = e.entity_id
+    union all
+    select o.initiator_id, kind, 'ledger'::text, o.counterparty_id from public.offsets o where o.id = e.entity_id;
+
+  elsif kind = 'adjustment.recorded' then
+    return query
+    select a.debtor_id, kind, 'ledger'::text, a.creditor_id from public.adjustments a where a.id = e.entity_id
+    union all
+    select a.creditor_id, kind, 'ledger'::text, a.debtor_id from public.adjustments a where a.id = e.entity_id;
+
+  elsif kind in ('member.joined', 'member.left', 'member.removed') then
+    return query
+    select m.user_id, kind, 'members'::text, e.entity_id
+    from public.apartment_members m
+    where m.apartment_id = e.apartment_id and m.left_at is null and m.role = 'admin'
+      and m.user_id <> e.entity_id;
+    if e.action = 'removed' then
+      -- The removed member is no longer a member; they land on the apartment,
+      -- which they still see as a former member.
+      return query select e.entity_id, 'member.you_were_removed'::text, 'apartment'::text, e.apartment_id;
+    end if;
+
+  elsif kind in ('member.role_changed', 'member.expense_permission_changed') then
+    return query select e.entity_id, kind, 'members'::text, e.entity_id;
+
+  elsif kind = 'settlement_period.closed' then
+    return query
+    select m.user_id, kind, 'settlement'::text, e.entity_id
+    from public.apartment_members m
+    where m.apartment_id = e.apartment_id and m.left_at is null;
+
+  elsif kind = 'expense.collector_set' then
+    -- The person asked to pay the bill, unless they set it themselves.
+    return query
+    select (e.details ->> 'collector_id')::uuid, kind, 'expense'::text, e.entity_id
+    where e.details ->> 'collector_id' is not null;
+
+  elsif kind = 'join_request.requested' then
+    -- Every admin can decide; the first to act does.
+    return query
+    select m.user_id, kind, 'members'::text, e.entity_id
+    from public.apartment_members m
+    where m.apartment_id = e.apartment_id and m.left_at is null and m.role = 'admin';
+
+  elsif kind = 'join_request.approved' then
+    return query select (e.details ->> 'user_id')::uuid, kind, 'apartment'::text, e.apartment_id;
+
+  elsif kind = 'join_request.declined' then
+    -- They cannot open the apartment, so the notification leads home.
+    return query select (e.details ->> 'user_id')::uuid, kind, 'join_request'::text, e.entity_id;
+  end if;
+end;
+$$;
+
+create or replace function private.push_text(p_type text)
+returns text
+language sql
+immutable
+set search_path = ''
+as $$
+  select case p_type
+    when 'expense.created' then 'An expense that includes you was added.'
+    when 'expense.edited' then 'An expense that includes you was changed.'
+    when 'expense.voided' then 'An expense that included you was cancelled.'
+    when 'expense.bill_paid' then 'A bill that includes you was paid.'
+    when 'expense.collector_set' then 'You were asked to pay a bill for your apartment.'
+    when 'expense.dispute_raised' then 'An expense that includes you was disputed.'
+    when 'expense.dispute_accepted' then 'A dispute on an expense that includes you was answered.'
+    when 'expense.dispute_rejected' then 'A dispute on an expense that includes you was answered.'
+    when 'expense.dispute_decided' then 'A dispute on an expense that includes you was decided.'
+    when 'expense.dispute_withdrawn' then 'A dispute on an expense that includes you was withdrawn.'
+    when 'payment.recorded' then 'A flatmate recorded a payment to you. Check that it arrived.'
+    when 'payment.proof_added' then 'Proof was added to a payment to you.'
+    when 'payment.declined' then 'A payment you recorded was declined.'
+    when 'payment.decline_withdrawn' then 'An objection to your payment was withdrawn.'
+    when 'payment.confirmed_by_app_policy' then 'Your payment is now final in FlatMate. Nobody objected in time.'
+    when 'payment.voided' then 'A payment you are part of was voided.'
+    when 'offset.netted_off' then 'Debts between you and a flatmate were netted off.'
+    when 'adjustment.recorded' then 'An adjustment between you and a flatmate was recorded.'
+    when 'member.joined' then 'Someone joined your apartment.'
+    when 'member.left' then 'A member left your apartment.'
+    when 'member.removed' then 'A member was removed from your apartment.'
+    when 'member.you_were_removed' then 'You were removed from an apartment.'
+    when 'member.role_changed' then 'Your role in an apartment changed.'
+    when 'member.expense_permission_changed' then 'Your permission to add expenses changed.'
+    when 'settlement_period.closed' then 'A settlement period closed. See the summary.'
+    when 'join_request.requested' then 'Someone asked to join your apartment.'
+    when 'join_request.approved' then 'Your request to join an apartment was approved.'
+    when 'join_request.declined' then 'Your request to join an apartment was declined.'
+    else 'Something changed in FlatMate.'
+  end;
+$$;

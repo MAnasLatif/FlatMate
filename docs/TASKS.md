@@ -2,7 +2,7 @@
 
 Everything that remains to take FlatMate from its current state to a released app, in the order it should be done. It is derived from the [SRS](SRS.md): every functional requirement (FR) and acceptance criterion (AC) is covered by a task below.
 
-Last reviewed: 2026-11-12.
+Last reviewed: 2026-11-15.
 
 ## How to use this list
 
@@ -10,7 +10,7 @@ Last reviewed: 2026-11-12.
 - One task is one branch and one pull request. If a task turns out too large, split it and add the new tasks here.
 - Tick the box in the same pull request that completes the task.
 - A task marked **Owner** needs something only the project owner can provide, such as an account, a device or a decision.
-- A task marked **Needs D-number** depends on an [open decision](#open-decisions). Settle the decision first and record it in the SRS.
+- A task marked **Needs** a decision depends on one that is still [open](#decisions). Settle it first and record it in the SRS.
 - Backend tasks are done when the migration, the RLS policies and their database tests are all in. App tasks are done when the screen has its loading, empty and error states and its tests.
 
 ## Where the project stands
@@ -23,106 +23,132 @@ Done:
 - [x] Mobile app foundation: Expo SDK 58, Expo Router, HeroUI Native, Supabase client with encrypted session storage, configuration validation, money formatting, lint, type check and tests.
 - [x] App icon, Android adaptive icon, splash screen and brand source images.
 
-Not started: the backend (`supabase/`), every app feature, and the website (`web/`).
+- [x] Backend initialized: Supabase CLI 3.1.0 local stack, a pgTAP test that every public table has row-level security, and generated database types in the app.
 
-## Open decisions
+Phase 1 is built up to member exit (1.34). Next: offline reading and the event-driven sync (1.35 to 1.42), then notifications and the MVP acceptance pass. The website (`web/`) is not started.
 
-These come from section 12 of the SRS. Each one blocks the tasks listed next to it. Where the SRS already recommends an answer, it is shown.
+## Decisions
 
-| No. | Decision | SRS recommendation | Needed before |
+These come from section 12 of the SRS, where each decision is written out in full. Most were decided on 2026-11-13. The ones still open block the tasks listed next to them.
+
+| No. | Decision | Status | Affects |
 |---|---|---|---|
-| D1 | Which apartments can require explicit approval of expenses, and how that interacts with the 7-day objection window | None | 1.24 |
-| D2 | Whether a dispute freezes only the objector's share or every share it affects | None. Totals must stay consistent. | 1.12 |
-| D3 | Whether the payment objection window starts when the payment is recorded or when the recipient is notified | Record time, with reliable notification retries | 1.27 |
-| D4 | How objections raised after the deadline are resolved: admin mediation or mutual approval | Use an adjustment case, never change closed history | 1.23 |
-| D5 | Who can be owed money for an unpaid bill (flatmate, landlord, utility) and whether third-party bills can be settled outside the apartment | None | 1.12 |
-| D6 | Encryption and visibility of receiving-account details, and whether wallets need different fields from bank accounts | None | 1.26 |
-| D7 | One currency per apartment (likely PKR), or multi-currency | Start with one apartment currency | 1.6 |
-| D8 | What a member can see of apartment-wide expenses and of other members' payment history, including after they leave | None | 1.10 |
-| D9 | Month boundaries, changing the settlement day mid-cycle, and days 29 to 31 | Day 31 becomes the last day of a short month | 1.6 |
-| D10 | Open-source licence | MIT or Apache-2.0. The repository currently uses MIT. | 4.8 |
-| D11 | Final product name, after checking trademarks, store names and domains | "FlatMate" is provisional | 0.3 |
-| D12 | HeroUI Native version and compatibility with the Expo SDK | Verify on a device | 0.2 |
+| D1 | Explicit approval mode | Decided: not in the MVP, every expense is accepted automatically | 1.24 |
+| D2 | What a dispute holds | Decided: every share of the disputed expense | 1.12, 1.23 |
+| D3 | Start of the payment objection window | Decided: when the payment is recorded | 1.27 |
+| D4 | Objections after the deadline | Decided: adjustment case; the two members agree, an admin decides if they cannot | 1.23 |
+| D5 | Who can be owed | Decided: members only; a third-party bill becomes a debt to the member who pays it | 1.12 |
+| D6 | Receiving accounts | Decided: one table for bank and wallet accounts, private by default, shared per apartment, masked until revealed; no encryption beyond the platform's at-rest encryption for the MVP | 1.26 |
+| D7 | Currency | Decided: one per apartment, PKR by default, no conversion | 1.6 |
+| D8 | Member visibility | Decided: members see all expenses; a payment is visible to its payer, recipient and admins; former members see only their own records | 1.10 |
+| D9 | Settlement period | Decided: settlement day to the day before the next; days 29 to 31 fall on the last day of short months; a change applies from the next period | 1.6, 1.32 |
+| D10 | Open-source licence | **Open:** MIT or Apache-2.0; the repository currently uses MIT | 4.8 |
+| D11 | Product name | Decided in part: identifiers are `com.manaslatif.flatmate`. **Open:** trademark, store-name and domain checks | 4.6, 4.7 |
+| D12 | HeroUI Native and the Expo SDK | Decided: HeroUI Native 1.x runs on Expo SDK 58 (decision 0002) | 0.2 |
 
 ## Phase 0: Foundation
 
-- [ ] **0.1 Repair `main`.** `npm ci` fails on `main` since `tailwind-variants` was bumped to version 4, because HeroUI Native requires version 3. Restore version 3, confirm lint still passes on ESLint 10 (which was bumped at the same time and has never run), and stop Dependabot from proposing the `tailwind-variants` major again. Done when CI on `main` is green.
-- [ ] **0.2 Run the app on an Android device.** Confirm the home screen renders, light and dark themes follow the device, and the HeroUI Native components the app will rely on work: button, text field, dialog, bottom sheet and toast. Record the result in a decision record. *(D12. Owner: a device or emulator.)*
-- [ ] **0.3 App identifiers and development build.** Set the Android package name and iOS bundle identifier, create the EAS project and `eas.json`, and produce a development build. Push notifications need this, since they do not work in Expo Go on Android. *(Needs D11. Owner: Expo account.)*
-- [ ] **0.4 Initialize the backend.** Run `supabase init`, commit `config.toml`, confirm the local stack starts, add an empty `seed.sql`, and confirm the CI database job now runs.
-- [ ] **0.5 Database tests and generated types.** Set up pgTAP with a first passing test. Add a script that generates TypeScript types from the schema into `app/src/types/`, and document both.
-- [ ] **0.6 Hosted development project.** Create a Supabase project for development, link it, and document how migrations reach it. *(Owner: Supabase account.)*
-- [ ] **0.7 Settle the Phase 1 decisions.** Decide D1 to D9 in one sitting and update section 12 of the SRS, so Phase 1 is not interrupted task by task. *(Owner.)*
+- [x] **0.1 Repair `main`.** `npm ci` fails on `main` since `tailwind-variants` was bumped to version 4, because HeroUI Native requires version 3. Restore version 3, confirm lint still passes on ESLint 10 (which was bumped at the same time and has never run), and stop Dependabot from proposing the `tailwind-variants` major again. Done when CI on `main` is green.
+- [x] **0.2 Run the app on an Android device.** Confirm the home screen renders, light and dark themes follow the device, and the HeroUI Native components the app will rely on work: button, text field, dialog, bottom sheet and toast. Record the result in a decision record. *(Owner: a device or emulator.)*
+- [x] **0.3 App identifiers and development build.** Set the Android package name and iOS bundle identifier, create the EAS project and `eas.json`, and produce a development build. Push notifications need this, since they do not work in Expo Go on Android. *(Owner: Expo account.)* The EAS project is `@m.anaslatif/flatmate`, and the first Android development build finished on 2026-11-12.
+- [x] **0.4 Initialize the backend.** Run `supabase init`, commit `config.toml`, confirm the local stack starts, add an empty `seed.sql`, and confirm the CI database job now runs.
+- [x] **0.5 Database tests and generated types.** Set up pgTAP with a first passing test. Add a script that generates TypeScript types from the schema into `app/src/types/`, and document both.
+- [x] **0.6 Hosted development project.** Create a Supabase project for development, link it, and document how migrations reach it. *(Owner: Supabase account.)* The project exists and the app's local `.env` points at it. Linking the CLI needs the owner's access token and moves to task 1.1.
+- [x] **0.7 Settle the Phase 1 decisions.** Decide D1 to D9 in one sitting and update section 12 of the SRS, so Phase 1 is not interrupted task by task. *(Owner.)*
 
 ## Phase 1: Financial MVP
 
 ### Accounts
 
-- [ ] **1.1 Profiles.** `profiles` table created automatically at sign-up, with RLS and tests. *(FR-01.2)*
-- [ ] **1.2 Email sign-up and sign-in.** Sign-up, sign-in, sign-out, session persistence, and a session check at launch that routes signed-out users to the auth screens. *(FR-01.1)*
-- [ ] **1.3 Account recovery and email verification.** Password reset and email confirmation through deep links back into the app. *(FR-01.1)*
-- [ ] **1.4 Google sign-in.** *(FR-01.1. Owner: Google OAuth credentials.)*
-- [ ] **1.5 Profile screen.** Edit display name and photo, with photos in a private bucket. *(FR-01.2)*
+- [x] **1.1 Profiles.** `profiles` table created automatically at sign-up, with RLS and tests. Link the CLI to the hosted development project and push this first migration to it, as described in `supabase/README.md`. *(FR-01.2. Owner: access token for the link.)* The migration is applied to the hosted development project.
+- [x] **1.2 Email sign-up and sign-in.** Sign-up, sign-in, sign-out, session persistence, and a session check at launch that routes signed-out users to the auth screens. *(FR-01.1)* Test it in the development build: Expo Go lacks the native module behind the encrypted session storage (`react-native-get-random-values`).
+- [x] **1.3 Account recovery and email verification.** Password reset and email confirmation through deep links back into the app. *(FR-01.1)* Uses 6-digit codes instead of links, because mail apps can use up one-time links by opening them automatically. The hosted project needs the matching auth settings (`supabase/README.md`).
+- [ ] **1.4 Google sign-in.** *(FR-01.1. Owner: Google OAuth credentials.)* Done: the app side, behind `EXPO_PUBLIC_AUTH_GOOGLE_ENABLED`. Remaining: a Google OAuth client and enabling the provider in the hosted project (`supabase/README.md`).
+- [x] **1.5 Profile screen.** Edit display name and photo, with photos in a private bucket. *(FR-01.2)* Also lets users change their password and sign out.
 
 ### Apartments and members
 
-- [ ] **1.6 Apartments and membership.** `apartments` and `apartment_members` tables, membership and role helper functions for RLS, and a function that creates an apartment and makes the creator its admin. Tests prove one apartment's data is invisible from another. *(FR-02.1, FR-02.3, AC-01. Needs D7, D9.)*
-- [ ] **1.7 Join codes.** Hashed codes with expiry, rotation and revocation, and a rate-limited join function that fails safely on a bad code. *(FR-02.2)*
-- [ ] **1.8 My Apartments and New Apartment screens.** List of joined apartments, join by code, and the create form (name, optional location, settlement day, approval window, currency, timezone). *(SRS 3.1)*
-- [ ] **1.9 Apartment shell.** Top bar with the apartment switcher, members and notification entries, the bottom navigation in the order Profile, Add, Expenses, and an empty dashboard. *(SRS 3.2, AC-13)*
-- [ ] **1.10 Members and roles.** Member directory, promote and demote admins, the expense-creation permission, remove a member, leave an apartment, the rule that one admin must remain, and join and leave dates. *(FR-02.4, FR-02.5, FR-02.6, AC-11. Needs D8.)*
-- [ ] **1.11 Apartment settings.** Admin screen for name, location visibility, settlement day, approval window, expense categories and invite codes. *(FR-08.1)*
+- [x] **1.6 Apartments and membership.** `apartments` and `apartment_members` tables, membership and role helper functions for RLS, and a function that creates an apartment and makes the creator its admin. Tests prove one apartment's data is invisible from another. *(FR-02.1, FR-02.3, AC-01)*
+- [x] **1.7 Join codes.** Hashed codes with expiry, rotation and revocation, and a rate-limited join function that fails safely on a bad code. *(FR-02.2)*
+- [x] **1.8 My Apartments and New Apartment screens.** List of joined apartments, join by code, and the create form (name, optional location, settlement day, approval window, currency, timezone). *(SRS 3.1)*
+- [x] **1.9 Apartment shell.** Top bar with the apartment switcher, members and notification entries, the bottom navigation in the order Profile, Add, Expenses, and an empty dashboard. *(SRS 3.2, AC-13)* The Add tab arrives with task 1.17, and the notification entry with task 1.35.
+- [x] **1.10 Members and roles.** Member directory, promote and demote admins, the expense-creation permission, remove a member, leave an apartment, the rule that one admin must remain, and join and leave dates. *(FR-02.4, FR-02.5, FR-02.6, AC-11)*
+- [x] **1.11 Apartment settings.** Admin screen for name, location visibility, settlement day, approval window, expense categories and invite codes. *(FR-08.1)*
 
 ### Ledger core
 
-- [ ] **1.12 Ledger model decision record.** Write down the entities, the ledger entry model, the exact rounding rule for leftover minor units, the status transitions, and how unpaid vendor bills are represented. No code. *(SRS 5.2, 5.3. Needs D2, D5.)*
-- [ ] **1.13 Split arithmetic.** Equal, percentage and fixed splits with excluded members, as a TypeScript function for previews and as a database function that is the authority. Both run the same test cases, starting with the worked examples in SRS 5.1. *(FR-03.4, FR-06.6, AC-03)*
-- [ ] **1.14 Expense and ledger schema.** `expenses`, `expense_payers`, `expense_splits`, `ledger_entries` and `audit_events`, with constraints and RLS. *(SRS 6)*
-- [ ] **1.15 Posting an expense.** One transactional function that checks permission, validates that payers and splits add up, writes the expense, its ledger entries and an audit event, and marks it accepted by default. Supports several payers and unpaid portions. Tests include a restricted member calling the function directly. *(FR-03.1, FR-03.2, FR-03.3, FR-05.1, AC-02, AC-04)*
-- [ ] **1.16 Balance queries.** A user's totals for an apartment (payable, receivable, net, monthly share) and pairwise balances with each member. *(FR-06.1, FR-06.2)*
+- [x] **1.12 Ledger model decision record.** Write down the entities, the ledger entry model, the exact rounding rule for leftover minor units, the status transitions, and how unpaid vendor bills are represented. No code. *(SRS 5.2, 5.3)* See decision record 0003.
+- [x] **1.13 Split arithmetic.** Equal, percentage and fixed splits with excluded members, as a TypeScript function for previews and as a database function that is the authority. Both run the same test cases, starting with the worked examples in SRS 5.1. *(FR-03.4, FR-06.6, AC-03)*
+- [x] **1.14 Expense and ledger schema.** `expenses`, `expense_payers`, `expense_splits`, `ledger_entries` and `audit_events`, with constraints and RLS. *(SRS 6)*
+- [x] **1.15 Posting an expense.** One transactional function that checks permission, validates that payers and splits add up, writes the expense, its ledger entries and an audit event, and marks it accepted by default. Supports several payers and unpaid portions. Tests include a restricted member calling the function directly. *(FR-03.1, FR-03.2, FR-03.3, FR-05.1, AC-02, AC-04)*
+- [x] **1.16 Balance queries.** A user's totals for an apartment (payable, receivable, net, monthly share) and pairwise balances with each member. *(FR-06.1, FR-06.2)*
 
 ### Expenses in the app
 
-- [ ] **1.17 Add expense.** Details, payer editor, split editor and a preview of shares and resulting balances before saving. *(FR-03.1–03.5)*
-- [ ] **1.18 Receipts.** Upload to a private bucket, storage policies, signed URLs and a viewer. *(FR-03.1, AC-12)*
-- [ ] **1.19 Dashboard.** Summary cards and the monthly expense feed with a month selector, pagination and status indicators. *(FR-06.1, SRS 3.2)*
-- [ ] **1.20 Expense detail.** Receipt, split, payers, payment state, due date, status, audit trail and the actions the viewer's role allows. *(FR-03.6)*
-- [ ] **1.21 Editing a posted expense.** Edits create a new version. Corrections to settled records are linked adjustments or reversals. *(FR-03.7)*
-- [ ] **1.22 Member balances and pairwise ledger.** The members directory shows what the viewer owes and is owed by each member. Tapping a member shows their shared expenses, payments, dues and disputes. *(FR-06.2, FR-06.3)*
+- [x] **1.17 Add expense.** Details, payer editor, split editor and a preview of shares and resulting balances before saving. *(FR-03.1–03.5)* Dates are typed as YYYY-MM-DD with Today and Yesterday shortcuts; a native date picker needs a new development build and can follow.
+- [x] **1.18 Receipts.** Upload to a private bucket, storage policies, signed URLs and a viewer. *(FR-03.1, AC-12)* Photos come from the library; taking one with the camera needs a new development build and can follow.
+- [x] **1.19 Dashboard.** Summary cards and the monthly expense feed with a month selector, pagination and status indicators. *(FR-06.1, SRS 3.2)*
+- [x] **1.20 Expense detail.** Receipt, split, payers, payment state, due date, status, audit trail and the actions the viewer's role allows. *(FR-03.6)*
+- [x] **1.21 Editing a posted expense.** Edits create a new version. Corrections to settled records are linked adjustments or reversals. *(FR-03.7)*
+- [x] **1.22 Member balances and pairwise ledger.** The members directory shows what the viewer owes and is owed by each member. Tapping a member shows their shared expenses, payments, dues and disputes. *(FR-06.2, FR-06.3)* Done for expenses; disputes (1.25), shared receiving accounts (1.26) and payments (1.30) are added to the pairwise ledger in their own tasks.
 
 ### Disputes
 
-- [ ] **1.23 Dispute schema and functions.** Decline with a reason, request an adjustment with a proposed share, creator accepts or rejects, and the affected shares are held while uncontested amounts stay payable. Every step is recorded. *(FR-05.2, FR-05.3, FR-05.4, FR-05.7, AC-06. Needs D4.)*
-- [ ] **1.24 Objection window.** A scheduled, idempotent job that finalizes expenses when the window closes, in the apartment's timezone. Late objections open a new adjustment case. Includes the optional approval mode. *(FR-05.5, FR-05.6, FR-03.8, AC-06. Needs D1.)*
-- [ ] **1.25 Dispute screens.** Decline and adjustment forms, dispute detail with its history, the creator's response, and dispute status on expense screens. *(FR-05.2, FR-05.3)*
+- [x] **1.23 Dispute schema and functions.** Decline with a reason, request an adjustment with a proposed share, creator accepts or rejects, and the affected shares are held while uncontested amounts stay payable. Every step is recorded. *(FR-05.2, FR-05.3, FR-05.4, FR-05.7, AC-06)* See [decision 0004](decisions/0004-expense-disputes.md).
+- [x] **1.24 Objection window.** A scheduled, idempotent job that finalizes expenses when the window closes, in the apartment's timezone. Late objections open a new adjustment case. *(FR-05.5, FR-05.6, AC-06)*
+- [x] **1.25 Dispute screens.** Decline and adjustment forms, dispute detail with its history, the creator's response, the admin's decision, and dispute status on expense screens. Includes evidence files on a dispute, stored privately like receipts. *(FR-05.2, FR-05.3, FR-05.7)* In the pairwise ledger, shared expenses that are disputed show it.
 
 ### Payments
 
-- [ ] **1.26 Receiving accounts.** Accounts a user can be paid into, private by default and visible to flatmates only when shared, with copy to clipboard. *(FR-01.3, FR-01.4, AC-12. Needs D6.)*
-- [ ] **1.27 Recording a payment.** A function that records a payment with an idempotency key, supports partial amounts, allocates it to specific obligations, and applies a provisional credit. *(FR-07.1, FR-07.3, FR-07.4, FR-07.7, AC-07, AC-09. Needs D3.)*
-- [ ] **1.28 Payment objections and finalization.** The recipient can decline within the window, which marks the payment disputed and reverses the provisional credit while keeping the evidence. With no objection, a scheduled job finalizes it as confirmed by app policy. *(FR-07.5, FR-07.6, FR-07.8, AC-07, AC-08)*
-- [ ] **1.29 Net-off.** Offset reciprocal dues between two members, showing exactly which obligations are offset and never counting anything twice. *(FR-06.4, AC-09)*
-- [ ] **1.30 Pay flow screens.** Start from an expense or a member's ledger, choose gross or net and the amount, see the recipient's shared accounts, mark as paid with an optional reference and proof, and view the payment with its status. *(FR-07.1, FR-07.2, FR-07.3, FR-07.8)*
+- [x] **1.26 Receiving accounts.** Accounts a user can be paid into, private by default and visible to flatmates only when shared, with copy to clipboard. *(FR-01.3, FR-01.4, AC-12)* Also show the recipient's shared accounts on the pay screen (1.30).
+- [x] **1.27 Recording a payment.** A function that records a payment with an idempotency key, supports partial amounts, allocates it to specific obligations, and applies a provisional credit. *(FR-07.1, FR-07.3, FR-07.4, FR-07.7, AC-07, AC-09)* Allocation is derived oldest first, as decision 0003 requires; a payment's proof photo comes with the pay flow (1.30).
+- [x] **1.28 Payment objections and finalization.** The recipient can decline within the window, which marks the payment disputed and reverses the provisional credit while keeping the evidence. With no objection, a scheduled job finalizes it as confirmed by app policy. *(FR-07.5, FR-07.6, FR-07.8, AC-07, AC-08)* See [decision 0005](decisions/0005-payment-objections.md).
+- [x] **1.29 Net-off.** Offset reciprocal dues between two members, showing exactly which obligations are offset and never counting anything twice. *(FR-06.4, AC-09)* The database side; choosing net-off in the app is part of the pay flow (1.30).
+- [x] **1.30 Pay flow screens.** Start from an expense or a member's ledger, choose gross or net and the amount, see the recipient's shared accounts, mark as paid with an optional reference and proof, and view the payment with its status. *(FR-07.1, FR-07.2, FR-07.3, FR-07.8)*
 
 ### Settlement
 
-- [ ] **1.31 Settlement calculation and preview.** A function that computes balances from expenses, payments, offsets and adjustments, excludes disputed amounts, and returns a preview with the source obligations. *(FR-08.2, FR-08.3, AC-10)*
-- [ ] **1.32 Settlement cycle job.** Opens a cycle on each apartment's settlement day in its timezone, handles short months, closes only reconciled items and carries the rest forward. *(FR-08.4, FR-08.5, FR-08.6, FR-09.4, AC-10)*
-- [ ] **1.33 Settlement screens.** Overview, preview, payment allocation, history and carried-forward balances. *(FR-08.3, FR-08.4)*
-- [ ] **1.34 Member exit.** When a member leaves or is removed, show their final balance and an exit settlement, and keep their history auditable. *(FR-02.4, AC-11)*
+- [x] **1.31 Settlement calculation and preview.** A function that computes balances from expenses, payments, offsets and adjustments, excludes disputed amounts, and returns a preview with the source obligations. *(FR-08.2, FR-08.3, AC-10)* Includes adjustment entries, so a late objection to a final payment can be corrected without voiding it (decision 0005). See [decision 0006](decisions/0006-settlement-periods.md).
+- [x] **1.32 Settlement cycle job.** Opens a cycle on each apartment's settlement day in its timezone, handles short months, closes only reconciled items and carries the rest forward. *(FR-08.4, FR-08.5, FR-08.6, FR-09.4, AC-10)* Once a period is closed, editing or voiding an expense dated in it, or moving an expense into it, must be refused or recorded as an adjustment in the open period (FR-03.7).
+- [x] **1.33 Settlement screens.** Overview, preview, payment allocation, history and carried-forward balances. *(FR-08.3, FR-08.4)*
+- [x] **1.34 Member exit.** When a member leaves or is removed, show their final balance and an exit settlement, and keep their history auditable. *(FR-02.4, AC-11)*
+
+### Offline reading and live sync
+
+These follow [decision 0007](decisions/0007-offline-reading-and-live-sync.md). The server stays the only authority. Every change another member or another device can see sends an event through Realtime, the app refreshes on events instead of polling, and it keeps an encrypted copy of what it has already loaded for offline reading.
+
+- [x] **1.35 Network and app lifecycle.** Feed React Query's `onlineManager` from `@react-native-community/netinfo` and its `focusManager` from `AppState`, so queries pause offline and refetch on reconnect and when the app returns to the foreground. Set the query client defaults: no retries for errors that will not change (permission and validation errors), and mutations that never wait in a queue while offline. Add a `useIsOnline` hook and an offline banner that shows when the data was last updated. Needs a new development build. *(SRS section 8: offline reading)* NetInfo is a native module, so the development build has to be rebuilt before this runs on a device. The banner is on the dashboard; the other screens get it in 1.37.
+- [x] **1.36 Saved cache.** Save the query cache with `@tanstack/react-query-persist-client` to `expo-sqlite/kv-store`, encrypted like the session (key in SecureStore). Store it per user, delete it on sign-out, discard it when its version tag changes, keep it up to 7 days with `gcTime` to match, and leave out failed queries and signed image links. Restore it behind the splash screen before the first signed-in screen renders. Tests: encryption round trip, a second user never sees the first user's data, sign-out deletes it, excluded queries are not saved. *(SRS section 8: offline reading)* `expo-sqlite` is a native module: rebuild the development build. A restore that takes more than 5 seconds is abandoned, so a stuck keychain cannot hold the splash screen.
+- [x] **1.37 Offline states on every screen.** Every screen that loads data shows its saved data with the offline banner when there is no connection, an offline state (not an error) when it was never loaded, and keeps its content when a refresh fails. Every action that writes is disabled offline with a reason. Private photos show "Available when online". Built as shared pieces so new screens get it for free: `Screen` shows the banner, `OnlineButton` disables writes, `LoadingRows` and `PendingSkeleton` handle loads that wait, and `loadingError` keeps saved content on a failed refresh. Covers the apartment list, dashboard, expense detail and edit, pair ledger, payments, disputes, settlement, members, settings, profile and receiving accounts, with tests per feature. *(SRS section 7, section 8)*
+- [x] **1.38 Change events for apartment data.** Migration: `private.emit_change(topic, kind)` sending `{ "kind": ... }` with `realtime.send`, inside its own exception block so a failed send never rolls back the write; an `AFTER INSERT` trigger on `audit_events` that emits to `apartment:<id>`, and for membership changes also to the member's `user:<id>`; RLS policies on `realtime.messages` so only active members receive an apartment topic and only the user receives their own. Make `add_payment_proof` write `audit_events`. pgTAP tests: a write succeeds when the send fails, a non-member and a former member cannot receive the apartment topic, nobody else receives a user topic, payloads have no ids or amounts. Turn off "Allow public access" in the hosted project's Realtime settings and document it in `supabase/README.md`. *(SRS section 8: freshness)* Built with one event per apartment and kind per statement, so a job finalizing many expenses sends one. Switching the hosted setting off is an owner step, listed in 1.42.
+- [x] **1.39 Change events for personal data.** Triggers on `profiles`, `receiving_accounts` and `receiving_account_shares` emit `profile` or `account` to the owner's user topic and to every apartment that can see the change. pgTAP tests for each. *(SRS section 8: freshness)*
+- [x] **1.40 Event coverage test.** A pgTAP test that fails when a `private` function writes to a `public` table without writing `audit_events` or calling `private.emit_change`, unless it is on an allow-list of helpers whose callers do (each with its reason), and when a `public` table that client roles can write has no change trigger. Fix anything it finds. *(Decision 0007)*
+- [x] **1.41 Event router in the app.** `src/lib/sync/` joins the user topic while signed in and the open apartment's topic while it is open (private channels, after `supabase.realtime.setAuth()`), maps every event kind to the cache keys it invalidates in one exhaustive, typed table, catches up by invalidating everything under a topic whenever its channel (re)subscribes or the app returns to the foreground, and leaves channels on sign-out or when the user topic reports a removal. Features declare their keys and never subscribe themselves. Tests with a mocked channel, including that every kind is mapped. *(SRS section 8: freshness)* Built as `src/lib/realtime-topic.ts` (the channel) and `src/features/sync/` (the map and hooks), since the map uses each feature's cache keys and `lib/` must not depend on features. Catch-up on returning to the foreground comes from React Query's focus refetch (1.35).
+- [ ] **1.42 Sync check on a device.** With two accounts on two devices: an expense, payment, dispute, member change, profile rename and account share on one appear on the other within seconds; a cron finalization appears without a refresh; the same user on a second device sees their own changes; in airplane mode the app opens with saved data and the banner; reconnecting refreshes it; signing out deletes the saved cache; a removed member's app drops the apartment. Record the results in the pull request. *(Owner: two devices or a device and an emulator.)* First: push the two change-event migrations (`20261114101115`, `20261114101350`) to the hosted development project with `db push --remote` after a `--dry-run`, turn off **Allow public access** in its Realtime settings, and install a new development build, since NetInfo and expo-sqlite are native.
 
 ### Notifications and sign-off
 
-- [ ] **1.35 Notification foundation.** `notifications` table, in-app inbox, push token registration, and push delivery for expenses, payments, disputes and membership changes. Opening a notification goes to the record and rechecks permission. *(FR-09.1, FR-09.3)*
-- [ ] **1.36 MVP acceptance pass.** Walk through AC-01 to AC-13 on an Android device, review every RLS policy, and check loading, empty, error and offline states on every screen. Fix what fails.
+- [x] **1.43 Notification foundation.** `notifications` table, in-app inbox, push token registration, and push delivery for expenses, payments, disputes and membership changes. Opening a notification goes to the record and rechecks permission. *(FR-09.1, FR-09.3)* Built: notifications from audit events (who is told is in `private.notification_recipients`), generic lock-screen text, the inbox and bell, device registration, and push through the `deliver-push` Edge Function, tested end to end locally up to Expo's answer. Setup in `docs/NOTIFICATIONS.md`.
+- [ ] **1.43.1 Push on a device.** Set up Firebase, the FCM key in EAS, the `GOOGLE_SERVICES_JSON` file variable, the Edge Function secret and the Vault secrets as in `docs/NOTIFICATIONS.md`, rebuild, and check that a flatmate's new expense arrives as a push that opens the expense. *(Owner: Firebase and Expo accounts, a device.)*
+- [x] **1.43.2 Unread dots instead of the inbox.** Remove the bell and the inbox. A red dot marks each place with an unread notification, and opening it marks it read. *(FR-09.3)* See [decision 0008](decisions/0008-unread-dots-instead-of-an-inbox.md).
+- [x] **1.43.3 Former members and invites.** Admins manage a person from their page, send invites from the members screen, remove a former member from the list (records stay), and invite a former member back. *(FR-02.2, FR-02.4)* See [decision 0009](decisions/0009-former-members-hiding-and-inviting-back.md).
+- [x] **1.43.4 Email codes.** Custom SMTP through Resend, and 6-digit code templates for sign-up, password reset and email change, pushed to the hosted project without its local-only settings (`supabase/README.md`). Sign-in links use PKCE with SHA-256 through `expo-crypto`. *(FR-01.1)*
+- [x] **1.43.5 Profile screen.** One page instead of cards: the photo opens a sheet to change or remove it, the name saves itself, email changes with a code from both addresses, the password changes in its own screen, and sign-out sits in the header, confirmed in a sheet. *(FR-01.1, FR-01.2)*
+- [x] **1.43.6 Bank and wallet accounts.** A plain list showing the owner the full numbers, swiped right to edit and left to delete; a details screen with Edit, Delete, Make preferred and the payments made into the account. Recording a payment can name the account it went into, kept as a snapshot. *(FR-01.3, FR-01.4, FR-07.3)*
+- [x] **1.43.7 Joining with approval.** A join code sends a request; any admin lets the person in or declines from the members screen; the person sees and can cancel pending requests; both sides are notified. The code field has Paste and shows errors only after Join. *(FR-02.2)*
+- [x] **1.43.8 Apartment setup and navigation.** Creating picks the currency from every currency with its symbol and a search, takes the time zone from the phone, and shows a location when one is given; editing has the same fields with the currency locked. The app opens in the apartment last opened on the device; My Apartments opens from the top bar's title, with a settings gear for admins. Icon-only bottom bars, also before joining an apartment. *(FR-02.1, SRS 3.1 and 3.2, AC-13)*
+- [x] **1.43.9 Expense form.** Dates from a calendar; any number of receipts, from the camera or the gallery, as the fourth field; who will pay an unpaid bill, told and suggested as the payer; what an Other expense was; no due date once paid; no preview; notes last. *(FR-03.1, FR-03.2, FR-03.5)*
+- [x] **1.43.10 Keyboard and failed loads.** Every screen makes room for the keyboard on Android and scrolls the field being typed in above it; a failed load is retried by tapping it.
+- [ ] **1.44 MVP acceptance pass.** Walk through AC-01 to AC-13 on an Android device, review every RLS policy and the Realtime topic policy, and check loading, empty, error and offline states on every screen. Fix what fails.
 
 ## Phase 2: Automation and reporting
 
 - [ ] **2.1 Recurring templates.** Template and split-rule tables that only admins can manage. *(FR-04.1, FR-04.4, AC-02)*
 - [ ] **2.2 Fixed recurring charges.** A scheduled job that creates exactly one expense per template and billing period. *(FR-04.2, FR-04.6, AC-05)*
 - [ ] **2.3 Variable recurring bills.** On the expected day, prompt admins for the real amount, optional proof and due date. No charge exists until an admin enters it. *(FR-04.3, AC-05)*
-- [ ] **2.4 Recurring screens.** Manage templates, override the split for one month, and apply template changes to future months only. *(FR-04.4, FR-04.5)*
+- [ ] **2.4 Recurring screens.** In a fourth tab of the apartment's settings, "Repeatable expenses", after General settings, Manage members and Expense control, for admins only: add and manage templates, override the split for one month, and apply template changes to future months only. The Add (+) flow stays for one-time expenses. *(FR-04.1, FR-04.4, FR-04.5)*
 - [ ] **2.5 Reminders and notification preferences.** Due-date and settlement reminders on a configurable schedule, per-user preferences, and no duplicate reminders. *(FR-09.2, FR-09.4, FR-01.2)*
+- [ ] **2.5.1 Push receipts.** Store Expo's ticket ids and check their receipts about 15 minutes later, deleting tokens Expo reports as `DeviceNotRegistered` there and making credential errors (`InvalidCredentials`, `MismatchSenderId`) visible to maintainers. Expo says tickets alone do not confirm delivery. *(FR-09)*
 - [ ] **2.6 Search, filters and comparison.** Filter expenses by month, member, category, amount and status, and compare spending between months. *(FR-10.1)*
 - [ ] **2.7 PDF statements.** Monthly per-user statements and apartment reports with gross, net, outstanding, disputed and carried-forward amounts. *(FR-10.2, AC-14)*
 - [ ] **2.8 Quick-add and budgets.** Templates for common expenses, and budget caps with alerts. *(FR-10.3)*
@@ -133,16 +159,20 @@ These come from section 12 of the SRS. Each one blocks the tasks listed next to 
 - [ ] **3.1 Security deposits.** Track deposits, refunds and exit adjustments. *(FR-10.4)*
 - [ ] **3.2 Shared inventory.** Items, ownership and maintenance costs. *(FR-10.5)*
 - [ ] **3.3 Rooms and occupancy.** Room-based allocations and splits driven by who lived where and when. *(FR-10.6)*
-- [ ] **3.4 Offline drafts.** Save expense drafts offline, review them on reconnect, and submit without duplicates. *(FR-10.7)*
+- [ ] **3.4 Offline drafts.** Save expense drafts offline, review them on reconnect, and submit without duplicates. *(FR-10.7)* Builds on the saved cache and network detection from 1.35 and 1.36; drafts are kept apart from the cache and are never treated as saved records.
 - [ ] **3.5 Debt simplification.** Suggest fewer transfers across the group. The user applies a suggestion explicitly, and the underlying ledger is preserved. *(FR-06.5)*
 
 ## Phase 4: Release
 
 - [ ] **4.1 Marketing website.** Initialize the Next.js project in `web/` and build the landing page with store links.
 - [ ] **4.2 Privacy policy and terms.** Publish both on the website. The stores require a privacy policy link. *(Owner: the content must be approved by the owner.)*
-- [ ] **4.3 Production environment.** Production Supabase project, secrets, backups with a tested restore, and written deployment and rollback steps for migrations.
+- [ ] **4.3 Production environment.** Production Supabase project, secrets, backups with a tested restore, and written deployment and rollback steps for migrations. Turn off public Realtime access and check the plan's Realtime connection and message limits against expected usage (decision 0007).
 - [ ] **4.4 Error reporting and monitoring.** Crashes and failures in scheduled jobs, financial functions and notification delivery are visible to maintainers.
 - [ ] **4.5 Quality pass.** Screen reader labels, font scaling and contrast, plus performance of the dashboard and add-expense flows on a mid-range Android phone.
-- [ ] **4.6 Android release.** Device testing, store listing, data safety form and submission to Google Play. *(Owner: Google Play developer account.)*
-- [ ] **4.7 iOS release.** Device testing, TestFlight and submission to the App Store. *(Owner: Apple developer account.)*
+- [ ] **4.6 Android release.** Device testing, store listing, data safety form and submission to Google Play. *(Needs the open part of D11. Owner: Google Play developer account.)*
+- [ ] **4.7 iOS release.** Device testing, TestFlight and submission to the App Store. *(Needs the open part of D11. Owner: Apple developer account.)*
 - [ ] **4.8 Open-source launch.** Confirm the licence, add the Code of Conduct contact, enable private vulnerability reporting, write the self-hosting guide, and tag the first release. *(Needs D10. Owner.)*
+
+## Deferred
+
+- **Optional approval mode** (FR-03.8). Not part of the MVP (decision D1). Reconsider after release.

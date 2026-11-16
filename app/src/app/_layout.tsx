@@ -1,13 +1,26 @@
 import '@/global.css';
 
 import { QueryClientProvider } from '@tanstack/react-query';
-import Stack from 'expo-router/stack';
+import * as SplashScreen from 'expo-splash-screen';
+import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import { StatusBar } from 'expo-status-bar';
-import { HeroUINativeProvider } from 'heroui-native';
-import { StyleSheet } from 'react-native';
+import { HeroUINativeProvider, useThemeColor } from 'heroui-native';
+import { type ReactNode, useMemo } from 'react';
+import { StyleSheet, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { RootNavigator } from '@/features/auth/components/root-navigator';
+import { SessionProvider } from '@/features/auth/session-provider';
+import { showNotificationsInForeground } from '@/features/notifications/push';
+import { connectQueryClientToDevice } from '@/lib/network';
 import { queryClient } from '@/lib/query-client';
+
+// Keep the splash screen up until the stored session has been read, so the
+// sign-in screen never flashes for someone who is already signed in.
+SplashScreen.preventAutoHideAsync();
+
+connectQueryClientToDevice();
+showNotificationsInForeground();
 
 export default function RootLayout() {
   return (
@@ -15,12 +28,44 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.root}>
       <QueryClientProvider client={queryClient}>
         <HeroUINativeProvider>
-          <Stack screenOptions={{ headerShown: false }} />
-          <StatusBar style="auto" />
+          <NavigationTheme>
+            <SessionProvider>
+              <RootNavigator />
+              <StatusBar style="auto" />
+            </SessionProvider>
+          </NavigationTheme>
         </HeroUINativeProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );
+}
+
+/** Gives navigation headers and backgrounds the HeroUI theme colours. */
+function NavigationTheme({ children }: { children: ReactNode }) {
+  const isDark = useColorScheme() === 'dark';
+  const [background, foreground, accent, border] = useThemeColor([
+    'background',
+    'foreground',
+    'accent',
+    'border',
+  ]);
+
+  const theme = useMemo(() => {
+    const base = isDark ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        background,
+        card: background,
+        text: foreground,
+        primary: accent,
+        border,
+      },
+    };
+  }, [isDark, background, foreground, accent, border]);
+
+  return <ThemeProvider value={theme}>{children}</ThemeProvider>;
 }
 
 const styles = StyleSheet.create({

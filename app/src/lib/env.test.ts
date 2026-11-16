@@ -7,7 +7,17 @@ const valid = {
 
 describe('parseEnv', () => {
   it('returns the configuration when every variable is valid', () => {
-    expect(parseEnv(valid)).toEqual(valid);
+    expect(parseEnv(valid)).toEqual({ ...valid, EXPO_PUBLIC_AUTH_GOOGLE_ENABLED: false });
+  });
+
+  it('turns on Google sign-in only for the exact value "true"', () => {
+    expect(
+      parseEnv({ ...valid, EXPO_PUBLIC_AUTH_GOOGLE_ENABLED: 'true' })
+        .EXPO_PUBLIC_AUTH_GOOGLE_ENABLED,
+    ).toBe(true);
+    expect(() => parseEnv({ ...valid, EXPO_PUBLIC_AUTH_GOOGLE_ENABLED: 'yes' })).toThrow(
+      /EXPO_PUBLIC_AUTH_GOOGLE_ENABLED/,
+    );
   });
 
   it('names a missing variable', () => {

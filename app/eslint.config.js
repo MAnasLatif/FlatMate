@@ -7,6 +7,6 @@ module.exports = defineConfig([
   // Turns off the lint rules that would fight Prettier's formatting.
   prettierConfig,
   {
-    ignores: ['dist/*', '.expo/*', 'src/uniwind-types.d.ts'],
+    ignores: ['dist/*', '.expo/*', 'src/uniwind-types.d.ts', 'src/types/database.ts'],
   },
 ]);

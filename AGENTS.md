@@ -41,7 +41,7 @@ The repository started as a scaffold. A folder without a `package.json` (or, for
 - **Website:** Next.js with TypeScript.
 - **Package manager:** npm, with the lockfile committed.
 
-Versions are whatever is installed, not whatever you remember. Before using a framework or library API, check the installed version in `package.json` and read the official documentation for that version. The app is on Expo SDK 58 with HeroUI Native 1.x. That pair installs cleanly and bundles for Android, but it has not been run on a device yet (SRS section 12, item 12), so confirm a component exists and works before building on it.
+Versions are whatever is installed, not whatever you remember. Before using a framework or library API, check the installed version in `package.json` and read the official documentation for that version. The app is on Expo SDK 58 with HeroUI Native 1.x, and runs on an Android device ([decision 0002](docs/decisions/0002-heroui-native-on-expo-sdk-58.md)). Individual HeroUI components have not been exercised on a device yet, so confirm a component exists and works before building on it.
 
 ## Roles
 
@@ -224,6 +224,8 @@ Schema changes happen only through versioned migration files in `supabase/migrat
 Keep contracts consistent and predictable across RPC functions and Edge Functions: validated inputs, structured errors, meaningful status codes. Expose a deliberate shape to clients instead of leaking internal table structure. Paginate anything that can grow, such as expense feeds, ledgers and notifications. Use transactions where several writes must succeed together, and think about concurrent writers before assuming a sequence is safe. Calls to external services need timeouts, sensible retries and a defined behavior when the service is down.
 
 Index for the queries the app really makes, and optimize a query once it is shown to be slow.
+
+The app is event-driven ([decision 0007](docs/decisions/0007-offline-reading-and-live-sync.md)). Every write that changes data another member, or the same user on another device, can see must send a change event, either by writing `audit_events` in the same transaction or through `private.emit_change`, and the app's event router (`app/src/features/sync/changes.ts`) must map the new event kind to the cache keys it refreshes. Events carry only the kind of record that changed, never ids, amounts or personal details. The app never polls.
 
 ### Performance
 

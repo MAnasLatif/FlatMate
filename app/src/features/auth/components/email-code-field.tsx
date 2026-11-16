@@ -1,0 +1,50 @@
+import { FieldError, InputOTP, Label, TextField } from 'heroui-native';
+
+import { EMAIL_CODE_LENGTH } from '../schemas';
+
+type EmailCodeFieldProps = {
+  value: string;
+  onChange: (code: string) => void;
+  error?: string;
+  /** Which email the code came from, when a screen asks for more than one. */
+  label?: string;
+};
+
+/** The 6-digit code from a confirmation or password reset email. */
+export function EmailCodeField({
+  value,
+  onChange,
+  error,
+  label = 'Code from the email',
+}: EmailCodeFieldProps) {
+  return (
+    <TextField isInvalid={error !== undefined}>
+      <Label>{label}</Label>
+      {/* Centred under the label at their usual size, not left with a gap on the right. */}
+      <InputOTP
+        className="self-center"
+        maxLength={EMAIL_CODE_LENGTH}
+        value={value}
+        onChange={onChange}
+        inputMode="numeric"
+        isInvalid={error !== undefined}
+        textInputProps={{
+          textContentType: 'oneTimeCode',
+          autoComplete: 'one-time-code',
+          accessibilityLabel: label,
+        }}
+      >
+        <InputOTP.Group>
+          {({ slots }) => (
+            <>
+              {slots.map((slot) => (
+                <InputOTP.Slot key={slot.index} index={slot.index} />
+              ))}
+            </>
+          )}
+        </InputOTP.Group>
+      </InputOTP>
+      <FieldError>{error}</FieldError>
+    </TextField>
+  );
+}
