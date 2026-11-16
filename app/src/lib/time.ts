@@ -54,27 +54,6 @@ export function formatDateTime(value: number | Date): string {
   });
 }
 
-/**
- * How long is left until a moment, for a countdown: "6 days, 4 hours left",
- * "3 hours, 12 minutes left" or "12 minutes left". Under a minute counts as
- * one minute, and a moment already past as none.
- */
-export function formatTimeLeft(until: number | Date, now: number | Date = Date.now()): string {
-  const minutes = Math.ceil((new Date(until).getTime() - new Date(now).getTime()) / 60_000);
-  if (minutes <= 0) return 'Expired';
-  const days = Math.floor(minutes / (24 * 60));
-  const hours = Math.floor((minutes % (24 * 60)) / 60);
-  const mins = minutes % 60;
-  const unit = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
-  if (days > 0) {
-    return `${hours > 0 ? `${unit(days, 'day')}, ${unit(hours, 'hour')}` : unit(days, 'day')} left`;
-  }
-  if (hours > 0) {
-    return `${mins > 0 ? `${unit(hours, 'hour')}, ${unit(mins, 'minute')}` : unit(hours, 'hour')} left`;
-  }
-  return `${unit(mins, 'minute')} left`;
-}
-
 /** Today's date in the given IANA time zone, as YYYY-MM-DD. */
 export function todayInTimeZone(timeZone: string, now: Date = new Date()): string {
   try {

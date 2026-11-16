@@ -1,5 +1,4 @@
 import {
-  formatTimeLeft,
   addDays,
   addMonths,
   deviceTimeZone,
@@ -96,25 +95,5 @@ describe('monthGrid', () => {
 
   it('handles February in a leap year', () => {
     expect(monthGrid('2028-02-01').filter(Boolean).at(-1)).toBe('2028-02-29');
-  });
-});
-
-describe('formatTimeLeft', () => {
-  const now = Date.UTC(2026, 10, 17, 10, 0);
-  const later = (minutes: number) => now + minutes * 60_000;
-
-  it('counts days and hours, then hours and minutes, then minutes', () => {
-    expect(formatTimeLeft(later(7 * 24 * 60), now)).toBe('7 days left');
-    expect(formatTimeLeft(later(6 * 24 * 60 + 4 * 60 + 30), now)).toBe('6 days, 4 hours left');
-    expect(formatTimeLeft(later(24 * 60 + 60), now)).toBe('1 day, 1 hour left');
-    expect(formatTimeLeft(later(3 * 60 + 12), now)).toBe('3 hours, 12 minutes left');
-    expect(formatTimeLeft(later(60), now)).toBe('1 hour left');
-    expect(formatTimeLeft(later(12), now)).toBe('12 minutes left');
-  });
-
-  it('rounds the last seconds up to a minute, and says when it has passed', () => {
-    expect(formatTimeLeft(now + 5_000, now)).toBe('1 minute left');
-    expect(formatTimeLeft(now, now)).toBe('Expired');
-    expect(formatTimeLeft(now - 60_000, now)).toBe('Expired');
   });
 });

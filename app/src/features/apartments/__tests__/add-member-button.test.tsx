@@ -1,10 +1,10 @@
-import { screen, userEvent } from '@testing-library/react-native';
+import { screen, userEvent, waitFor } from '@testing-library/react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Share } from 'react-native';
 
 import { renderWithProviders } from '@/test/render';
 
-import { createInvite, sendInviteEmail } from '../api';
+import { fetchJoinCode, sendInviteEmail } from '../api';
 import { useState } from 'react';
 
 import { AddMemberButton, AddMemberSheet } from '../components/add-member-button';
@@ -13,13 +13,13 @@ jest.mock('@/lib/supabase', () => ({ supabase: {} }));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(() => Promise.resolve(true)) }));
 jest.mock('../api', () => ({
   ...jest.requireActual('../api'),
-  createInvite: jest.fn(),
+  fetchJoinCode: jest.fn(),
   sendInviteEmail: jest.fn(),
 }));
 
 const APARTMENT = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const sendEmail = jest.mocked(sendInviteEmail);
-const create = jest.mocked(createInvite);
+const joinCode = jest.mocked(fetchJoinCode);
 
 function Harness() {
   const [isOpen, setOpen] = useState(false);
@@ -46,7 +46,7 @@ async function openSheet() {
 beforeEach(() => {
   jest.clearAllMocks();
   sendEmail.mockResolvedValue(undefined);
-  create.mockResolvedValue('ABCD-2345');
+  joinCode.mockResolvedValue('ABCD-2345');
 });
 
 it('emails an invite to the address typed, trimmed and in lower case', async () => {
@@ -83,18 +83,18 @@ it('says why an email was refused', async () => {
   ).toBeOnTheScreen();
 });
 
-it('copies and shares one code, created the first time it is needed', async () => {
+it("copies and shares the apartment's one code", async () => {
   const share = jest
     .spyOn(Share, 'share')
     .mockResolvedValue({ action: 'sharedAction', activityType: undefined });
   const user = await openSheet();
-  const message = 'Join Flat 4B on FlatMate with this code: ABCD-2345. It works for 7 days.';
+  const message = 'Join Flat 4B on FlatMate with this code: ABCD-2345';
 
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Copy invite' })).toBeEnabled());
   await user.press(screen.getByRole('button', { name: 'Copy invite' }));
   expect(Clipboard.setStringAsync).toHaveBeenCalledWith(message);
   expect(await screen.findByText('Copied')).toBeOnTheScreen();
 
   await user.press(screen.getByRole('button', { name: 'Share invite' }));
   expect(share).toHaveBeenCalledWith({ message });
-  expect(create).toHaveBeenCalledTimes(1);
 });

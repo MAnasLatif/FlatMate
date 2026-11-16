@@ -5,7 +5,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { Button, Card, PressableFeedback, Tabs, Typography, useThemeColor } from 'heroui-native';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Alert, View } from 'react-native';
+import { Alert, Share, View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
@@ -21,14 +21,15 @@ import { AddMemberSheet } from '@/features/apartments/components/add-member-butt
 import { CategorySheet } from '@/features/apartments/components/category-sheet';
 import { JoinRequests } from '@/features/apartments/components/join-requests';
 import { ManageMembers } from '@/features/apartments/components/manage-members';
+import { joinCodeMessage } from '@/features/apartments/join-code';
 import { APARTMENT_ERROR_MESSAGES } from '@/features/apartments/errors';
 import {
-  useActiveInvites,
   useApartment,
   useApartmentId,
   useCategories,
   useCategoryActions,
-  useInviteActions,
+  useJoinCode,
+  useJoinCodeActions,
   useMyMembership,
   useUpdateApartmentSettings,
 } from '@/features/apartments/hooks';
@@ -37,8 +38,6 @@ import { useMarkSeen } from '@/features/notifications/hooks';
 import { unreadMatches } from '@/features/notifications/unread';
 import { RecurringSection } from '@/features/recurring/components/recurring-section';
 import { userErrorMessage } from '@/lib/errors';
-import { formatTimeLeft } from '@/lib/time';
-import { useNow } from '@/lib/use-now';
 
 export default function ApartmentSettingsScreen() {
   const apartmentId = useApartmentId();
@@ -167,7 +166,7 @@ function MembersTab({
       <OnlineButton variant="secondary" onPress={() => setAddingMember(true)}>
         Add member
       </OnlineButton>
-      <InvitesSection apartmentId={apartmentId} />
+      <JoinCodeSection apartmentId={apartmentId} apartmentName={apartmentName} />
       <AddMemberSheet
         apartmentId={apartmentId}
         apartmentName={apartmentName}
@@ -224,99 +223,98 @@ function DetailsSection({ apartment }: { apartment: Apartment }) {
 }
 
 /**
- * Join codes that still work, each a card with the code, the time left, and
- * buttons to copy or delete it. A code leaves the list when it expires, without
- * a refresh. Codes are created and shared from Add member, so nothing shows
- * while none works.
+ * The apartment's one join code: copy or share it, or change it so the old
+ * one stops working. It does not expire, and every request to join still
+ * needs an admin's approval.
  */
-function InvitesSection({ apartmentId }: { apartmentId: string }) {
-  const invites = useActiveInvites(apartmentId, true);
-  const [accent, danger, success] = useThemeColor(['accent', 'danger', 'success']);
-  const { revoke } = useInviteActions(apartmentId);
-  // Ticks so the time left counts down and an expired code drops out.
-  const now = useNow(30_000);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+function JoinCodeSection({
+  apartmentId,
+  apartmentName,
+}: {
+  apartmentId: string;
+  apartmentName: string;
+}) {
+  const joinCode = useJoinCode(apartmentId, true);
+  const { change } = useJoinCodeActions(apartmentId);
+  const [accent, success] = useThemeColor(['accent', 'success']);
+  const [copied, setCopied] = useState(false);
+  const code = joinCode.data;
 
-  const confirmRevoke = (inviteId: string) => {
-    Alert.alert('Delete this code?', 'Nobody will be able to join with it any more.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => revoke.mutate(inviteId) },
-    ]);
-  };
-
-  const working = (invites.data ?? []).filter(
-    (invite) => new Date(invite.expires_at).getTime() > now,
-  );
-  if (working.length === 0) return null;
+  const confirmChange = () =>
+    Alert.alert(
+      'Change the join code?',
+      'The current code stops working. Anyone you shared it with will need the new one.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Change code',
+          style: 'destructive',
+          onPress: () => change.mutate(undefined, { onSuccess: () => setCopied(false) }),
+        },
+      ],
+    );
 
   return (
-    <View className="gap-3">
-      <View className="gap-1">
-        <Typography.Heading type="h6">Join codes</Typography.Heading>
-        <Typography.Paragraph type="body-xs" color="muted">
-          Codes that still work. Delete one to stop anyone joining with it.
-        </Typography.Paragraph>
-      </View>
-      <FormAlert
-        message={
-          revoke.error
-            ? userErrorMessage(revoke.error, 'Could not delete the code.', APARTMENT_ERROR_MESSAGES)
-            : null
-        }
-      />
-      {working.map((invite) => {
-        const timeLeft = formatTimeLeft(new Date(invite.expires_at), now);
-        return (
-          <Card key={invite.id}>
-            <Card.Body className="flex-row items-center gap-1">
-              <View className="flex-1 gap-1">
-                {invite.code ? (
-                  <Typography.Heading type="h4" selectable>
-                    {invite.code}
-                  </Typography.Heading>
-                ) : (
-                  // Codes made before admins could see them were kept only as a hash.
-                  <Typography.Paragraph color="muted">Code not shown</Typography.Paragraph>
-                )}
-                <Typography.Paragraph type="body-xs" color="muted">
-                  {timeLeft}
-                </Typography.Paragraph>
-              </View>
-              {invite.code ? (
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="ghost"
-                  onPress={() => {
-                    const code = invite.code ?? '';
-                    void Clipboard.setStringAsync(code).then(() => setCopiedId(invite.id));
-                  }}
-                  accessibilityLabel={
-                    copiedId === invite.id ? `Copied ${invite.code}` : `Copy ${invite.code}`
-                  }
-                >
-                  <Ionicons
-                    name={copiedId === invite.id ? 'checkmark' : 'copy-outline'}
-                    size={22}
-                    color={copiedId === invite.id ? success : accent}
-                  />
-                </Button>
-              ) : null}
-              <OnlineButton
-                isIconOnly
-                size="sm"
-                variant="ghost"
-                onPress={() => confirmRevoke(invite.id)}
-                isDisabled={revoke.isPending}
-                accessibilityLabel={`Delete the code${invite.code ? ` ${invite.code}` : ''}, ${timeLeft}`}
+    <Card>
+      <Card.Body className="gap-4">
+        <View className="gap-1">
+          <Card.Title>Join code</Card.Title>
+          <Card.Description>
+            Share this code with someone to let them ask to join. You let them in.
+          </Card.Description>
+        </View>
+        <FormAlert
+          message={
+            change.error
+              ? userErrorMessage(
+                  change.error,
+                  'Could not change the code.',
+                  APARTMENT_ERROR_MESSAGES,
+                )
+              : null
+          }
+        />
+        {joinCode.isPending ? <LoadingRows count={1} /> : null}
+        {joinCode.isLoadingError ? (
+          <LoadError
+            message={userErrorMessage(joinCode.error, 'Could not load the join code.')}
+            onRetry={() => void joinCode.refetch()}
+          />
+        ) : null}
+        {code ? (
+          <>
+            <Typography.Heading type="h2" className="text-center" selectable testID="join-code">
+              {code}
+            </Typography.Heading>
+            <View className="flex-row gap-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onPress={() => void Clipboard.setStringAsync(code).then(() => setCopied(true))}
               >
-                <Ionicons name="trash-outline" size={22} color={danger} />
-              </OnlineButton>
-            </Card.Body>
-          </Card>
-        );
-      })}
-    </View>
+                <Ionicons
+                  name={copied ? 'checkmark' : 'copy-outline'}
+                  size={18}
+                  color={copied ? success : accent}
+                />
+                <Button.Label>{copied ? 'Copied' : 'Copy'}</Button.Label>
+              </Button>
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onPress={() => void Share.share({ message: joinCodeMessage(apartmentName, code) })}
+              >
+                <Ionicons name="share-outline" size={18} color={accent} />
+                <Button.Label>Share</Button.Label>
+              </Button>
+            </View>
+            <OnlineButton variant="ghost" onPress={confirmChange} isDisabled={change.isPending}>
+              {change.isPending ? 'Changing…' : 'Change code'}
+            </OnlineButton>
+          </>
+        ) : null}
+      </Card.Body>
+    </Card>
   );
 }
 

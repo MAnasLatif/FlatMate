@@ -1948,6 +1948,7 @@ export type Database = {
       archive_recurring_template: { Args: { p_template_id: string }; Returns: undefined };
       cancel_join_request: { Args: { p_request_id: string }; Returns: undefined };
       cancel_rejoin_invite: { Args: { p_invite_id: string }; Returns: undefined };
+      change_join_code: { Args: { p_apartment_id: string }; Returns: string };
       claim_pushes: {
         Args: { p_limit?: number };
         Returns: {
@@ -2011,6 +2012,7 @@ export type Database = {
         };
         Returns: number;
       };
+      get_join_code: { Args: { p_apartment_id: string }; Returns: string };
       get_join_requests: {
         Args: { p_apartment_id: string };
         Returns: {

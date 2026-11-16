@@ -21,9 +21,9 @@ import { HEADER_ICON_SIZE } from '@/components/screen-transitions';
 import { emailSchema } from '@/features/auth/schemas';
 import { userErrorMessage } from '@/lib/errors';
 
-import { INVITE_VALID_DAYS } from '../api';
 import { APARTMENT_ERROR_MESSAGES, INVITE_EMAIL_ERROR_MESSAGES } from '../errors';
-import { useInviteActions } from '../hooks';
+import { useJoinCode, useJoinCodeActions } from '../hooks';
+import { joinCodeMessage } from '../join-code';
 
 /**
  * For admins, in the members screen's top bar: opens the `AddMemberSheet`.
@@ -85,14 +85,13 @@ function InviteOptions({
   apartmentId: string;
   apartmentName: string;
 }) {
-  const { create, sendEmail } = useInviteActions(apartmentId);
+  const { sendEmail } = useJoinCodeActions(apartmentId);
+  // The apartment's one code: the same one every time it is copied, shared or emailed.
+  const joinCode = useJoinCode(apartmentId, true);
   const { onFocus, onBlur } = useBottomSheetAwareHandlers();
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState<string>();
   const [sentTo, setSentTo] = useState<string>();
-  // The code is shown only when created, so one is made the first time it is
-  // copied or shared and reused for both.
-  const [code, setCode] = useState<string>();
   const [copied, setCopied] = useState(false);
   const accent = useThemeColor('accent');
 
@@ -113,18 +112,7 @@ function InviteOptions({
   };
 
   const withCode = (act: (message: string) => void) => {
-    const message = (value: string) =>
-      `Join ${apartmentName} on FlatMate with this code: ${value}. It works for ${INVITE_VALID_DAYS} days.`;
-    if (code) {
-      act(message(code));
-      return;
-    }
-    create.mutate(INVITE_VALID_DAYS, {
-      onSuccess: (created) => {
-        setCode(created);
-        act(message(created));
-      },
-    });
+    if (joinCode.data) act(joinCodeMessage(apartmentName, joinCode.data));
   };
 
   const copy = () =>
@@ -146,8 +134,8 @@ function InviteOptions({
       <View className="gap-1">
         <BottomSheet.Title>Add member</BottomSheet.Title>
         <BottomSheet.Description>
-          Email someone a join code, or share one yourself. A code works for {INVITE_VALID_DAYS}{' '}
-          days, and you let the person in when they ask to join.
+          Email someone the apartment&apos;s join code, or share it yourself. You let the person in
+          when they ask to join.
         </BottomSheet.Description>
       </View>
 
@@ -204,7 +192,7 @@ function InviteOptions({
             variant="secondary"
             className="flex-1"
             onPress={copy}
-            isDisabled={create.isPending}
+            isDisabled={!joinCode.data}
             accessibilityLabel="Copy invite"
           >
             <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={accent} />
@@ -214,18 +202,18 @@ function InviteOptions({
             variant="secondary"
             className="flex-1"
             onPress={share}
-            isDisabled={create.isPending}
+            isDisabled={!joinCode.data}
             accessibilityLabel="Share invite"
           >
             <Ionicons name="share-outline" size={18} color={accent} />
             <Button.Label>Share invite</Button.Label>
           </OnlineButton>
         </View>
-        {create.error ? (
+        {joinCode.isLoadingError ? (
           <Typography.Paragraph type="body-sm" className="text-danger">
             {userErrorMessage(
-              create.error,
-              'Could not create a code. Try again.',
+              joinCode.error,
+              'Could not load the join code. Try again.',
               APARTMENT_ERROR_MESSAGES,
             )}
           </Typography.Paragraph>

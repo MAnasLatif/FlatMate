@@ -26,7 +26,7 @@ jest.mock('@/features/apartments/api', () => ({
   ...jest.requireActual('@/features/apartments/api'),
   fetchApartment: jest.fn(),
   fetchMembers: jest.fn(),
-  fetchActiveInvites: jest.fn(async () => []),
+  fetchJoinCode: jest.fn(async () => 'ABCD-2345'),
   fetchJoinRequests: jest.fn(async () => []),
   fetchCategories: jest.fn(async () => []),
 }));
