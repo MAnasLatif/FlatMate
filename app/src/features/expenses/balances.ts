@@ -6,8 +6,6 @@ export type BalanceSummary = {
   oweMinor: number;
   /** What others owe the user, summed the same way. */
   receiveMinor: number;
-  /** receive minus owe. Positive: the user is owed overall. */
-  netMinor: number;
   /** Amounts still within an objection window are part of the figure, so it can change. */
   oweIsProvisional: boolean;
   receiveIsProvisional: boolean;
@@ -30,7 +28,6 @@ export function summarizeBalances(balances: readonly Balance[]): BalanceSummary 
   const summary: BalanceSummary = {
     oweMinor: 0,
     receiveMinor: 0,
-    netMinor: 0,
     oweIsProvisional: false,
     receiveIsProvisional: false,
     heldOweMinor: 0,
@@ -51,8 +48,41 @@ export function summarizeBalances(balances: readonly Balance[]): BalanceSummary 
     else summary.heldReceiveMinor -= balance.disputedMinor;
   }
 
-  summary.netMinor = summary.receiveMinor - summary.oweMinor;
   return summary;
+}
+
+/** What the user sends one person, or receives from them, as the dashboard lists it. */
+export type BalanceLine = {
+  counterpartyId: string;
+  amountMinor: number;
+  /** Part of the amount is still within an objection window. */
+  isProvisional: boolean;
+};
+
+/**
+ * The people behind the dashboard's two totals: whom the user sends money to
+ * and who sends money to them, each largest first. Uses the same rule as
+ * `summarizeBalances`, so each list adds up to its total: final and
+ * provisional amounts count, disputed ones are held.
+ */
+export function balanceLines(balances: readonly Balance[]): {
+  send: BalanceLine[];
+  receive: BalanceLine[];
+} {
+  const send: BalanceLine[] = [];
+  const receive: BalanceLine[] = [];
+  for (const balance of balances) {
+    const payable = balance.finalMinor + balance.provisionalMinor;
+    if (payable === 0) continue;
+    const line = {
+      counterpartyId: balance.counterpartyId,
+      amountMinor: Math.abs(payable),
+      isProvisional: balance.provisionalMinor !== 0,
+    };
+    (payable > 0 ? send : receive).push(line);
+  }
+  const largestFirst = (a: BalanceLine, b: BalanceLine) => b.amountMinor - a.amountMinor;
+  return { send: send.sort(largestFirst), receive: receive.sort(largestFirst) };
 }
 
 /** Where the signed-in user stands with one person. */
