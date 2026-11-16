@@ -2,7 +2,15 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams } from 'expo-router';
-import { Button, Card, PressableFeedback, Tabs, Typography, useThemeColor } from 'heroui-native';
+import {
+  Button,
+  Card,
+  PressableFeedback,
+  Separator,
+  Tabs,
+  Typography,
+  useThemeColor,
+} from 'heroui-native';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Share, View } from 'react-native';
@@ -18,8 +26,8 @@ import {
   type ApartmentFormInput,
   type ApartmentFormOutput,
 } from '@/features/apartments/components/apartment-form-fields';
-import { AddMemberSheet } from '@/features/apartments/components/add-member-button';
 import { CategorySheet } from '@/features/apartments/components/category-sheet';
+import { InviteByEmail } from '@/features/apartments/components/invite-by-email';
 import { JoinRequests } from '@/features/apartments/components/join-requests';
 import { ManageMembers } from '@/features/apartments/components/manage-members';
 import { joinCodeMessage } from '@/features/apartments/join-code';
@@ -156,7 +164,6 @@ function MembersTab({
   apartmentId: string;
   apartmentName: string;
 }) {
-  const [isAddingMember, setAddingMember] = useState(false);
   // Requests to join and declined invitations back are answered here.
   useMarkSeen(unreadMatches.memberAdmin(apartmentId));
 
@@ -164,15 +171,7 @@ function MembersTab({
     <View className="gap-6">
       <JoinRequests apartmentId={apartmentId} />
       <ManageMembers apartmentId={apartmentId} />
-      <OnlineButton variant="secondary" onPress={() => setAddingMember(true)}>
-        Add member
-      </OnlineButton>
       <JoinCodeSection apartmentId={apartmentId} apartmentName={apartmentName} />
-      <AddMemberSheet
-        apartmentId={apartmentId}
-        isOpen={isAddingMember}
-        onOpenChange={setAddingMember}
-      />
     </View>
   );
 }
@@ -258,7 +257,7 @@ function JoinCodeSection({
         <View className="gap-1">
           <Card.Title>Join code</Card.Title>
           <Card.Description>
-            Share this code with someone to let them ask to join. You let them in.
+            Share or email this code to let someone ask to join. You let them in.
           </Card.Description>
         </View>
         <FormAlert
@@ -309,6 +308,8 @@ function JoinCodeSection({
             <OnlineButton variant="ghost" onPress={confirmChange} isDisabled={change.isPending}>
               {change.isPending ? 'Changing…' : 'Change code'}
             </OnlineButton>
+            <Separator />
+            <InviteByEmail apartmentId={apartmentId} />
           </>
         ) : null}
         {dialog}

@@ -85,7 +85,9 @@ it('opens on the general settings and moves between the tabs', async () => {
   expect(await screen.findByText('Anas (you)')).toBeOnTheScreen();
   expect(await screen.findByTestId('join-code')).toHaveTextContent('ABCD-2345');
   expect(screen.getByRole('button', { name: 'Your actions' })).toBeOnTheScreen();
-  expect(screen.getByRole('button', { name: 'Add member' })).toBeOnTheScreen();
+  // Inviting by email is part of the Join code card; there is no separate Add member.
+  expect(screen.getByPlaceholderText('friend@example.com')).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Add member' })).not.toBeOnTheScreen();
   expect(screen.queryByText('Save settings')).not.toBeOnTheScreen();
 
   await user.press(screen.getByText('Expense control'));

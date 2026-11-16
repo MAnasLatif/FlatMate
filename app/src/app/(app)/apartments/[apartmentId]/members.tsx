@@ -9,7 +9,7 @@ import {
   Typography,
   useThemeColor,
 } from 'heroui-native';
-import { type ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
@@ -19,10 +19,7 @@ import { Screen } from '@/components/screen';
 import { StatusChip } from '@/components/status-chip';
 import type { Member } from '@/features/apartments/api';
 import { formerMembers } from '@/features/apartments/components/manage-members';
-import {
-  AddMemberButton,
-  AddMemberSheet,
-} from '@/features/apartments/components/add-member-button';
+import { AddMemberButton } from '@/features/apartments/components/add-member-button';
 import { useApartment, useApartmentId, useMembers } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import type { PairBalance } from '@/features/expenses/api';
@@ -45,7 +42,6 @@ export default function MembersScreen() {
   const apartment = useApartment(apartmentId);
   const balances = usePairBalances(apartmentId);
   useMarkSeen(unreadMatches.members(apartmentId));
-  const [isAddingMember, setAddingMember] = useState(false);
 
   if (members.isPending) {
     return (
@@ -83,7 +79,14 @@ export default function MembersScreen() {
             ? () => (
                 <View className="flex-row items-center gap-5">
                   <ManageMembersButton apartmentId={apartmentId} />
-                  <AddMemberButton onPress={() => setAddingMember(true)} />
+                  <AddMemberButton
+                    onPress={() =>
+                      router.push({
+                        pathname: '/apartments/[apartmentId]/settings',
+                        params: { apartmentId, tab: 'members' },
+                      })
+                    }
+                  />
                 </View>
               )
             : undefined,
@@ -98,13 +101,6 @@ export default function MembersScreen() {
         balances={balances}
         currency={apartment.data?.currency}
       />
-      {viewerIsAdmin ? (
-        <AddMemberSheet
-          apartmentId={apartmentId}
-          isOpen={isAddingMember}
-          onOpenChange={setAddingMember}
-        />
-      ) : null}
     </>
   );
 }
