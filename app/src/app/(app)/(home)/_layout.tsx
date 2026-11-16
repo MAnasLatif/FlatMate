@@ -6,7 +6,7 @@ import { View } from 'react-native';
 
 import { AppLogo } from '@/components/app-logo';
 
-import { TAB_ICON_BOX, TAB_ICON_SIZE, tabTransition } from '@/components/screen-transitions';
+import { TAB_ICON_BOX, TAB_ICON_SIZES, tabTransition } from '@/components/screen-transitions';
 import { HeaderBack } from '@/components/header-back';
 import { ProfileTabIcon } from '@/features/profile/components/profile-tab-icon';
 import { SignOutButton } from '@/features/profile/components/sign-out-button';
@@ -42,7 +42,7 @@ export default function HomeTabsLayout() {
           tabBarIcon: ({ focused }) => (
             <Ionicons
               name="receipt-outline"
-              size={TAB_ICON_SIZE}
+              size={TAB_ICON_SIZES.expenses}
               color={focused ? accent : muted}
             />
           ),
