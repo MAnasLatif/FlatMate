@@ -19,6 +19,7 @@ import { CATEGORY_DETAIL_MAX_LENGTH, type DraftResult, type ExpenseDraft } from 
 import { memberLabel } from '../member-label';
 import { PayerFields } from './payer-fields';
 import { SplitFields } from './split-fields';
+import { currencySymbol } from '@/features/apartments/currencies';
 
 type ExpenseFormProps = {
   draft: ExpenseDraft;
@@ -82,7 +83,7 @@ function DetailsSection({
       </TextField>
 
       <TextField isRequired isInvalid={error('amount') !== undefined}>
-        <Label>Amount ({currency})</Label>
+        <Label>Amount ({currencySymbol(currency)})</Label>
         <Input
           variant="secondary"
           value={draft.amount}

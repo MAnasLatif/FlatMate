@@ -11,7 +11,6 @@ import { useApartment } from '@/features/apartments/hooks';
 import { useIsUnread } from '@/features/notifications/hooks';
 import { unreadMatches } from '@/features/notifications/unread';
 import { userErrorMessage } from '@/lib/errors';
-import { formatMinorUnits } from '@/lib/money';
 import { formatMonth, monthStart, todayInTimeZone } from '@/lib/time';
 
 import type { ExpenseListItem } from '../api';
@@ -19,6 +18,7 @@ import { useExpenses, useMyMonthlyShare, useRefreshMoney } from '../hooks';
 import { BalanceSummary, type ExpenseFilter } from './balance-summary';
 import { ExpenseRow } from './expense-row';
 import { MonthSelector } from './month-selector';
+import { formatMoney } from '@/features/apartments/currencies';
 
 /** An apartment's main screen: the user's balances, then a month of expenses (SRS 3.2). */
 export function Dashboard({ apartment }: { apartment: Apartment }) {
@@ -155,7 +155,7 @@ function MonthlyShare({
     <Typography.Paragraph type="body-sm">
       Your share this month:{' '}
       <Typography.Paragraph type="body-sm" weight="semibold">
-        {formatMinorUnits(share.data)} {currency}
+        {formatMoney(share.data, currency)}
       </Typography.Paragraph>
     </Typography.Paragraph>
   );

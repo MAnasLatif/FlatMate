@@ -13,13 +13,13 @@ import { UnreadDot } from '@/features/notifications/components/unread-dot';
 import { useIsUnread, useMarkSeen } from '@/features/notifications/hooks';
 import { type UnreadMatch, unreadMatches } from '@/features/notifications/unread';
 import { userErrorMessage } from '@/lib/errors';
-import { formatMinorUnits } from '@/lib/money';
 import { formatDate } from '@/lib/time';
 
 import type { PreviewRow } from '../api';
 import { useClosedPeriods, useSettlementPreview } from '../hooks';
 import { useNameOf } from '../names';
 import { describeClosingBalance, describePeriod } from '../rules';
+import { formatMoney } from '@/features/apartments/currencies';
 
 /**
  * The open period's preview for the signed-in user, and the closed periods
@@ -62,8 +62,7 @@ export function SettlementOverview({ apartmentId }: { apartmentId: string }) {
     );
   }
 
-  const money = (amountMinor: number) =>
-    `${formatMinorUnits(amountMinor)} ${apartment.data.currency}`;
+  const money = (amountMinor: number) => `${formatMoney(amountMinor, apartment.data.currency)}`;
   const { period, rows } = preview.data;
 
   return (

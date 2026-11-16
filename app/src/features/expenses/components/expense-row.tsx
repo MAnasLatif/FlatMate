@@ -2,11 +2,11 @@ import { Card, PressableFeedback, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
 import { UnreadDot } from '@/features/notifications/components/unread-dot';
-import { formatMinorUnits } from '@/lib/money';
 import { formatDate } from '@/lib/time';
 
 import type { ExpenseListItem } from '../api';
 import { ExpenseStatusChips } from './expense-status';
+import { formatMoney } from '@/features/apartments/currencies';
 
 /**
  * One expense in the feed: what it was, when, how much, what the user receives
@@ -63,7 +63,7 @@ export function ExpenseRow({
                 className={position > 0 ? 'text-success' : 'text-danger'}
               >
                 {position > 0 ? "You'll receive" : "You'll send"}{' '}
-                {formatMinorUnits(Math.abs(position))} {expense.currency}
+                {formatMoney(Math.abs(position), expense.currency)}
               </Typography.Paragraph>
             ) : null}
           </View>
@@ -73,7 +73,7 @@ export function ExpenseRow({
               color={isVoid ? 'muted' : 'default'}
               className={isVoid ? 'line-through' : undefined}
             >
-              {formatMinorUnits(expense.amount_minor)} {expense.currency}
+              {formatMoney(expense.amount_minor, expense.currency)}
             </Typography.Paragraph>
             <ExpenseStatusChips expense={expense} />
           </View>

@@ -11,12 +11,12 @@ import { UnreadDot, withUnread } from '@/features/notifications/components/unrea
 import { useHasUnread } from '@/features/notifications/hooks';
 import { unreadMatches } from '@/features/notifications/unread';
 import { userErrorMessage } from '@/lib/errors';
-import { formatMinorUnits } from '@/lib/money';
 import { formatDate } from '@/lib/time';
 
 import type { Obligation } from '../api';
 import { usePairObligations } from '../hooks';
 import { obligationState } from '../rules';
+import { formatMoney } from '@/features/apartments/currencies';
 
 const STATE_COLORS = {
   settled: 'success',
@@ -66,8 +66,7 @@ export function SettleWith({
     );
   }
 
-  const money = (amountMinor: number) =>
-    `${formatMinorUnits(amountMinor)} ${apartment.data.currency}`;
+  const money = (amountMinor: number) => `${formatMoney(amountMinor, apartment.data.currency)}`;
   const owe = obligations.data.filter((item) => item.direction === 'owe');
   const owed = obligations.data.filter((item) => item.direction === 'owed');
   const remaining = (items: Obligation[]) =>

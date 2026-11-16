@@ -106,7 +106,7 @@ it('lists repeatable expenses in a fourth settings tab', async () => {
   await user.press(await screen.findByText('Repeatable expenses'));
   expect(await screen.findByText('Rent')).toBeOnTheScreen();
   expect(screen.getByText('Every month on the 1st · next Dec 1, 2026')).toBeOnTheScreen();
-  expect(screen.getByText('90,000.00 PKR')).toBeOnTheScreen();
+  expect(screen.getByText('Rs 90,000.00')).toBeOnTheScreen();
   // A paused expense shows no next date.
   expect(screen.getByText('Every week on Monday')).toBeOnTheScreen();
   expect(screen.getByText('Amount varies')).toBeOnTheScreen();

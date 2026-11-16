@@ -33,6 +33,7 @@ import type { WaitingBill } from '../api';
 import { draftFromBill, validateBillDraft } from '../draft';
 import { RECURRING_ERROR_MESSAGES } from '../errors';
 import { useBillActions, useWaitingBills } from '../hooks';
+import { currencySymbol } from '@/features/apartments/currencies';
 
 /**
  * Entering a repeatable bill that waits for an admin: the real amount of a
@@ -210,7 +211,7 @@ function BillEditor({
       </View>
 
       <TextField isRequired isInvalid={error('amount') !== undefined}>
-        <Label>Amount ({apartment.currency})</Label>
+        <Label>Amount ({currencySymbol(apartment.currency)})</Label>
         <Input
           variant="secondary"
           value={draft.amount}

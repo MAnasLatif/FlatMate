@@ -92,14 +92,14 @@ describe('PairLedger', () => {
     );
     const user = userEvent.setup();
 
-    expect(await screen.findByText('You owe Zubair 83.33 PKR')).toBeOnTheScreen();
+    expect(await screen.findByText('You owe Zubair Rs 83.33')).toBeOnTheScreen();
     expect(screen.getByText('Zubair owes you')).toBeOnTheScreen();
-    expect(screen.getByText('66.67 PKR')).toBeOnTheScreen();
-    expect(screen.getByText('150.00 PKR')).toBeOnTheScreen();
+    expect(screen.getByText('Rs 66.67')).toBeOnTheScreen();
+    expect(screen.getByText('Rs 150.00')).toBeOnTheScreen();
     expect(screen.getAllByText('Provisional').length).toBeGreaterThan(0);
 
-    expect(await screen.findByText('You owe Zubair 150.00 PKR')).toBeOnTheScreen();
-    expect(screen.getByText('Zubair owes you 66.67 PKR')).toBeOnTheScreen();
+    expect(await screen.findByText('You owe Zubair Rs 150.00')).toBeOnTheScreen();
+    expect(screen.getByText('Zubair owes you Rs 66.67')).toBeOnTheScreen();
     expect(screen.getByText('Nothing between you now')).toBeOnTheScreen();
     expect(pairExpenses).toHaveBeenCalledWith(APARTMENT, ZUBAIR, 0);
 
@@ -117,7 +117,7 @@ describe('PairLedger', () => {
 
     expect(await screen.findByText('You and Ajmal are square')).toBeOnTheScreen();
     expect(
-      screen.getByText('Held by open disputes and not counted above: 66.66 PKR to you.'),
+      screen.getByText('Held by open disputes and not counted above: Rs 66.66 to you.'),
     ).toBeOnTheScreen();
     expect(await screen.findByText('No expenses between you and Ajmal yet.')).toBeOnTheScreen();
   });
@@ -166,9 +166,9 @@ describe('Members directory', () => {
     await renderWithProviders(<MembersScreen />);
     const user = userEvent.setup();
 
-    expect(await screen.findByText('You owe 83.33 PKR')).toBeOnTheScreen();
+    expect(await screen.findByText('You owe Rs 83.33')).toBeOnTheScreen();
     expect(
-      screen.getByText('you owe 150.00 PKR, they owe 66.67 PKR · provisional'),
+      screen.getByText('you owe Rs 150.00, they owe Rs 66.67 · provisional'),
     ).toBeOnTheScreen();
     expect(screen.getByText('some held by a dispute')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Open Anas' })).not.toBeOnTheScreen();

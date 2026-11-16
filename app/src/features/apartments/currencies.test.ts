@@ -1,4 +1,4 @@
-import { CURRENCIES, matchesCurrency } from './currencies';
+import { CURRENCIES, currencySymbol, formatMoney, matchesCurrency } from './currencies';
 
 describe('CURRENCIES', () => {
   it('lists each currency in circulation once, sorted by name', () => {
@@ -30,5 +30,19 @@ describe('matchesCurrency', () => {
     expect(matchesCurrency(rupee, '₹')).toBe(true);
     expect(matchesCurrency(rupee, '')).toBe(true);
     expect(matchesCurrency(rupee, 'dollar')).toBe(false);
+  });
+});
+
+describe('formatMoney', () => {
+  it('writes the symbol first, with a space after letters', () => {
+    expect(formatMoney(9_000_000, 'PKR')).toBe('Rs 90,000.00');
+    expect(formatMoney(1200, 'USD')).toBe('$12.00');
+    expect(formatMoney(-500, 'EUR')).toBe('-€5.00');
+    expect(formatMoney(0, 'PKR')).toBe('Rs 0.00');
+  });
+
+  it('falls back to the code for a currency without a symbol or one it does not know', () => {
+    expect(currencySymbol('ALL')).toBe('ALL');
+    expect(formatMoney(100, 'XYZ')).toBe('XYZ 1.00');
   });
 });

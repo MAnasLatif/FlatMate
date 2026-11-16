@@ -22,6 +22,7 @@ import { memberLabel } from '../member-label';
 import { matchDebts, type SplitMethod } from '../split';
 import { ExpenseReceipts } from './expense-receipts';
 import { ExpenseStatusChips } from './expense-status';
+import { formatMoney } from '@/features/apartments/currencies';
 
 const SPLIT_METHOD_TITLES: Record<SplitMethod, string> = {
   equal: 'Split equally',
@@ -90,7 +91,7 @@ export function ExpenseDetailView({
     const member = members.data.find((item) => item.userId === id);
     return member ? memberLabel(member, userId) : 'A former member';
   };
-  const money = (amountMinor: number) => `${formatMinorUnits(amountMinor)} ${expense.currency}`;
+  const money = (amountMinor: number) => `${formatMoney(amountMinor, expense.currency)}`;
   const canRecordPayment =
     expense.paidStatus === 'unpaid' &&
     expense.status === 'provisional' &&

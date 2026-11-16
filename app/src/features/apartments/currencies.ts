@@ -1,3 +1,5 @@
+import { formatMinorUnits } from '@/lib/money';
+
 /**
  * Currencies in circulation (ISO 4217), with their English name and the
  * symbol people write. Generated once from ICU's data, since phones may not
@@ -173,4 +175,26 @@ export function matchesCurrency(currency: Currency, query: string): boolean {
     currency.name.toLowerCase().includes(needle) ||
     currency.symbol.toLowerCase().includes(needle)
   );
+}
+
+const SYMBOLS = new Map(CURRENCIES.map((currency) => [currency.code, currency.symbol]));
+
+/** The symbol people write for a currency, such as "Rs" for PKR; the code when it has none. */
+export function currencySymbol(code: string): string {
+  return SYMBOLS.get(code) ?? code;
+}
+
+/**
+ * An amount with its currency symbol in front, as people write it: "Rs 1,234.56",
+ * "$12.00", "-€5.00". A symbol made of letters is followed by a space.
+ */
+export function formatMoney(
+  amountMinor: number,
+  currencyCode: string,
+  minorUnitDigits = 2,
+): string {
+  const symbol = currencySymbol(currencyCode);
+  const sign = amountMinor < 0 ? '-' : '';
+  const gap = /\p{L}$/u.test(symbol) ? ' ' : '';
+  return `${sign}${symbol}${gap}${formatMinorUnits(Math.abs(amountMinor), minorUnitDigits)}`;
 }

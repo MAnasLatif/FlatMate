@@ -3,11 +3,11 @@ import { View } from 'react-native';
 
 import { StatusChip } from '@/components/status-chip';
 import { UnreadDot, withUnread } from '@/features/notifications/components/unread-dot';
-import { formatMinorUnits } from '@/lib/money';
 import { formatDate } from '@/lib/time';
 
 import type { Payment } from '../api';
 import { paymentStatus } from '../rules';
+import { formatMoney } from '@/features/apartments/currencies';
 
 /**
  * One payment in a list: who paid whom, the amount, the date and its status.
@@ -25,7 +25,7 @@ export function PaymentRow({
   onPress: () => void;
 }) {
   const status = paymentStatus(payment.status);
-  const amount = `${formatMinorUnits(payment.amountMinor)} ${payment.currency}`;
+  const amount = `${formatMoney(payment.amountMinor, payment.currency)}`;
   return (
     <PressableFeedback
       onPress={onPress}

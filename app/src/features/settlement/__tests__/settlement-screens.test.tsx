@@ -111,13 +111,13 @@ describe('SettlementOverview', () => {
     expect(
       await screen.findByText(/nothing is cleared just because the date passes/),
     ).toBeOnTheScreen();
-    expect(screen.getByText('Zubair owes you 30.00 PKR')).toBeOnTheScreen();
-    expect(screen.getByText('You owe 120.00 PKR · Zubair owes you 150.00 PKR')).toBeOnTheScreen();
-    expect(screen.getByText('66.66 PKR held by disputes')).toBeOnTheScreen();
-    expect(await screen.findByText('Zubair owed you 60.00 PKR')).toBeOnTheScreen();
+    expect(screen.getByText('Zubair owes you Rs 30.00')).toBeOnTheScreen();
+    expect(screen.getByText('You owe Rs 120.00 · Zubair owes you Rs 150.00')).toBeOnTheScreen();
+    expect(screen.getByText('Rs 66.66 held by disputes')).toBeOnTheScreen();
+    expect(await screen.findByText('Zubair owed you Rs 60.00')).toBeOnTheScreen();
     expect(screen.getByText(/with 1 open dispute carried forward/)).toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: /Zubair owes you 30.00 PKR/ }));
+    await user.press(screen.getByRole('button', { name: /Zubair owes you Rs 30.00/ }));
     expect(router.push).toHaveBeenCalledWith({
       pathname: '/apartments/[apartmentId]/settlement/[memberId]',
       params: { apartmentId: APARTMENT, memberId: ZUBAIR },
@@ -162,13 +162,13 @@ describe('SettleWith', () => {
     const user = userEvent.setup();
 
     expect(
-      await screen.findByRole('button', { name: 'Cleaning, 100.00 PKR, settled' }),
+      await screen.findByRole('button', { name: 'Cleaning, Rs 100.00, settled' }),
     ).toBeOnTheScreen();
     expect(
-      screen.getByRole('button', { name: 'Snacks, 50.00 PKR, partly settled' }),
+      screen.getByRole('button', { name: 'Snacks, Rs 50.00, partly settled' }),
     ).toBeOnTheScreen();
-    expect(screen.getByText(/30.00 PKR left/)).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Groceries, 120.00 PKR, open' })).toBeOnTheScreen();
+    expect(screen.getByText(/Rs 30.00 left/)).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Groceries, Rs 120.00, open' })).toBeOnTheScreen();
 
     await user.press(screen.getByRole('button', { name: 'Pay or net off with Zubair' }));
     expect(router.push).toHaveBeenCalledWith({

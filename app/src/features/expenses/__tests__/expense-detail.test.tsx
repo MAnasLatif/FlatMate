@@ -149,13 +149,13 @@ describe('ExpenseDetailView', () => {
     detail.mockResolvedValue(cleaning);
     await renderWithProviders(<ExpenseDetailView apartmentId={APARTMENT} expenseId={EXPENSE} />);
 
-    expect(await screen.findByRole('header', { name: '200.00 PKR' })).toBeOnTheScreen();
-    expect(screen.getAllByText('200.00 PKR')).toHaveLength(2); // the amount, and what Anas paid
+    expect(await screen.findByRole('header', { name: 'Rs 200.00' })).toBeOnTheScreen();
+    expect(screen.getAllByText('Rs 200.00')).toHaveLength(2); // the amount, and what Anas paid
     expect(screen.getByText('Provisional')).toBeOnTheScreen();
     expect(screen.getByText(/can object until the end of/)).toBeOnTheScreen();
     expect(screen.getByText('Split equally')).toBeOnTheScreen();
-    expect(screen.getByText('Zubair owes you 66.67 PKR')).toBeOnTheScreen();
-    expect(screen.getByText('Ajmal owes you 66.66 PKR')).toBeOnTheScreen();
+    expect(screen.getByText('Zubair owes you Rs 66.67')).toBeOnTheScreen();
+    expect(screen.getByText('Ajmal owes you Rs 66.66')).toBeOnTheScreen();
     expect(screen.getByText('You added this expense')).toBeOnTheScreen();
     expect(await screen.findByText('No receipt attached.')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Record payment' })).not.toBeOnTheScreen();
@@ -194,11 +194,11 @@ describe('ExpenseDetailView', () => {
   it('keeps the expense on screen offline, says so, and does not let it be voided', async () => {
     detail.mockResolvedValue(cleaning);
     await renderWithProviders(<ExpenseDetailView apartmentId={APARTMENT} expenseId={EXPENSE} />);
-    expect(await screen.findByRole('header', { name: '200.00 PKR' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Rs 200.00' })).toBeOnTheScreen();
 
     await act(async () => onlineManager.setOnline(false));
 
-    expect(screen.getByRole('header', { name: '200.00 PKR' })).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Rs 200.00' })).toBeOnTheScreen();
     expect(
       screen.getByText(/^You're offline\. Last updated .+\. Saving needs a connection\.$/),
     ).toBeOnTheScreen();
@@ -211,7 +211,7 @@ describe('ExpenseDetailView', () => {
   it('keeps the expense on screen when a refresh fails', async () => {
     detail.mockResolvedValue(cleaning);
     await renderWithProviders(<ExpenseDetailView apartmentId={APARTMENT} expenseId={EXPENSE} />);
-    expect(await screen.findByRole('header', { name: '200.00 PKR' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Rs 200.00' })).toBeOnTheScreen();
 
     detail.mockRejectedValue({ message: 'server error', code: 'XX000' });
     await act(async () => {
@@ -222,7 +222,7 @@ describe('ExpenseDetailView', () => {
     expect(
       await screen.findByText(/^Could not refresh\. Showing what was loaded/),
     ).toBeOnTheScreen();
-    expect(screen.getByRole('header', { name: '200.00 PKR' })).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Rs 200.00' })).toBeOnTheScreen();
     expect(screen.queryByText('Could not load this expense.')).not.toBeOnTheScreen();
     focusManager.setFocused(undefined);
   });
@@ -242,8 +242,8 @@ describe('RecordPayment', () => {
     await renderWithProviders(<RecordPayment apartmentId={APARTMENT} expenseId={EXPENSE} />);
     const user = userEvent.setup();
 
-    expect(await screen.findByText('Zubair will owe you 30.00 PKR')).toBeOnTheScreen();
-    expect(screen.getByText('Ajmal will owe you 30.00 PKR')).toBeOnTheScreen();
+    expect(await screen.findByText('Zubair will owe you Rs 30.00')).toBeOnTheScreen();
+    expect(screen.getByText('Ajmal will owe you Rs 30.00')).toBeOnTheScreen();
     await user.press(screen.getByRole('button', { name: 'Record payment' }));
 
     expect(recordPayment).toHaveBeenCalledWith(EXPENSE, [{ userId: ANAS, amountMinor: 9000 }]);

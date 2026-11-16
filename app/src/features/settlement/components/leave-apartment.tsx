@@ -9,10 +9,10 @@ import { Screen } from '@/components/screen';
 import { APARTMENT_ERROR_MESSAGES } from '@/features/apartments/errors';
 import { useApartment, useLeaveApartment } from '@/features/apartments/hooks';
 import { userErrorMessage } from '@/lib/errors';
-import { formatMinorUnits } from '@/lib/money';
 
 import { useSettlementPreview } from '../hooks';
 import { useNameOf } from '../names';
+import { formatMoney } from '@/features/apartments/currencies';
 
 /**
  * Leaving an apartment, after showing what the user still owes and is owed
@@ -46,8 +46,7 @@ export function LeaveApartment({ apartmentId }: { apartmentId: string }) {
     );
   }
 
-  const money = (amountMinor: number) =>
-    `${formatMinorUnits(amountMinor)} ${apartment.data.currency}`;
+  const money = (amountMinor: number) => `${formatMoney(amountMinor, apartment.data.currency)}`;
   const rows = preview.data.rows;
   const confirm = () =>
     Alert.alert(`Leave ${apartment.data.name}?`, 'You will lose access to its current expenses.', [

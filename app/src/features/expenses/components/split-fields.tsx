@@ -11,11 +11,11 @@ import {
 import { View } from 'react-native';
 
 import type { Member } from '@/features/apartments/api';
-import { formatMinorUnits } from '@/lib/money';
 
 import type { SplitInput } from '../draft';
 import { memberLabel } from '../member-label';
 import type { Share, SplitMethod } from '../split';
+import { formatMoney } from '@/features/apartments/currencies';
 
 const METHOD_LABELS: Record<SplitMethod, string> = {
   equal: 'Equally',
@@ -93,7 +93,7 @@ export function SplitFields({
                   <Description>
                     {included
                       ? share !== undefined
-                        ? `Share: ${formatMinorUnits(share)} ${currency}`
+                        ? `Share: ${formatMoney(share, currency)}`
                         : 'Included'
                       : 'Not included'}
                   </Description>

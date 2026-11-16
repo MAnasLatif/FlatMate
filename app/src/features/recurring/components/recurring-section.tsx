@@ -9,13 +9,13 @@ import { StatusChip } from '@/components/status-chip';
 import { useMarkSeen } from '@/features/notifications/hooks';
 import { unreadMatches } from '@/features/notifications/unread';
 import { userErrorMessage } from '@/lib/errors';
-import { formatMinorUnits } from '@/lib/money';
 import { formatDate, ordinal } from '@/lib/time';
 
 import type { RecurringTemplate, WaitingBill } from '../api';
 import { isMonthly, type Repeat } from '../schedule';
 import { RECURRING_ERROR_MESSAGES } from '../errors';
 import { useBillActions, useRecurringTemplates, useWaitingBills } from '../hooks';
+import { formatMoney } from '@/features/apartments/currencies';
 
 const EVERY: Record<Repeat, string> = {
   daily: 'Every day',
@@ -196,7 +196,7 @@ function TemplateRow({
   const amount =
     template.amountMinor === null
       ? 'Amount varies'
-      : `${formatMinorUnits(template.amountMinor)} ${currency}`;
+      : `${formatMoney(template.amountMinor, currency)}`;
   const details = [
     scheduleLabel(template),
     template.isPaused ? undefined : `next ${formatDate(template.nextBillDate)}`,

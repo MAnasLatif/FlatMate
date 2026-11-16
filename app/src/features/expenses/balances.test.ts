@@ -1,4 +1,4 @@
-import { formatMinorUnits } from '@/lib/money';
+import { formatMoney } from '@/features/apartments/currencies';
 
 import type { Balance, PairBalance } from './api';
 import { describePairNet, pairPosition, summarizeBalances } from './balances';
@@ -113,11 +113,11 @@ describe('pairPosition', () => {
 });
 
 describe('describePairNet', () => {
-  const money = (amount: number) => `${formatMinorUnits(amount)} PKR`;
+  const money = (amount: number) => formatMoney(amount, 'PKR');
 
   it.each([
-    [6667, 'Zubair owes you 66.67 PKR'],
-    [-15_000, 'You owe Zubair 150.00 PKR'],
+    [6667, 'Zubair owes you Rs 66.67'],
+    [-15_000, 'You owe Zubair Rs 150.00'],
     [0, 'You and Zubair are square'],
   ])('describes a net of %p', (netMinor, expected) => {
     expect(describePairNet({ netMinor }, 'Zubair', money)).toBe(expected);

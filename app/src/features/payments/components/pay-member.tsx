@@ -37,6 +37,7 @@ import { randomUuid } from '@/lib/uuid';
 import { PAYMENT_ERROR_MESSAGES, proofUploadErrorMessage } from '../errors';
 import { usePaymentMutations } from '../hooks';
 import { type PaymentPlan, type PayMode, planPayment } from '../rules';
+import { currencySymbol, formatMoney } from '@/features/apartments/currencies';
 
 const REFERENCE_MAX_LENGTH = 100;
 
@@ -112,7 +113,7 @@ function PayForm({
   expenseId: string | null;
 }) {
   const today = todayInTimeZone(apartment.timezone);
-  const money = (amountMinor: number) => `${formatMinorUnits(amountMinor)} ${apartment.currency}`;
+  const money = (amountMinor: number) => `${formatMoney(amountMinor, apartment.currency)}`;
   const [mode, setMode] = useState<PayMode>('gross');
   const [amount, setAmount] = useState('');
   const [paidOn, setPaidOn] = useState(today);
@@ -248,7 +249,7 @@ function PayForm({
       {checked.plan === undefined || checked.plan.payMinor > 0 || amount !== '' ? (
         <View className="gap-4">
           <TextField isInvalid={showErrors && checked.error !== undefined}>
-            <Label>Amount you paid ({apartment.currency})</Label>
+            <Label>Amount you paid ({currencySymbol(apartment.currency)})</Label>
             <Input
               variant="secondary"
               value={amount}

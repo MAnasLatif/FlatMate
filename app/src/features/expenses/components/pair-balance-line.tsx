@@ -1,9 +1,8 @@
 import { Typography } from 'heroui-native';
 
-import { formatMinorUnits } from '@/lib/money';
-
 import type { PairBalance } from '../api';
 import { pairPosition } from '../balances';
+import { formatMoney } from '@/features/apartments/currencies';
 
 /**
  * A member's balance with the signed-in user, for the members directory: the
@@ -17,7 +16,7 @@ export function PairBalanceLine({
   currency: string;
 }) {
   const position = pairPosition(balance);
-  const money = (amountMinor: number) => `${formatMinorUnits(amountMinor)} ${currency}`;
+  const money = (amountMinor: number) => `${formatMoney(amountMinor, currency)}`;
   const net =
     position.netMinor > 0
       ? `Owes you ${money(position.netMinor)}`

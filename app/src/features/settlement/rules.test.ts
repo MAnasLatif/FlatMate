@@ -1,8 +1,8 @@
-import { formatMinorUnits } from '@/lib/money';
+import { formatMoney } from '@/features/apartments/currencies';
 
 import { describeClosingBalance, obligationState } from './rules';
 
-const money = (amount: number) => `${formatMinorUnits(amount)} PKR`;
+const money = (amount: number) => formatMoney(amount, 'PKR');
 const names: Record<string, string> = { a: 'Anas', z: 'Zubair', j: 'Ajmal' };
 const nameOf = (id: string) => names[id];
 
@@ -18,10 +18,10 @@ describe('describeClosingBalance', () => {
   it("speaks from the viewer's side", () => {
     expect(
       describeClosingBalance({ ...balance, provisionalMinor: -6000 }, 'a', nameOf, money),
-    ).toBe('Zubair owed you 60.00 PKR');
+    ).toBe('Zubair owed you Rs 60.00');
     expect(
       describeClosingBalance({ ...balance, provisionalMinor: -6000 }, 'z', nameOf, money),
-    ).toBe('You owed Anas 60.00 PKR');
+    ).toBe('You owed Anas Rs 60.00');
   });
 
   it('names both people for an admin outside the pair, and keeps held amounts apart', () => {
@@ -32,9 +32,9 @@ describe('describeClosingBalance', () => {
         nameOf,
         money,
       ),
-    ).toBe('Anas owed Zubair 20.00 PKR, 90.00 PKR held by disputes');
+    ).toBe('Anas owed Zubair Rs 20.00, Rs 90.00 held by disputes');
     expect(describeClosingBalance({ ...balance, disputedMinor: -500 }, 'a', nameOf, money)).toBe(
-      'You and Zubair were square, 5.00 PKR held by disputes',
+      'You and Zubair were square, Rs 5.00 held by disputes',
     );
   });
 });

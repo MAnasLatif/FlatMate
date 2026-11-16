@@ -18,6 +18,7 @@ import {
   type RecurringDraft,
   type RecurringResult,
 } from '../draft';
+import { currencySymbol } from '@/features/apartments/currencies';
 
 const KIND_CHOICES: { value: RecurringKind; label: string }[] = [
   { value: 'fixed', label: 'Same amount each time' },
@@ -122,7 +123,7 @@ export function TemplateForm({
 
       {isVariable ? null : (
         <TextField isRequired isInvalid={error('amount') !== undefined}>
-          <Label>Amount ({currency})</Label>
+          <Label>Amount ({currencySymbol(currency)})</Label>
           <Input
             variant="secondary"
             value={draft.amount}

@@ -94,7 +94,7 @@ describe('LeaveApartment', () => {
     await renderWithProviders(<LeaveApartment apartmentId={APARTMENT} />);
     const user = userEvent.setup();
 
-    expect(await screen.findByText('You still owe Anas 100.00 PKR')).toBeOnTheScreen();
+    expect(await screen.findByText('You still owe Anas Rs 100.00')).toBeOnTheScreen();
     expect(screen.getByText(/Leaving keeps every record/)).toBeOnTheScreen();
     await user.press(screen.getByRole('button', { name: 'Leave apartment' }));
 
@@ -121,7 +121,7 @@ describe('PastApartments', () => {
     await renderWithProviders(<PastApartments />);
     const user = userEvent.setup();
 
-    expect(await screen.findByText('You owed Anas 100.00 PKR')).toBeOnTheScreen();
+    expect(await screen.findByText('You owed Anas Rs 100.00')).toBeOnTheScreen();
     await user.press(screen.getByRole('button', { name: 'See what is left to settle' }));
     expect(router.push).toHaveBeenCalledWith({
       pathname: '/apartments/[apartmentId]/settlement',
@@ -138,7 +138,7 @@ describe('names for a former member', () => {
     jest.mocked(fetchDisplayNames).mockResolvedValue({ [ANAS]: 'Anas' });
     await renderWithProviders(<LeaveApartment apartmentId={APARTMENT} />);
 
-    expect(await screen.findByText('You still owe Anas 100.00 PKR')).toBeOnTheScreen();
+    expect(await screen.findByText('You still owe Anas Rs 100.00')).toBeOnTheScreen();
     expect(fetchDisplayNames).toHaveBeenCalledWith([ANAS]);
   });
 });
