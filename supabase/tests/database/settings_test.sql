@@ -97,8 +97,8 @@ select throws_ok(
 
 select results_eq(
   $$ select name from public.expense_categories where apartment_id = pg_temp.flat() order by name $$,
-  $$ values ('Cleaning'::text), ('Groceries'), ('Household'), ('Internet'), ('Maintenance'), ('Other'), ('Rent'), ('Utilities') $$,
-  'a new apartment starts with the default categories'
+  $$ values ('Cleaning'::text), ('Groceries'), ('Household'), ('Maintenance'), ('Other') $$,
+  'a new apartment starts with the default categories, without the repeatable ones'
 );
 
 insert into vals values ('gas', public.add_category(pg_temp.flat(), ' Gas ')::text);
