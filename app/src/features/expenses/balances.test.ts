@@ -1,7 +1,7 @@
 import { formatMinorUnits } from '@/lib/money';
 
 import type { Balance, PairBalance } from './api';
-import { balanceLines, describePairNet, pairPosition, summarizeBalances } from './balances';
+import { describePairNet, pairPosition, summarizeBalances } from './balances';
 
 function balance(overrides: Partial<Balance>): Balance {
   return {
@@ -68,41 +68,6 @@ describe('summarizeBalances', () => {
     expect(summary.receiveMinor).toBe(0);
     expect(summary.heldOweMinor).toBe(9000);
     expect(summary.heldReceiveMinor).toBe(1500);
-  });
-});
-
-describe('balanceLines', () => {
-  it('lists whom the user sends to and who sends to them, largest first', () => {
-    const lines = balanceLines([
-      balance({ counterpartyId: 'zubair', finalMinor: 5000 }),
-      balance({ counterpartyId: 'ajmal', provisionalMinor: -6667 }),
-      balance({ counterpartyId: 'sara', finalMinor: 9000, provisionalMinor: 1 }),
-      balance({ counterpartyId: 'bilal', finalMinor: -100 }),
-    ]);
-    expect(lines.send).toEqual([
-      { counterpartyId: 'sara', amountMinor: 9001, isProvisional: true },
-      { counterpartyId: 'zubair', amountMinor: 5000, isProvisional: false },
-    ]);
-    expect(lines.receive).toEqual([
-      { counterpartyId: 'ajmal', amountMinor: 6667, isProvisional: true },
-      { counterpartyId: 'bilal', amountMinor: 100, isProvisional: false },
-    ]);
-  });
-
-  it('adds up to the dashboard totals, leaving out people who are square and held amounts', () => {
-    const input = [
-      balance({ counterpartyId: 'zubair', finalMinor: 2000, disputedMinor: 9000 }),
-      balance({ counterpartyId: 'ajmal', finalMinor: 4000, provisionalMinor: -4000 }),
-      balance({ counterpartyId: 'sara', disputedMinor: -1500, provisionalMinor: -300 }),
-    ];
-    const lines = balanceLines(input);
-    const summary = summarizeBalances(input);
-    const total = (list: { amountMinor: number }[]) =>
-      list.reduce((sum, line) => sum + line.amountMinor, 0);
-
-    expect(lines.send.map((line) => line.counterpartyId)).toEqual(['zubair']);
-    expect(total(lines.send)).toBe(summary.oweMinor);
-    expect(total(lines.receive)).toBe(summary.receiveMinor);
   });
 });
 

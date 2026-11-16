@@ -1,12 +1,7 @@
 import { fireEvent, screen, userEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
-import {
-  type Apartment,
-  fetchApartment,
-  fetchMembers,
-  type Member,
-} from '@/features/apartments/api';
+import { type Apartment, fetchApartment } from '@/features/apartments/api';
 import { fetchUnreadNotifications } from '@/features/notifications/api';
 import type { UnreadNotification } from '@/features/notifications/unread';
 import { addMonths, formatMonth, monthStart, todayInTimeZone } from '@/lib/time';
@@ -43,7 +38,6 @@ jest.mock('@/features/notifications/api', () => ({
 jest.mock('@/features/apartments/api', () => ({
   ...jest.requireActual('@/features/apartments/api'),
   fetchApartment: jest.fn(),
-  fetchMembers: jest.fn(),
 }));
 
 const apartment: Apartment = {
@@ -108,51 +102,28 @@ it('shows what the user will receive and send (SRS 5.1)', async () => {
   expect(screen.queryByRole('button', { name: /Settle up/ })).not.toBeOnTheScreen();
 });
 
-function member(userId: string, displayName: string): Member {
-  return {
-    membershipId: `m-${userId}`,
-    userId,
-    role: 'member',
-    canAddExpense: true,
-    joinedAt: '2026-11-01T00:00:00Z',
-    leftAt: null,
-    leftReason: null,
-    hiddenAt: null,
-    displayName,
-    avatarPath: null,
-  };
-}
-
-it('lists below a total only the people behind it, and hides the list on a second tap', async () => {
-  balances.mockResolvedValue([
-    { counterpartyId: 'z', finalMinor: 5000, provisionalMinor: 0, disputedMinor: 0 },
-    { counterpartyId: 'j', finalMinor: 0, provisionalMinor: -6666, disputedMinor: 0 },
+it('shows only the expenses on the tapped side, and all of them on a second tap', async () => {
+  expensesPage.mockResolvedValue([
+    expense({ id: 'e1', title: 'Cleaning', my_position_minor: 50_000 }),
+    expense({ id: 'e2', title: 'Internet', my_position_minor: -3_000 }),
+    expense({ id: 'e3', title: 'Water', my_position_minor: 0 }),
   ]);
-  jest.mocked(fetchMembers).mockResolvedValue([member('z', 'Zubair'), member('j', 'Ajmal')]);
   await renderWithProviders(<Dashboard apartment={apartment} />);
   const user = userEvent.setup();
+  await screen.findByRole('button', { name: /Cleaning/ });
 
-  const send = await screen.findByRole('button', { name: "You'll send, 50.00 PKR" });
-  await user.press(send);
-  expect(
-    await screen.findByRole('button', { name: 'You pay Zubair, 50.00 PKR' }),
-  ).toBeOnTheScreen();
-  expect(screen.queryByText('Ajmal')).not.toBeOnTheScreen();
+  await user.press(screen.getByRole('button', { name: "You'll send, 0.00 PKR" }));
+  expect(screen.getByRole('button', { name: /Internet/ })).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: /Cleaning/ })).not.toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: /Water/ })).not.toBeOnTheScreen();
 
-  await user.press(screen.getByRole('button', { name: "You'll receive, 66.66 PKR" }));
-  expect(
-    await screen.findByRole('button', { name: 'Ajmal pays you, 66.66 PKR, provisional' }),
-  ).toBeOnTheScreen();
-  expect(screen.queryByText('Zubair')).not.toBeOnTheScreen();
+  await user.press(screen.getByRole('button', { name: "You'll receive, 0.00 PKR" }));
+  expect(screen.getByRole('button', { name: /Cleaning/ })).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: /Internet/ })).not.toBeOnTheScreen();
 
-  await user.press(screen.getByRole('button', { name: 'Ajmal pays you, 66.66 PKR, provisional' }));
-  expect(router.push).toHaveBeenCalledWith({
-    pathname: '/apartments/[apartmentId]/ledger/[memberId]',
-    params: { apartmentId: apartment.id, memberId: 'j' },
-  });
-
-  await user.press(screen.getByRole('button', { name: "You'll receive, 66.66 PKR" }));
-  expect(screen.queryByText('Ajmal')).not.toBeOnTheScreen();
+  await user.press(screen.getByRole('button', { name: "You'll receive, 0.00 PKR" }));
+  expect(screen.getByRole('button', { name: /Water/ })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: /Internet/ })).toBeOnTheScreen();
 });
 
 it('shows the line under the header only once the list is scrolled', async () => {
@@ -175,12 +146,18 @@ it('shows the line under the header only once the list is scrolled', async () =>
   expect(mockSetOptions).toHaveBeenLastCalledWith({ headerShadowVisible: false });
 });
 
-it('says so when there is nobody to pay', async () => {
+it('says so when no expense of the month is on the tapped side', async () => {
+  expensesPage.mockResolvedValue([
+    expense({ id: 'e1', title: 'Cleaning', my_position_minor: 50_000 }),
+  ]);
   await renderWithProviders(<Dashboard apartment={apartment} />);
   const user = userEvent.setup();
+  await screen.findByRole('button', { name: /Cleaning/ });
 
-  await user.press(await screen.findByRole('button', { name: "You'll send, 0.00 PKR" }));
-  expect(screen.getByText("You don't owe anyone right now.")).toBeOnTheScreen();
+  await user.press(screen.getByRole('button', { name: "You'll send, 0.00 PKR" }));
+  expect(
+    screen.getByText(`Nothing to send for the expenses in ${formatMonth(thisMonth)}.`),
+  ).toBeOnTheScreen();
 });
 
 it('keeps disputed amounts out of the totals and says so', async () => {

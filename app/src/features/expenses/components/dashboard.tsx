@@ -16,7 +16,7 @@ import { formatMonth, monthStart, todayInTimeZone } from '@/lib/time';
 
 import type { ExpenseListItem } from '../api';
 import { useExpenses, useMyMonthlyShare, useRefreshMoney } from '../hooks';
-import { BalanceSummary } from './balance-summary';
+import { BalanceSummary, type ExpenseFilter } from './balance-summary';
 import { ExpenseRow } from './expense-row';
 import { MonthSelector } from './month-selector';
 
@@ -30,9 +30,14 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
   const [refreshing, setRefreshing] = useState(false);
   const isUnread = useIsUnread();
   const headerShadow = useHeaderShadowOnScroll();
+  const [filter, setFilter] = useState<ExpenseFilter | null>(null);
 
   // Pages are fetched by offset, so an expense added while scrolling can appear twice.
-  const items = useMemo(() => uniqueById(expenses.data?.pages.flat() ?? []), [expenses.data]);
+  const loaded = useMemo(() => uniqueById(expenses.data?.pages.flat() ?? []), [expenses.data]);
+  const items = useMemo(
+    () => (filter ? loaded.filter((item) => matchesFilter(item, filter)) : loaded),
+    [loaded, filter],
+  );
 
   const refresh = async () => {
     setRefreshing(true);
@@ -72,7 +77,12 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
       ListHeaderComponent={
         <View className="gap-4 pb-1">
           <FreshnessBanner freshness={expenses} />
-          <BalanceSummary apartmentId={apartment.id} currency={apartment.currency} />
+          <BalanceSummary
+            apartmentId={apartment.id}
+            currency={apartment.currency}
+            filter={filter}
+            onFilterChange={setFilter}
+          />
           <MonthSelector month={month} latestMonth={latestMonth} onChange={setMonth} />
           <MonthlyShare apartmentId={apartment.id} month={month} currency={apartment.currency} />
         </View>
@@ -85,6 +95,12 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
             message={userErrorMessage(expenses.error, 'Could not load the expenses.')}
             onRetry={() => void expenses.refetch()}
           />
+        ) : filter && loaded.length > 0 ? (
+          <Typography.Paragraph color="muted" className="py-10 text-center">
+            {filter === 'receive'
+              ? `Nothing to receive from the expenses in ${formatMonth(month)}.`
+              : `Nothing to send for the expenses in ${formatMonth(month)}.`}
+          </Typography.Paragraph>
         ) : (
           <View className="items-center gap-2 py-10">
             <Typography.Heading type="h6" className="text-center">
@@ -143,6 +159,12 @@ function MonthlyShare({
       </Typography.Paragraph>
     </Typography.Paragraph>
   );
+}
+
+/** The expenses the user receives for (paid more than their share), or sends for. */
+function matchesFilter(item: ExpenseListItem, filter: ExpenseFilter): boolean {
+  const position = item.my_position_minor ?? 0;
+  return filter === 'receive' ? position > 0 : position < 0;
 }
 
 function uniqueById(items: ExpenseListItem[]): ExpenseListItem[] {
