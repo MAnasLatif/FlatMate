@@ -26,6 +26,29 @@ describe('notificationHref', () => {
       pathname: '/apartments/[apartmentId]/settlement',
       params: { apartmentId },
     });
+    expect(
+      notificationHref({ apartmentId, recordType: 'recurring', recordId: apartmentId }),
+    ).toEqual({
+      pathname: '/apartments/[apartmentId]/settings',
+      params: { apartmentId, tab: 'recurring' },
+    });
+  });
+
+  it('opens the settings for a request to join, and the members screen for anything else', () => {
+    expect(
+      notificationHref({
+        apartmentId,
+        recordType: 'members',
+        recordId: 'r',
+        type: 'join_request.requested',
+      }),
+    ).toEqual({
+      pathname: '/apartments/[apartmentId]/settings',
+      params: { apartmentId, tab: 'members' },
+    });
+    expect(
+      notificationHref({ apartmentId, recordType: 'members', recordId: 'u', type: 'member.left' }),
+    ).toEqual({ pathname: '/apartments/[apartmentId]/members', params: { apartmentId } });
   });
 
   it('falls back to the apartment when the record is missing', () => {

@@ -184,8 +184,8 @@ describe('RaiseDispute', () => {
     await user.type(screen.getByLabelText('Why you object'), 'Half');
 
     expect(await screen.findByText('If Zubair accepts')).toBeOnTheScreen();
-    expect(screen.getByText('50.00 PKR')).toBeOnTheScreen();
-    expect(screen.getAllByText('125.00 PKR')).toHaveLength(2);
+    expect(screen.getByText('Rs 50.00')).toBeOnTheScreen();
+    expect(screen.getAllByText('Rs 125.00')).toHaveLength(2);
   });
 
   it('does not let the person who added the expense dispute it', async () => {
@@ -207,7 +207,7 @@ describe('DisputeDetailView', () => {
     const user = userEvent.setup();
 
     expect(
-      await screen.findByText('Anas: Proposes a share of 50.00 PKR instead of 100.00 PKR.'),
+      await screen.findByText('Anas: Proposes a share of Rs 50.00 instead of Rs 100.00.'),
     ).toBeOnTheScreen();
     expect(screen.getByText('If the proposal is applied')).toBeOnTheScreen();
     await user.press(screen.getByRole('button', { name: 'Accept' }));

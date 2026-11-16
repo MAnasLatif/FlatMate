@@ -220,7 +220,7 @@ describe('PayMember', () => {
     const user = userEvent.setup();
 
     await user.press(await screen.findByRole('button', { name: 'Net off first' }));
-    expect(screen.getByText(/120.00 PKR is netted off both ways/)).toBeOnTheScreen();
+    expect(screen.getByText(/Rs 120.00 is netted off both ways/)).toBeOnTheScreen();
     await user.press(screen.getByRole('button', { name: 'Record payment' }));
 
     expect(netOff).toHaveBeenCalledWith(APARTMENT, ANAS, 12_000, expect.any(String));
@@ -291,7 +291,7 @@ describe('PairPayments', () => {
 
     await user.press(
       await screen.findByRole('button', {
-        name: 'You paid Anas 120.00 PKR, Recorded, provisional',
+        name: 'You paid Anas Rs 120.00, Recorded, provisional',
       }),
     );
     expect(router.push).toHaveBeenCalledWith({
@@ -366,7 +366,7 @@ describe('AccountPayments', () => {
     await renderWithProviders(<AccountPayments accountId={UBL} />);
     const user = userEvent.setup();
 
-    expect(await screen.findByText('Zubair paid you 120.00 PKR')).toBeOnTheScreen();
+    expect(await screen.findByText('Zubair paid you Rs 120.00')).toBeOnTheScreen();
     expect(fetchAccountPaymentsPage).toHaveBeenCalledWith(UBL, 0);
 
     await user.press(screen.getByRole('button', { name: /Zubair paid you/ }));

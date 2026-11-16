@@ -7,7 +7,14 @@ const ME = 'me';
 const APT = 'apt';
 
 function target(overrides: Partial<NotificationTarget>): NotificationTarget {
-  return { id: 'n', apartmentId: APT, recordType: 'expense', recordId: 'e1', ...overrides };
+  return {
+    id: 'n',
+    apartmentId: APT,
+    recordType: 'expense',
+    recordId: 'e1',
+    type: 'expense.created',
+    ...overrides,
+  };
 }
 
 function item(overrides: Partial<UnreadNotification>): UnreadNotification {
@@ -110,5 +117,17 @@ describe('unreadMatches', () => {
     expect(
       unreadMatches.requestsAndInvites()(item({ recordType: 'join_request', apartmentId: 'x' })),
     ).toBe(true);
+  });
+
+  it('leaves requests to join and declined invitations to the settings, not the members icon', () => {
+    const asking = item({ recordType: 'members', type: 'join_request.requested' });
+    const declined = item({ recordType: 'members', type: 'rejoin_invite.declined' });
+    const joined = item({ recordType: 'members', type: 'member.joined' });
+    expect(unreadMatches.members(APT)(asking)).toBe(false);
+    expect(unreadMatches.members(APT)(declined)).toBe(false);
+    expect(unreadMatches.members(APT)(joined)).toBe(true);
+    expect(unreadMatches.memberAdmin(APT)(asking)).toBe(true);
+    expect(unreadMatches.memberAdmin(APT)(declined)).toBe(true);
+    expect(unreadMatches.memberAdmin(APT)(joined)).toBe(false);
   });
 });

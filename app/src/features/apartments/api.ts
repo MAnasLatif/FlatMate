@@ -32,14 +32,6 @@ export type Member = {
   avatarPath: string | null;
 };
 
-/** How long a join code works, in days. */
-export const INVITE_VALID_DAYS = 7;
-
-export type Invite = Pick<
-  Tables<'apartment_invites'>,
-  'id' | 'created_at' | 'expires_at' | 'created_by'
->;
-
 export type Category = Pick<Tables<'expense_categories'>, 'id' | 'name'>;
 
 const roleSchema = z.enum(['admin', 'member']);
@@ -325,20 +317,23 @@ export async function leaveApartment(apartmentId: string): Promise<void> {
   if (error) throw error;
 }
 
-/** Codes that can still be used. Expired and revoked codes are hidden. */
-export async function fetchActiveInvites(apartmentId: string): Promise<Invite[]> {
-  const { data, error } = await supabase
-    .from('apartment_invites')
-    .select('id, created_at, expires_at, created_by')
-    .eq('apartment_id', apartmentId)
-    .is('revoked_at', null)
-    .gt('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: false });
+/**
+ * The apartment's one join code, as XXXX-XXXX. It does not expire; the
+ * database makes it the first time an admin asks. Admins only.
+ */
+export async function fetchJoinCode(apartmentId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('get_join_code', { p_apartment_id: apartmentId });
   if (error) throw error;
   return data;
 }
 
-/** Returns the code, which is shown only now: the database keeps a hash. */
+/** Replaces the apartment's join code; every older code stops working. */
+export async function changeJoinCode(apartmentId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('change_join_code', { p_apartment_id: apartmentId });
+  if (error) throw error;
+  return data;
+}
+
 /**
  * Emails a join code to `email` through the send-invite-email Edge Function.
  * Fails with an Error whose message is the function's error key, such as
@@ -359,20 +354,6 @@ export async function sendInviteEmail(apartmentId: string, email: string): Promi
   }
   if (error instanceof FunctionsFetchError) throw new Error('unreachable');
   throw error;
-}
-
-export async function createInvite(apartmentId: string, validDays: number): Promise<string> {
-  const { data, error } = await supabase.rpc('create_invite', {
-    p_apartment_id: apartmentId,
-    p_valid_days: validDays,
-  });
-  if (error) throw error;
-  return data;
-}
-
-export async function revokeInvite(inviteId: string): Promise<void> {
-  const { error } = await supabase.rpc('revoke_invite', { p_invite_id: inviteId });
-  if (error) throw error;
 }
 
 export async function fetchCategories(apartmentId: string): Promise<Category[]> {

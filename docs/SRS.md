@@ -81,7 +81,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-01.4 Account visibility defaults to private; only explicitly shared receiving accounts are visible to other eligible apartment members. The owner sees their accounts with the full number, in a list that opens each account's details (with Edit and Delete, Make preferred, and the payments made into it); swiping a row right edits it and left asks to delete it.
 
 ### FR-02 Apartment Lifecycle
-- FR-02.1 Create apartment with unique identifier and join code; creator becomes admin.
+- FR-02.1 Create apartment with unique identifier and join code; creator becomes admin. An apartment has one join code at a time, which does not expire; admins copy, share or email it and can change it ([decision 0011](decisions/0011-one-join-code-per-apartment.md)).
 - FR-02.2 A valid code sends a request to join; invalid/revoked/expired codes fail safely. Any current admin approves or declines the request, and the first to act decides; the person joins only when approved. The person sees their pending requests and can cancel them, and may ask again after a decline (join-code rate limits still apply). Admins are notified of requests, and the person of the decision. Admin can rotate/revoke codes. An admin can also type an email address and have FlatMate email a code, limited to 20 emails a day per admin and 3 a day per address per apartment; the address is not stored ([decision 0010](decisions/0010-invite-emails.md)).
 - FR-02.3 Multiple memberships per user; all apartment balances and settings remain isolated.
 - FR-02.4 Member may leave; admin may remove member. Historical transactions remain immutable/auditable; outstanding dues and disputes remain attached to the former member. An admin may remove a former member from the members list, which hides them there and changes no record, and may invite a former member back; accepting makes them a member again ([decision 0009](decisions/0009-former-members-hiding-and-inviting-back.md)).
@@ -100,7 +100,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 
 ### FR-04 Recurring Expenses
 - FR-04.1 Admin-only recurring template management; multiple admins may act. Recurring expenses are added and managed from the apartment's settings screen, which only admins reach; the Add (+) flow creates one-time expenses only.
-- FR-04.2 Fixed: predetermined amount and recurrence schedule (e.g. monthly rent), automatically instantiate once per cycle.
+- FR-04.2 Fixed: predetermined amount and recurrence schedule (e.g. monthly rent), automatically instantiate once per cycle. A template repeats every day, every 1 or 2 weeks from its first date (keeping that weekday), or every 1, 3 or 12 months on a bill day (29 to 31 fall on the last day of shorter months), with an optional number of days to pay and an optional member who will pay it. Each charge is an unpaid bill (section 12, items 5 and 16).
 - FR-04.3 Variable: expected monthly arrival day (e.g. electricity on the 5th); notify admins to enter actual amount, optional proof and due date. Do not create a financial charge with an invented amount.
 - FR-04.4 Each template has independent split rules, included/excluded members, and optional percentage/custom allocations; admins can override splits for one generated month without rewriting the template.
 - FR-04.5 Changes to recurring templates apply prospectively by default; historical instances remain unchanged.
@@ -198,9 +198,8 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 | `expense_payers` | id, expense_id, payer_user_id, amount_minor |
 | `expense_splits` | id, expense_id, member_user_id, amount_minor, split_rule_snapshot, status |
 | `expense_attachments` | id, expense_id, storage_path, uploaded_by, type |
-| `recurring_templates` | id, apartment_id, title, fixed_or_variable, amount_minor_nullable, schedule, expected_bill_day, enabled, created_by |
-| `recurring_split_rules` | id, template_id, member_user_id, allocation_type, allocation_value, excluded |
-| `recurring_instances` | id, template_id, billing_period, expense_id_nullable, state, UNIQUE(template_id,billing_period) |
+| `recurring_templates` | id, apartment_id, title, kind (fixed, variable), amount_minor (fixed only), repeat_unit (day, week, month), repeat_every, bill_day (monthly only), due_after_days, collector_id, split_method, participants (the split, as `post_expense` takes it), next_bill_date, paused_at, archived_at, created_by |
+| `recurring_instances` | id, template_id, billing_period, bill_date, state (waiting, posted, skipped), reason, expense_id, decided_by, UNIQUE(template_id,billing_period) |
 | `payments` | id, apartment_id, sender_user_id, recipient_user_id, amount_minor, currency, reference, proof_path, status, idempotency_key, recorded_at, final_after, receiving_account_id (cleared if the account is deleted) and a snapshot of it: paid_to_provider, paid_to_title, paid_to_identifier_masked |
 | `payment_allocations` | id, payment_id, obligation_reference, allocated_amount_minor |
 | `disputes` | id, apartment_id, subject_type, subject_id, raised_by, reason, proposed_amount_minor_nullable, state, created_at, resolved_at |
@@ -296,7 +295,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ## 12. Product Decisions
 
-Items 1–9 and 12 were decided on 2026-11-13, and items 13–17 on 2026-11-14 and 15. Items 10 and 11 are still open, and part of item 6.
+Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, and item 19 on 2026-11-17. Items 10 and 11 are still open, and part of item 6.
 
 1. **Explicit approval mode — decided.** Not part of the MVP. Every expense is accepted automatically, and affected members object within the window (FR-05). An optional approval mode (FR-03.8) may be reconsidered after release.
 2. **What a dispute holds — decided.** A dispute holds every share of the disputed expense until it is resolved, so settlement never sees inconsistent totals. Other expenses stay payable.
@@ -315,6 +314,8 @@ Items 1–9 and 12 were decided on 2026-11-13, and items 13–17 on 2026-11-14 a
 15. **No expense preview — decided.** The add and edit forms do not preview who will owe whom (FR-03.5).
 16. **Who will pay an unpaid bill — decided.** Naming a collector only records who is responsible and notifies them. It creates no debt; balances still change only when the bill is paid (FR-03.2, item 5).
 17. **Payments name the account they went into — decided.** Optional when recording a payment; the payment keeps a snapshot of the account so history survives edits and deletion (FR-07.3).
+18. **Repeatable bills are not categories — decided.** Rent, utilities and internet are set up as repeatable expenses, so new apartments no longer start with those categories and existing apartments archive them; expenses filed under them keep their category. A repeatable expense repeats daily, weekly, every 2 weeks, monthly, every 3 months or yearly (FR-04.2).
+19. **One join code per apartment — decided.** Each apartment has one join code at a time. It does not expire, and admins can see it, copy, share or email it, and change it, which stops the old one. Only admins can read it; joining matches on its hash. See decision record 0011.
 
 
 ## 13. Suggested First Implementation Tasks

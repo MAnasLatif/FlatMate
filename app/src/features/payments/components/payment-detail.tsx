@@ -16,7 +16,6 @@ import { useApartment, useMembers } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { memberLabel } from '@/features/expenses/member-label';
 import { userErrorMessage } from '@/lib/errors';
-import { formatMinorUnits } from '@/lib/money';
 import type { PickedImage } from '@/lib/private-images';
 import { formatDate, lastDayBefore } from '@/lib/time';
 
@@ -24,6 +23,7 @@ import type { PaymentDetail } from '../api';
 import { PAYMENT_ERROR_MESSAGES, proofUploadErrorMessage } from '../errors';
 import { usePaymentDetail, usePaymentMutations } from '../hooks';
 import { paymentPermissions, paymentStatus } from '../rules';
+import { formatMoney } from '@/features/apartments/currencies';
 
 /** One payment: who paid whom, its status, proof, objections and what the viewer can do (SRS FR-07.8). */
 export function PaymentDetailView({
@@ -104,7 +104,7 @@ function PaymentContent({
   const [reasonError, setReasonError] = useState<string | null>(null);
   const [proof, setProof] = useState<PickedImage | null>(null);
 
-  const money = (amountMinor: number) => `${formatMinorUnits(amountMinor)} ${payment.currency}`;
+  const money = (amountMinor: number) => `${formatMoney(amountMinor, payment.currency)}`;
   const nameOf = (id: string) => {
     const member = members.find((item) => item.userId === id);
     return member ? memberLabel(member, userId) : 'A former member';

@@ -32,22 +32,18 @@ select matches(
 );
 
 select is(
-  (select val::jsonb - 'code' - 'invite_id' from vals where name = 'first'),
-  '{"apartment_name": "Flat 4B", "inviter_name": "Anas", "valid_days": 7}'::jsonb,
-  'with what the email says: the apartment, the inviter and how long the code works'
+  (select val::jsonb - 'code' from vals where name = 'first'),
+  '{"apartment_name": "Flat 4B", "inviter_name": "Anas"}'::jsonb,
+  'with what the email says: the apartment and the inviter'
+);
+
+select is(
+  (select val::jsonb ->> 'code' from vals where name = 'first'),
+  public.get_join_code((select val::uuid from vals where name = 'flat')),
+  'the email carries the apartment''s one join code, not a new one'
 );
 
 reset role;
-
-select ok(
-  exists (
-    select 1 from public.apartment_invites
-    where id = (select (val::jsonb ->> 'invite_id')::uuid from vals where name = 'first')
-      and expires_at > now() + interval '6 days'
-      and revoked_at is null
-  ),
-  'the code is an ordinary join code, recorded like a shared one'
-);
 
 select is(
   (select recipient_hash from private.invite_emails),

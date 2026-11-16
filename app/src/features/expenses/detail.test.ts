@@ -1,4 +1,4 @@
-import { formatMinorUnits } from '@/lib/money';
+import { formatMoney } from '@/features/apartments/currencies';
 import { formatDate } from '@/lib/time';
 
 import type { HistoryEvent } from './api';
@@ -60,7 +60,7 @@ describe('describeHistoryEvent', () => {
       event('edited', {
         changes: { amount_minor: { from: 20_000, to: 30_000 }, revision: { from: 1, to: 2 } },
       }),
-      'Anas changed the amount from 200.00 PKR to 300.00 PKR',
+      'Anas changed the amount from Rs 200.00 to Rs 300.00',
     ],
     [
       event('edited', { changes: { revision: { from: 1, to: 2 } } }),
@@ -69,7 +69,7 @@ describe('describeHistoryEvent', () => {
     [event('edited', { changes: { title: { from: 'A', to: 'B' } } }), 'Anas edited the details'],
     [event('voided', { reason: null }), 'Anas voided this expense'],
   ])('describes %j', (input, expected) => {
-    expect(describeHistoryEvent(input, 'Anas', (amount) => `${formatMinorUnits(amount)} PKR`)).toBe(
+    expect(describeHistoryEvent(input, 'Anas', (amount) => formatMoney(amount, 'PKR'))).toBe(
       expected,
     );
   });

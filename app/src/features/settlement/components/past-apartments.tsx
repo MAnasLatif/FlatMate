@@ -4,10 +4,10 @@ import { View } from 'react-native';
 
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { useDisplayNames } from '@/features/profile/hooks';
-import { formatMinorUnits } from '@/lib/money';
 import { formatDate } from '@/lib/time';
 
 import { useMyExits } from '../hooks';
+import { formatMoney } from '@/features/apartments/currencies';
 
 /**
  * Apartments the user left or was removed from, with what they owed or were
@@ -30,8 +30,7 @@ export function PastApartments() {
       <Card.Body className="gap-3">
         <Card.Title>Past apartments</Card.Title>
         {exits.data.map((exit, index) => {
-          const money = (amountMinor: number) =>
-            `${formatMinorUnits(amountMinor)} ${exit.currency}`;
+          const money = (amountMinor: number) => `${formatMoney(amountMinor, exit.currency)}`;
           const owed = exit.balances.filter(
             (balance) => balance.payableMinor !== 0 || balance.heldMinor !== 0,
           );

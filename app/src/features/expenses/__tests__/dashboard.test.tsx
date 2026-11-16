@@ -94,9 +94,9 @@ it('shows what the user will receive and send (SRS 5.1)', async () => {
   await renderWithProviders(<Dashboard apartment={apartment} />);
 
   expect(
-    await screen.findByRole('button', { name: "You'll receive, 133.33 PKR" }),
+    await screen.findByRole('button', { name: "You'll receive, Rs 133.33" }),
   ).toBeOnTheScreen();
-  expect(screen.getByRole('button', { name: "You'll send, 0.00 PKR" })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: "You'll send, Rs 0.00" })).toBeOnTheScreen();
   expect(screen.queryByText('Net balance')).not.toBeOnTheScreen();
   expect(screen.queryByText('Provisional')).not.toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: /Settle up/ })).not.toBeOnTheScreen();
@@ -112,16 +112,16 @@ it('shows only the expenses on the tapped side, and all of them on a second tap'
   const user = userEvent.setup();
   await screen.findByRole('button', { name: /Cleaning/ });
 
-  await user.press(screen.getByRole('button', { name: "You'll send, 0.00 PKR" }));
+  await user.press(screen.getByRole('button', { name: "You'll send, Rs 0.00" }));
   expect(screen.getByRole('button', { name: /Internet/ })).toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: /Cleaning/ })).not.toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: /Water/ })).not.toBeOnTheScreen();
 
-  await user.press(screen.getByRole('button', { name: "You'll receive, 0.00 PKR" }));
+  await user.press(screen.getByRole('button', { name: "You'll receive, Rs 0.00" }));
   expect(screen.getByRole('button', { name: /Cleaning/ })).toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: /Internet/ })).not.toBeOnTheScreen();
 
-  await user.press(screen.getByRole('button', { name: "You'll receive, 0.00 PKR" }));
+  await user.press(screen.getByRole('button', { name: "You'll receive, Rs 0.00" }));
   expect(screen.getByRole('button', { name: /Water/ })).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: /Internet/ })).toBeOnTheScreen();
 });
@@ -154,7 +154,7 @@ it('says so when no expense of the month is on the tapped side', async () => {
   const user = userEvent.setup();
   await screen.findByRole('button', { name: /Cleaning/ });
 
-  await user.press(screen.getByRole('button', { name: "You'll send, 0.00 PKR" }));
+  await user.press(screen.getByRole('button', { name: "You'll send, Rs 0.00" }));
   expect(
     screen.getByText(`Nothing to send for the expenses in ${formatMonth(thisMonth)}.`),
   ).toBeOnTheScreen();
@@ -166,9 +166,9 @@ it('keeps disputed amounts out of the totals and says so', async () => {
   ]);
   await renderWithProviders(<Dashboard apartment={apartment} />);
 
-  expect(await screen.findByRole('button', { name: "You'll send, 20.00 PKR" })).toBeOnTheScreen();
+  expect(await screen.findByRole('button', { name: "You'll send, Rs 20.00" })).toBeOnTheScreen();
   expect(
-    screen.getByText(/Held by open disputes and not counted above: 90.00 PKR from you/),
+    screen.getByText(/Held by open disputes and not counted above: Rs 90.00 from you/),
   ).toBeOnTheScreen();
 });
 
@@ -180,9 +180,9 @@ it('shows on each expense what the user receives or sends for it', async () => {
   ]);
   await renderWithProviders(<Dashboard apartment={apartment} />);
 
-  expect(await screen.findByText("You'll receive 500.00 PKR")).toBeOnTheScreen();
-  expect(screen.getByText("You'll send 30.00 PKR")).toBeOnTheScreen();
-  expect(screen.getAllByText(/You'll (receive|send) \d/)).toHaveLength(2);
+  expect(await screen.findByText("You'll receive Rs 500.00")).toBeOnTheScreen();
+  expect(screen.getByText("You'll send Rs 30.00")).toBeOnTheScreen();
+  expect(screen.getAllByText(/You'll (receive|send) Rs \d/)).toHaveLength(2);
 });
 
 it("lists the month's expenses with their status and the user's share", async () => {
@@ -198,7 +198,7 @@ it("lists the month's expenses with their status and the user's share", async ()
   expect(screen.getByText('Provisional')).toBeOnTheScreen();
   expect(screen.getByText('Unpaid bill')).toBeOnTheScreen();
   expect(screen.getByText('Final')).toBeOnTheScreen();
-  expect(await screen.findByText('66.67 PKR')).toBeOnTheScreen();
+  expect(await screen.findByText('Rs 66.67')).toBeOnTheScreen();
   expect(expensesPage).toHaveBeenCalledWith(
     apartment.id,
     '11111111-1111-1111-1111-111111111111',
@@ -226,6 +226,7 @@ function unread(overrides: Partial<UnreadNotification>): UnreadNotification {
     id: 'n1',
     apartmentId: apartment.id,
     recordType: 'expense',
+    type: 'expense.created',
     recordId: 'e1',
     expenseId: null,
     counterpartyId: null,
@@ -298,7 +299,7 @@ it('offers a retry when the balances cannot be loaded', async () => {
   expect(await screen.findByText('Could not load your balances.')).toBeOnTheScreen();
   await user.press(screen.getByRole('button', { name: /Tap to try again/ }));
 
-  expect(await screen.findByRole('button', { name: "You'll send, 0.00 PKR" })).toBeOnTheScreen();
+  expect(await screen.findByRole('button', { name: "You'll send, Rs 0.00" })).toBeOnTheScreen();
 });
 
 it('offers a retry when the expenses cannot be loaded', async () => {

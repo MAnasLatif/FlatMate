@@ -4,10 +4,10 @@ import { View } from 'react-native';
 
 import { LoadError, PendingSkeleton } from '@/components/query-states';
 import { userErrorMessage } from '@/lib/errors';
-import { formatMinorUnits } from '@/lib/money';
 
 import { summarizeBalances } from '../balances';
 import { useMyBalances } from '../hooks';
+import { formatMoney } from '@/features/apartments/currencies';
 
 /** Which expenses the list below shows: those the user receives for, or sends for. */
 export type ExpenseFilter = 'receive' | 'send';
@@ -46,7 +46,7 @@ export function BalanceSummary({
     );
   }
 
-  const money = (amountMinor: number) => `${formatMinorUnits(amountMinor)} ${currency}`;
+  const money = (amountMinor: number) => `${formatMoney(amountMinor, currency)}`;
   const toggle = (next: ExpenseFilter) => onFilterChange(filter === next ? null : next);
 
   return (

@@ -112,6 +112,7 @@ export type Database = {
       apartment_invites: {
         Row: {
           apartment_id: string;
+          code: string | null;
           code_hash: string;
           created_at: string;
           created_by: string | null;
@@ -122,6 +123,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           apartment_id: string;
+          code?: string | null;
           code_hash: string;
           created_at?: string;
           created_by?: string | null;
@@ -131,6 +133,7 @@ export type Database = {
         };
         Update: {
           apartment_id?: string;
+          code?: string | null;
           code_hash?: string;
           created_at?: string;
           created_by?: string | null;
@@ -1581,6 +1584,167 @@ export type Database = {
           },
         ];
       };
+      recurring_instances: {
+        Row: {
+          apartment_id: string;
+          bill_date: string;
+          billing_period: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          expense_id: string | null;
+          id: string;
+          reason: string | null;
+          state: string;
+          template_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          bill_date: string;
+          billing_period: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          expense_id?: string | null;
+          id?: string;
+          reason?: string | null;
+          state: string;
+          template_id: string;
+        };
+        Update: {
+          apartment_id?: string;
+          bill_date?: string;
+          billing_period?: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          expense_id?: string | null;
+          id?: string;
+          reason?: string | null;
+          state?: string;
+          template_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'recurring_instances_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'recurring_instances_decided_by_fkey';
+            columns: ['decided_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'recurring_instances_expense_id_fkey';
+            columns: ['expense_id'];
+            isOneToOne: true;
+            referencedRelation: 'expenses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'recurring_instances_template_id_fkey';
+            columns: ['template_id'];
+            isOneToOne: false;
+            referencedRelation: 'recurring_templates';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      recurring_templates: {
+        Row: {
+          amount_minor: number | null;
+          apartment_id: string;
+          archived_at: string | null;
+          bill_day: number | null;
+          client_request_id: string | null;
+          collector_id: string | null;
+          created_at: string;
+          created_by: string;
+          due_after_days: number | null;
+          id: string;
+          kind: string;
+          next_bill_date: string;
+          participants: NonNullable<Json>;
+          paused_at: string | null;
+          repeat_every: number;
+          repeat_unit: string;
+          split_method: string;
+          title: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_minor?: number | null;
+          apartment_id: string;
+          archived_at?: string | null;
+          bill_day?: number | null;
+          client_request_id?: string | null;
+          collector_id?: string | null;
+          created_at?: string;
+          created_by: string;
+          due_after_days?: number | null;
+          id?: string;
+          kind: string;
+          next_bill_date: string;
+          participants: NonNullable<Json>;
+          paused_at?: string | null;
+          repeat_every: number;
+          repeat_unit: string;
+          split_method: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount_minor?: number | null;
+          apartment_id?: string;
+          archived_at?: string | null;
+          bill_day?: number | null;
+          client_request_id?: string | null;
+          collector_id?: string | null;
+          created_at?: string;
+          created_by?: string;
+          due_after_days?: number | null;
+          id?: string;
+          kind?: string;
+          next_bill_date?: string;
+          participants?: NonNullable<Json>;
+          paused_at?: string | null;
+          repeat_every?: number;
+          repeat_unit?: string;
+          split_method?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'recurring_templates_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'recurring_templates_collector_id_fkey';
+            columns: ['collector_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'recurring_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       rejoin_invites: {
         Row: {
           apartment_id: string;
@@ -1781,8 +1945,10 @@ export type Database = {
       };
       approve_join_request: { Args: { p_request_id: string }; Returns: undefined };
       archive_category: { Args: { p_category_id: string }; Returns: undefined };
+      archive_recurring_template: { Args: { p_template_id: string }; Returns: undefined };
       cancel_join_request: { Args: { p_request_id: string }; Returns: undefined };
       cancel_rejoin_invite: { Args: { p_invite_id: string }; Returns: undefined };
+      change_join_code: { Args: { p_apartment_id: string }; Returns: string };
       claim_pushes: {
         Args: { p_limit?: number };
         Returns: {
@@ -1804,6 +1970,24 @@ export type Database = {
         Returns: string;
       };
       create_invite: { Args: { p_apartment_id: string; p_valid_days?: number }; Returns: string };
+      create_recurring_template: {
+        Args: {
+          p_amount_minor: number;
+          p_apartment_id: string;
+          p_bill_day: number;
+          p_client_request_id?: string;
+          p_collector_id?: string;
+          p_due_after_days: number;
+          p_first_date?: string;
+          p_kind: string;
+          p_participants: Json;
+          p_repeat_every: number;
+          p_repeat_unit: string;
+          p_split_method: string;
+          p_title: string;
+        };
+        Returns: string;
+      };
       decide_dispute: {
         Args: { p_apply: boolean; p_dispute_id: string; p_message: string };
         Returns: undefined;
@@ -1828,6 +2012,7 @@ export type Database = {
         };
         Returns: number;
       };
+      get_join_code: { Args: { p_apartment_id: string }; Returns: string };
       get_join_requests: {
         Args: { p_apartment_id: string };
         Returns: {
@@ -1976,6 +2161,17 @@ export type Database = {
         };
         Returns: string;
       };
+      post_recurring_bill: {
+        Args: {
+          p_amount_minor: number;
+          p_collector_id?: string;
+          p_due_date?: string;
+          p_instance_id: string;
+          p_participants: Json;
+          p_split_method: string;
+        };
+        Returns: string;
+      };
       prepare_invite_email: { Args: { p_apartment_id: string; p_email: string }; Returns: Json };
       raise_dispute: {
         Args: {
@@ -2039,6 +2235,11 @@ export type Database = {
         Args: { p_apartment_id: string; p_role: string; p_user_id: string };
         Returns: undefined;
       };
+      set_recurring_template_paused: {
+        Args: { p_paused: boolean; p_template_id: string };
+        Returns: undefined;
+      };
+      skip_recurring_bill: { Args: { p_instance_id: string }; Returns: undefined };
       unregister_push_token: { Args: { p_token: string }; Returns: undefined };
       update_apartment_settings: {
         Args: {
@@ -2049,6 +2250,21 @@ export type Database = {
           p_settlement_day: number;
           p_show_location: boolean;
           p_timezone: string;
+        };
+        Returns: undefined;
+      };
+      update_recurring_template: {
+        Args: {
+          p_amount_minor: number;
+          p_bill_day: number;
+          p_collector_id?: string;
+          p_due_after_days: number;
+          p_participants: Json;
+          p_repeat_every: number;
+          p_repeat_unit: string;
+          p_split_method: string;
+          p_template_id: string;
+          p_title: string;
         };
         Returns: undefined;
       };

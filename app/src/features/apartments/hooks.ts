@@ -9,11 +9,11 @@ import {
   type ApartmentSettingsInput,
   archiveCategory,
   createApartment,
-  createInvite,
+  changeJoinCode,
   cancelJoinRequest,
   cancelRejoinInvite,
   decideJoinRequest,
-  fetchActiveInvites,
+  fetchJoinCode,
   fetchApartment,
   fetchCategories,
   fetchJoinRequests,
@@ -30,7 +30,6 @@ import {
   type MemberRole,
   removeMember,
   renameCategory,
-  revokeInvite,
   sendInviteEmail,
   setMemberCanAddExpense,
   setMemberRole,
@@ -246,28 +245,25 @@ export function useLeaveApartment(apartmentId: string) {
   });
 }
 
-export function useActiveInvites(apartmentId: string, enabled: boolean) {
+/** The apartment's one join code, for admins: shown in the settings and shared from Add member. */
+export function useJoinCode(apartmentId: string, enabled: boolean) {
   return useQuery({
     queryKey: apartmentKeys.invites(apartmentId),
-    queryFn: () => fetchActiveInvites(apartmentId),
+    queryFn: () => fetchJoinCode(apartmentId),
     enabled,
   });
 }
 
-export function useInviteActions(apartmentId: string) {
+export function useJoinCodeActions(apartmentId: string) {
   const queryClient = useQueryClient();
-  const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: apartmentKeys.invites(apartmentId) });
-  const create = useMutation({
-    mutationFn: (validDays: number) => createInvite(apartmentId, validDays),
-    onSuccess: refresh,
+  const change = useMutation({
+    mutationFn: () => changeJoinCode(apartmentId),
+    onSuccess: (code) => queryClient.setQueryData(apartmentKeys.invites(apartmentId), code),
   });
-  const revoke = useMutation({ mutationFn: revokeInvite, onSuccess: refresh });
   const sendEmail = useMutation({
     mutationFn: (email: string) => sendInviteEmail(apartmentId, email),
-    onSuccess: refresh,
   });
-  return { create, revoke, sendEmail };
+  return { change, sendEmail };
 }
 
 export function useCategories(apartmentId: string) {

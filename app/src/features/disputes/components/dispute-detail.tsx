@@ -28,7 +28,6 @@ import { useExpenseDetail } from '@/features/expenses/hooks';
 import { memberLabel } from '@/features/expenses/member-label';
 import { adjustedSplit } from '@/features/expenses/split';
 import { userErrorMessage } from '@/lib/errors';
-import { formatMinorUnits } from '@/lib/money';
 import type { PickedImage } from '@/lib/private-images';
 import { formatDate } from '@/lib/time';
 
@@ -42,6 +41,7 @@ import {
   disputePermissions,
   disputeStatus,
 } from '../rules';
+import { formatMoney } from '@/features/apartments/currencies';
 
 const MESSAGE_MAX_LENGTH = 1000;
 
@@ -126,7 +126,7 @@ function DisputeContent({
 }) {
   const userId = useCurrentUserId();
   const { dispute, events, evidence } = detail;
-  const money = (amountMinor: number) => `${formatMinorUnits(amountMinor)} ${expense.currency}`;
+  const money = (amountMinor: number) => `${formatMoney(amountMinor, expense.currency)}`;
   const nameOf = (id: string | null) => {
     const member = members.find((item) => item.userId === id);
     return member ? memberLabel(member, userId) : 'A former member';

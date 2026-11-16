@@ -1,4 +1,4 @@
-import { formatMinorUnits } from '@/lib/money';
+import { formatMoney } from '@/features/apartments/currencies';
 
 import {
   canRaiseDispute,
@@ -92,7 +92,7 @@ describe('disputePermissions', () => {
 });
 
 describe('dispute wording', () => {
-  const money = (amount: number) => `${formatMinorUnits(amount)} PKR`;
+  const money = (amount: number) => formatMoney(amount, 'PKR');
 
   it('keeps every state distinct', () => {
     expect(disputeStatus({ state: 'open', resolution: null, isLate: false }).label).toBe(
@@ -111,7 +111,7 @@ describe('dispute wording', () => {
 
   it('describes a proposal against the current share', () => {
     expect(describeProposal({ kind: 'adjustment', proposedShareMinor: 5000 }, 10_000, money)).toBe(
-      'Proposes a share of 50.00 PKR instead of 100.00 PKR',
+      'Proposes a share of Rs 50.00 instead of Rs 100.00',
     );
     expect(describeProposal({ kind: 'decline', proposedShareMinor: 0 }, 10_000, money)).toBe(
       'Declines to share this expense',

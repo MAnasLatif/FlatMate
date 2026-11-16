@@ -25,7 +25,6 @@ import { useExpenseDetail } from '@/features/expenses/hooks';
 import { memberLabel } from '@/features/expenses/member-label';
 import { adjustedSplit } from '@/features/expenses/split';
 import { userErrorMessage } from '@/lib/errors';
-import { formatMinorUnits } from '@/lib/money';
 import { randomUuid } from '@/lib/uuid';
 
 import type { DisputeKind } from '../api';
@@ -33,6 +32,7 @@ import { type DisputeDraft, validateDisputeDraft } from '../draft';
 import { DISPUTE_ERROR_MESSAGES } from '../errors';
 import { useExpenseDisputes, useRaiseDispute } from '../hooks';
 import { canRaiseDispute } from '../rules';
+import { currencySymbol, formatMoney } from '@/features/apartments/currencies';
 
 /** Declining an expense or proposing a different share of it (SRS FR-05.2). */
 export function RaiseDispute({
@@ -116,7 +116,7 @@ function RaiseDisputeForm({
   const [requestId] = useState(randomUuid);
   const raise = useRaiseDispute(apartmentId);
 
-  const money = (amountMinor: number) => `${formatMinorUnits(amountMinor)} ${expense.currency}`;
+  const money = (amountMinor: number) => `${formatMoney(amountMinor, expense.currency)}`;
   const currentShare = expense.splits.find((split) => split.userId === userId)?.amountMinor ?? 0;
   const result = useMemo(
     () => validateDisputeDraft(draft, currentShare, expense.amountMinor),
@@ -169,7 +169,7 @@ function RaiseDisputeForm({
 
       {draft.kind === 'adjustment' ? (
         <TextField isRequired isInvalid={showErrors && result.errors.share !== undefined}>
-          <Label>Your fair share ({expense.currency})</Label>
+          <Label>Your fair share ({currencySymbol(expense.currency)})</Label>
           <Input
             variant="secondary"
             value={draft.share}

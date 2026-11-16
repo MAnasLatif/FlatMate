@@ -5,7 +5,6 @@ import {
   FieldError,
   Input,
   Label,
-  Tabs,
   TextArea,
   TextField,
 } from 'heroui-native';
@@ -15,12 +14,13 @@ import { View } from 'react-native';
 import { ChoiceChips } from '@/components/choice-chips';
 import { DateField } from '@/components/form/date-field';
 import type { Category, Member } from '@/features/apartments/api';
-import { formatMinorUnits } from '@/lib/money';
+import { isOtherCategoryName } from '@/features/apartments/schemas';
 
 import { CATEGORY_DETAIL_MAX_LENGTH, type DraftResult, type ExpenseDraft } from '../draft';
 import { memberLabel } from '../member-label';
-import type { SplitMethod } from '../split';
 import { PayerFields } from './payer-fields';
+import { SplitFields } from './split-fields';
+import { currencySymbol } from '@/features/apartments/currencies';
 
 type ExpenseFormProps = {
   draft: ExpenseDraft;
@@ -77,14 +77,14 @@ function DetailsSection({
           variant="secondary"
           value={draft.title}
           onChangeText={(title) => update({ title })}
-          placeholder="Cleaning, groceries, rent…"
+          placeholder="Cleaning, groceries, repairs…"
           accessibilityLabel="What was it for?"
         />
         <FieldError>{error('title')}</FieldError>
       </TextField>
 
       <TextField isRequired isInvalid={error('amount') !== undefined}>
-        <Label>Amount ({currency})</Label>
+        <Label>Amount ({currencySymbol(currency)})</Label>
         <Input
           variant="secondary"
           value={draft.amount}
@@ -144,7 +144,7 @@ function DetailsSection({
 /** Whether the chosen category is the catch-all Other, which asks what it was. */
 function isOtherCategory(categories: readonly Category[], categoryId: string | null): boolean {
   const name = categories.find((category) => category.id === categoryId)?.name;
-  return name?.trim().toLowerCase() === 'other';
+  return name !== undefined && isOtherCategoryName(name);
 }
 
 /** Optional notes, last: most expenses need none. */
@@ -253,12 +253,6 @@ function PaidSection({
   );
 }
 
-const METHOD_LABELS: Record<SplitMethod, string> = {
-  equal: 'Equally',
-  percentage: 'By %',
-  fixed: 'By amount',
-};
-
 function SplitSection({
   draft,
   setDraft,
@@ -268,100 +262,15 @@ function SplitSection({
   currentUserId,
   currency,
 }: ExpenseFormProps) {
-  const shares = new Map(result.shares?.map((share) => [share.userId, share.amountMinor]));
-  const splitError = showErrors || draft.splitMethod !== 'equal' ? result.errors.split : undefined;
-
-  const toggle = (userId: string, included: boolean) =>
-    setDraft((current) => ({
-      ...current,
-      excluded: included
-        ? current.excluded.filter((id) => id !== userId)
-        : [...current.excluded, userId],
-    }));
-
   return (
-    <Card>
-      <Card.Body className="gap-4">
-        <Card.Title>Split</Card.Title>
-        <Tabs
-          value={draft.splitMethod}
-          onValueChange={(value) =>
-            setDraft((current) => ({ ...current, splitMethod: value as SplitMethod }))
-          }
-        >
-          <Tabs.List>
-            <Tabs.Indicator />
-            {(Object.keys(METHOD_LABELS) as SplitMethod[]).map((method) => (
-              <Tabs.Trigger key={method} value={method}>
-                <Tabs.Label>{METHOD_LABELS[method]}</Tabs.Label>
-              </Tabs.Trigger>
-            ))}
-          </Tabs.List>
-        </Tabs>
-
-        {members.map((member) => {
-          const included = !draft.excluded.includes(member.userId);
-          const label = memberLabel(member, currentUserId);
-          // Read aloud with the field: "Your percentage", "Sara's percentage".
-          const possessive = member.userId === currentUserId ? 'Your' : `${label}'s`;
-          const share = shares.get(member.userId);
-          return (
-            <View key={member.userId} className="gap-2">
-              <ControlField
-                isSelected={included}
-                onSelectedChange={(value) => toggle(member.userId, value)}
-              >
-                <View className="flex-1">
-                  <Label>{label}</Label>
-                  <Description>
-                    {included
-                      ? share !== undefined
-                        ? `Share: ${formatMinorUnits(share)} ${currency}`
-                        : 'Included'
-                      : 'Not included'}
-                  </Description>
-                </View>
-                <ControlField.Indicator />
-              </ControlField>
-              {included && draft.splitMethod === 'percentage' ? (
-                <TextField>
-                  <Input
-                    variant="secondary"
-                    value={draft.percentages[member.userId] ?? ''}
-                    onChangeText={(text) =>
-                      setDraft((current) => ({
-                        ...current,
-                        percentages: { ...current.percentages, [member.userId]: text },
-                      }))
-                    }
-                    keyboardType="decimal-pad"
-                    placeholder="%"
-                    accessibilityLabel={`${possessive} percentage`}
-                  />
-                </TextField>
-              ) : null}
-              {included && draft.splitMethod === 'fixed' ? (
-                <TextField>
-                  <Input
-                    variant="secondary"
-                    value={draft.fixedAmounts[member.userId] ?? ''}
-                    onChangeText={(text) =>
-                      setDraft((current) => ({
-                        ...current,
-                        fixedAmounts: { ...current.fixedAmounts, [member.userId]: text },
-                      }))
-                    }
-                    keyboardType="decimal-pad"
-                    placeholder="0.00"
-                    accessibilityLabel={`${possessive} amount, in ${currency}`}
-                  />
-                </TextField>
-              ) : null}
-            </View>
-          );
-        })}
-        {splitError ? <FieldError isInvalid>{splitError}</FieldError> : null}
-      </Card.Body>
-    </Card>
+    <SplitFields
+      value={draft}
+      onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+      shares={result.shares}
+      error={showErrors || draft.splitMethod !== 'equal' ? result.errors.split : undefined}
+      members={members}
+      currentUserId={currentUserId}
+      currency={currency}
+    />
   );
 }

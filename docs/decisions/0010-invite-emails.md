@@ -15,7 +15,7 @@ FlatMate had no way to send its own email. Supabase Auth sends sign-up and passw
 - **The database decides.** `prepare_invite_email` checks that the caller is an admin, checks the address's shape, applies the limits and creates an ordinary join code with `create_invite`. The email carries that code; joining with it still sends a request that an admin approves.
 - **Limits:** 20 invite emails a day from one admin, and 3 a day to the same address from one apartment.
 - **No stored address.** The database keeps only a SHA-256 hash of the trimmed, lower-case address, for the per-address limit, in `private.invite_emails`, which clients cannot read. Logs record events and status codes, never addresses, names or codes.
-- **A failed email leaves no code.** If the provider refuses or cannot be reached, the function revokes the code it just created. The attempt still counts toward the limits.
+- **A failed email leaves no code.** If the provider refuses or cannot be reached, the function revokes the code it just created. The attempt still counts toward the limits. *Superseded by [decision 0011](0011-one-join-code-per-apartment.md): the email carries the apartment's one code, which a failed email leaves as it is.*
 - **Copy and Share stay.** The same sheet still copies or shares a code for admins who prefer their own apps.
 
 ## Alternatives considered

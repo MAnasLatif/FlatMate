@@ -2,7 +2,7 @@
 
 Everything that remains to take FlatMate from its current state to a released app, in the order it should be done. It is derived from the [SRS](SRS.md): every functional requirement (FR) and acceptance criterion (AC) is covered by a task below.
 
-Last reviewed: 2026-11-15.
+Last reviewed: 2026-11-16.
 
 ## How to use this list
 
@@ -145,10 +145,11 @@ These follow [decision 0007](decisions/0007-offline-reading-and-live-sync.md). T
 
 ## Phase 2: Automation and reporting
 
-- [ ] **2.1 Recurring templates.** Template and split-rule tables that only admins can manage. *(FR-04.1, FR-04.4, AC-02)*
-- [ ] **2.2 Fixed recurring charges.** A scheduled job that creates exactly one expense per template and billing period. *(FR-04.2, FR-04.6, AC-05)*
-- [ ] **2.3 Variable recurring bills.** On the expected day, prompt admins for the real amount, optional proof and due date. No charge exists until an admin enters it. *(FR-04.3, AC-05)*
-- [ ] **2.4 Recurring screens.** In a fourth tab of the apartment's settings, "Repeatable expenses", after General settings, Manage members and Expense control, for admins only: add and manage templates, override the split for one month, and apply template changes to future months only. The Add (+) flow stays for one-time expenses. *(FR-04.1, FR-04.4, FR-04.5)*
+- [x] **2.1 Recurring templates.** Template and split-rule tables that only admins can manage. *(FR-04.1, FR-04.4, AC-02)* The split is stored on the template as the same participants list `post_expense` takes. Rent, Utilities and Internet are no longer default categories.
+- [x] **2.2 Fixed recurring charges.** A scheduled job that creates exactly one expense per template and billing period. *(FR-04.2, FR-04.6, AC-05)*
+- [x] **2.3 Variable recurring bills.** On the expected day, prompt admins for the real amount, optional proof and due date. No charge exists until an admin enters it. *(FR-04.3, AC-05)*
+- [x] **2.4 Recurring screens.** In a fourth tab of the apartment's settings, "Repeatable expenses", after General settings, Manage members and Expense control, for admins only: add and manage templates, override the split for one month, and apply template changes to future months only. The Add (+) flow stays for one-time expenses. *(FR-04.1, FR-04.4, FR-04.5)* One month's split is overridden when entering a waiting bill, or by editing that month's charge.
+- [ ] **2.4.1 This branch on the hosted project.** Push migrations `20261116120000`, `20261116120100`, `20261117090000`, `20261117100000` and `20261117110000` with `db push --remote` after a `--dry-run`, and deploy the updated `send-invite-email` function at the same time (it no longer expects `invite_id` or `valid_days`). Then, on a device: add a fixed and a variable repeatable expense and check the charge and the admin prompt; share, change and email the join code. The first migration archives Rent, Utilities and Internet in every existing apartment. *(Owner.)*
 - [ ] **2.5 Reminders and notification preferences.** Due-date and settlement reminders on a configurable schedule, per-user preferences, and no duplicate reminders. *(FR-09.2, FR-09.4, FR-01.2)*
 - [ ] **2.5.1 Push receipts.** Store Expo's ticket ids and check their receipts about 15 minutes later, deleting tokens Expo reports as `DeviceNotRegistered` there and making credential errors (`InvalidCredentials`, `MismatchSenderId`) visible to maintainers. Expo says tickets alone do not confirm delivery. *(FR-09)*
 - [ ] **2.6 Search, filters and comparison.** Filter expenses by month, member, category, amount and status, and compare spending between months. *(FR-10.1)*

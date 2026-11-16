@@ -10,7 +10,6 @@ import type { Member } from '@/features/apartments/api';
 import { useMembers } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { userErrorMessage } from '@/lib/errors';
-import { formatMinorUnits } from '@/lib/money';
 
 import type { ExpenseDetail } from '../api';
 import { type PayerInput, validatePayers } from '../draft';
@@ -19,6 +18,7 @@ import { useExpenseDetail, useRecordBillPayment } from '../hooks';
 import { memberLabel } from '../member-label';
 import { matchDebts } from '../split';
 import { PayerFields } from './payer-fields';
+import { formatMoney } from '@/features/apartments/currencies';
 
 /** Records who paid a bill that was added as unpaid. */
 export function RecordPayment({
@@ -112,7 +112,7 @@ function RecordPaymentForm({
     [input, memberIds, expense.amountMinor],
   );
   const debts = checked.error ? null : matchDebts(checked.payers, expense.splits);
-  const money = (amountMinor: number) => `${formatMinorUnits(amountMinor)} ${expense.currency}`;
+  const money = (amountMinor: number) => `${formatMoney(amountMinor, expense.currency)}`;
   const nameOf = (id: string) => {
     const member = allMembers.find((item) => item.userId === id);
     return member ? memberLabel(member, userId) : 'A former member';

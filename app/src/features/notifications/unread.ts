@@ -1,6 +1,20 @@
 import type { NotificationTarget } from './api';
 
 /**
+ * Members notifications an admin acts on in the apartment's settings rather
+ * than on the members screen: someone asking to join, and a declined
+ * invitation back.
+ */
+export const MEMBER_ADMIN_TYPES: readonly string[] = [
+  'join_request.requested',
+  'rejoin_invite.declined',
+];
+
+function isMemberAdmin(item: Pick<NotificationTarget, 'recordType' | 'type'>): boolean {
+  return item.recordType === 'members' && MEMBER_ADMIN_TYPES.includes(item.type);
+}
+
+/**
  * An unread notification, placed so the app can mark it with a red dot where
  * its record shows and clear it when that record is opened. There is no inbox:
  * the dots lead to the place a notification is about.
@@ -120,17 +134,29 @@ export const unreadMatches = {
     (item) =>
       item.apartmentId === apartmentId && item.recordType === 'settlement',
 
-  /** Joins, exits, role changes and requests to join, behind the members icon. */
+  /** Joins, exits and role changes, behind the members icon. */
   members:
     (apartmentId: string): UnreadMatch =>
     (item) =>
-      item.apartmentId === apartmentId && item.recordType === 'members',
+      item.apartmentId === apartmentId && item.recordType === 'members' && !isMemberAdmin(item),
+
+  /** Requests to join and declined invitations back, cleared on the settings' members tab. */
+  memberAdmin:
+    (apartmentId: string): UnreadMatch =>
+    (item) =>
+      item.apartmentId === apartmentId && isMemberAdmin(item),
 
   /** About the apartment as a whole, such as being let in: cleared on its dashboard. */
   apartment:
     (apartmentId: string): UnreadMatch =>
     (item) =>
       item.apartmentId === apartmentId && item.recordType === 'apartment',
+
+  /** Repeatable bills waiting for an admin, cleared on the repeatable expenses tab. */
+  recurring:
+    (apartmentId: string): UnreadMatch =>
+    (item) =>
+      item.apartmentId === apartmentId && item.recordType === 'recurring',
 
   /**
    * A declined request to join, or an invitation back to an apartment, cleared

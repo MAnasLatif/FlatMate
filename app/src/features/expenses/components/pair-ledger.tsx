@@ -6,13 +6,13 @@ import { FlatList, RefreshControl, View } from 'react-native';
 import { LoadError, LoadingRows, PendingSkeleton } from '@/components/query-states';
 import { StatusChip } from '@/components/status-chip';
 import { userErrorMessage } from '@/lib/errors';
-import { formatMinorUnits } from '@/lib/money';
 import { formatDate } from '@/lib/time';
 
 import type { PairExpense } from '../api';
 import { describePairNet, pairPosition } from '../balances';
 import { usePairBalances, usePairExpenses, useRefreshMoney } from '../hooks';
 import { ExpenseStatusChips } from './expense-status';
+import { formatMoney } from '@/features/apartments/currencies';
 
 /**
  * Everything between the signed-in user and one person: what each owes the
@@ -35,7 +35,7 @@ export function PairLedger({
   const expenses = usePairExpenses(apartmentId, counterpartyId);
   const refreshMoney = useRefreshMoney(apartmentId);
   const [refreshing, setRefreshing] = useState(false);
-  const money = (amountMinor: number) => `${formatMinorUnits(amountMinor)} ${currency}`;
+  const money = (amountMinor: number) => `${formatMoney(amountMinor, currency)}`;
   const items = useMemo(() => uniqueById(expenses.data?.pages.flat() ?? []), [expenses.data]);
 
   const refresh = async () => {
