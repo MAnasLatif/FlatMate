@@ -15,8 +15,12 @@ export const switchTransition = { animation: 'fade' } as const;
 /** Switching bottom tabs: the screens shift slightly toward the tab chosen. */
 export const tabTransition = { animation: 'shift' } as const;
 
-/** One size for every bottom bar icon, the Add button and the profile photo alike. */
-export const TAB_ICON_SIZE = 28;
+/**
+ * Font sizes for the bottom bar icons. Ionicons glyphs fill their box by
+ * different amounts, so each gets the size at which it is drawn 24dp across,
+ * the same as the profile photo (measured on a device).
+ */
+export const TAB_ICON_SIZES = { expenses: 25, add: 29 } as const;
 /** The box each bottom bar icon sits in, a little larger so nothing is cut off. */
 export const TAB_ICON_BOX = 32;
 /** Icons in the top bars, such as the bell and members. */

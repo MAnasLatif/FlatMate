@@ -14,11 +14,13 @@ import { EmailCodeField } from '@/features/auth/components/email-code-field';
 import { authErrorMessage } from '@/features/auth/errors';
 import { formatCountdown, useResendCountdown } from '@/features/auth/resend-countdown';
 import { emailCodeSchema } from '@/features/auth/schemas';
+import { useIsOnline } from '@/lib/network';
 
 export default function VerifyEmailScreen() {
   const { email, codeSent } = useLocalSearchParams<{ email?: string; codeSent?: string }>();
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState<string | undefined>();
+  const isOnline = useIsOnline();
   // From sign-in no code was sent, so a new one can be asked for at once.
   const countdown = useResendCountdown(codeSent === '1');
 
@@ -41,8 +43,8 @@ export default function VerifyEmailScreen() {
     );
   }
 
-  const submit = () => {
-    const parsed = emailCodeSchema.safeParse(code);
+  const submit = (value: string) => {
+    const parsed = emailCodeSchema.safeParse(value);
     if (!parsed.success) {
       setCodeError(parsed.error.issues[0]?.message);
       return;
@@ -80,11 +82,16 @@ export default function VerifyEmailScreen() {
             setCode(next);
             setCodeError(undefined);
           }}
+          // The code is the only input here, so the last digit sends it. A
+          // wrong code shows its error and can be retyped or sent again.
+          onComplete={(value) => {
+            if (isOnline && !verify.isPending) submit(value);
+          }}
           error={codeError}
         />
 
         <View className="gap-3">
-          <OnlineButton onPress={submit} isDisabled={verify.isPending}>
+          <OnlineButton onPress={() => submit(code)} isDisabled={verify.isPending}>
             {verify.isPending ? 'Checking…' : 'Confirm email'}
           </OnlineButton>
 

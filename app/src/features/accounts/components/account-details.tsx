@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import Stack from 'expo-router/stack';
-import { Button, Chip, Separator, Typography, useThemeColor } from 'heroui-native';
+import { Button, Separator, Typography, useThemeColor } from 'heroui-native';
 import { type ReactNode, useState } from 'react';
 import { View } from 'react-native';
 
@@ -10,6 +10,7 @@ import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
+import { StatusChip } from '@/components/status-chip';
 import { userErrorMessage } from '@/lib/errors';
 
 import type { MyAccount } from '../api';
@@ -124,9 +125,9 @@ function Details({
         value={account.provider}
         end={
           account.isPreferred ? (
-            <Chip size="sm" variant="soft" color="accent">
+            <StatusChip size="sm" variant="soft" color="accent">
               Preferred
-            </Chip>
+            </StatusChip>
           ) : (
             <OnlineButton
               size="sm"

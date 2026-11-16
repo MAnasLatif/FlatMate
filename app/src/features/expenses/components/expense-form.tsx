@@ -298,6 +298,8 @@ function SplitSection({
         {members.map((member) => {
           const included = !draft.excluded.includes(member.userId);
           const label = memberLabel(member, currentUserId);
+          // Read aloud with the field: "Your percentage", "Sara's percentage".
+          const possessive = member.userId === currentUserId ? 'Your' : `${label}'s`;
           const share = shares.get(member.userId);
           return (
             <View key={member.userId} className="gap-2">
@@ -329,7 +331,7 @@ function SplitSection({
                     }
                     keyboardType="decimal-pad"
                     placeholder="%"
-                    accessibilityLabel={`${label}'s percentage`}
+                    accessibilityLabel={`${possessive} percentage`}
                   />
                 </TextField>
               ) : null}
@@ -345,7 +347,7 @@ function SplitSection({
                     }
                     keyboardType="decimal-pad"
                     placeholder="0.00"
-                    accessibilityLabel={`${label}'s amount, in ${currency}`}
+                    accessibilityLabel={`${possessive} amount, in ${currency}`}
                   />
                 </TextField>
               ) : null}

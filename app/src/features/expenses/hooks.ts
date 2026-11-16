@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { useCurrentUserId } from '@/features/auth/session-provider';
 import type { PickedImage } from '@/lib/private-images';
 import { addMonths } from '@/lib/time';
 
@@ -40,10 +41,17 @@ export const expenseKeys = {
 };
 
 export function useExpenses(apartmentId: string, monthStartDate: string) {
+  const userId = useCurrentUserId();
   return useInfiniteQuery({
     queryKey: expenseKeys.list(apartmentId, monthStartDate),
     queryFn: ({ pageParam }) =>
-      fetchExpensesPage(apartmentId, monthStartDate, addMonths(monthStartDate, 1), pageParam),
+      fetchExpensesPage(
+        apartmentId,
+        userId,
+        monthStartDate,
+        addMonths(monthStartDate, 1),
+        pageParam,
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, pages) =>
       lastPage.length === EXPENSES_PAGE_SIZE ? pages.length : undefined,

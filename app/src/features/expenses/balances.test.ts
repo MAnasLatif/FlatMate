@@ -18,7 +18,6 @@ describe('summarizeBalances', () => {
     expect(summarizeBalances([])).toEqual({
       oweMinor: 0,
       receiveMinor: 0,
-      netMinor: 0,
       oweIsProvisional: false,
       receiveIsProvisional: false,
       heldOweMinor: 0,
@@ -33,7 +32,6 @@ describe('summarizeBalances', () => {
     ]);
     expect(summary.receiveMinor).toBe(13_333);
     expect(summary.oweMinor).toBe(0);
-    expect(summary.netMinor).toBe(13_333);
     expect(summary.receiveIsProvisional).toBe(true);
   });
 
@@ -44,7 +42,6 @@ describe('summarizeBalances', () => {
     ]);
     expect(summary.oweMinor).toBe(5000);
     expect(summary.receiveMinor).toBe(3000);
-    expect(summary.netMinor).toBe(-2000);
     expect(summary.oweIsProvisional).toBe(false);
   });
 
@@ -71,7 +68,6 @@ describe('summarizeBalances', () => {
     expect(summary.receiveMinor).toBe(0);
     expect(summary.heldOweMinor).toBe(9000);
     expect(summary.heldReceiveMinor).toBe(1500);
-    expect(summary.netMinor).toBe(-2000);
   });
 });
 

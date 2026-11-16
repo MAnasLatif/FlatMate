@@ -2,6 +2,8 @@ import { Chip } from 'heroui-native';
 import type { ComponentProps } from 'react';
 import { View } from 'react-native';
 
+import { StatusChip } from '@/components/status-chip';
+
 import type { ExpenseListItem, ExpenseStatus } from '../api';
 
 type ChipColor = NonNullable<ComponentProps<typeof Chip>['color']>;
@@ -28,14 +30,14 @@ export function ExpenseStatusChips({
   return (
     <View className="flex-row flex-wrap justify-end gap-1">
       {expense.paid_status === 'unpaid' && expense.status !== 'void' ? (
-        <Chip size="sm" variant="soft" color="accent">
+        <StatusChip size="sm" variant="soft" color="accent">
           Unpaid bill
-        </Chip>
+        </StatusChip>
       ) : null}
       {status ? (
-        <Chip size="sm" variant="soft" color={status.color}>
+        <StatusChip size="sm" variant="soft" color={status.color}>
           {status.label}
-        </Chip>
+        </StatusChip>
       ) : null}
     </View>
   );

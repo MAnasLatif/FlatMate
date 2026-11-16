@@ -207,13 +207,13 @@ describe('Members directory', () => {
       .mocked(fetchMembers)
       .mockResolvedValue([{ ...member(ANAS, 'Anas'), role: 'admin' }, member(ZUBAIR, 'Zubair')]);
     await renderWithProviders(<MembersScreen />);
-    expect(await screen.findByRole('button', { name: 'Send invite' })).toBeOnTheScreen();
+    expect(await screen.findByRole('button', { name: 'Add member' })).toBeOnTheScreen();
   });
 
   it('shows no invite button to a member who is not an admin', async () => {
     await renderWithProviders(<MembersScreen />);
     expect(await screen.findByText('Zubair')).toBeOnTheScreen();
-    expect(screen.queryByRole('button', { name: 'Send invite' })).not.toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Add member' })).not.toBeOnTheScreen();
   });
 
   it('still lists the members when balances cannot be loaded', async () => {

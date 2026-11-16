@@ -7,7 +7,7 @@ import { View } from 'react-native';
 import {
   HEADER_ICON_SIZE,
   TAB_ICON_BOX,
-  TAB_ICON_SIZE,
+  TAB_ICON_SIZES,
   tabTransition,
 } from '@/components/screen-transitions';
 import { ApartmentSwitcher } from '@/features/apartments/components/apartment-switcher';
@@ -36,6 +36,8 @@ export default function ApartmentTabsLayout() {
         headerTitle: () => <ApartmentSwitcher apartmentId={apartmentId} />,
         headerTitleAlign: 'left',
         headerRight: () => <HeaderActions apartmentId={apartmentId} />,
+        // No line under the header; the dashboard shows it once its list scrolls.
+        headerShadowVisible: false,
         tabBarShowLabel: false,
         // No line above the bar.
         tabBarStyle: { borderTopWidth: 0, elevation: 0 },
@@ -52,7 +54,7 @@ export default function ApartmentTabsLayout() {
           title: 'Expenses',
           tabBarAccessibilityLabel: 'Expenses',
           tabBarIcon: ({ focused }) => (
-            <TabIcon name="receipt-outline" focused={focused} size={TAB_ICON_SIZE} />
+            <TabIcon name="receipt-outline" focused={focused} size={TAB_ICON_SIZES.expenses} />
           ),
         }}
       />
@@ -62,7 +64,7 @@ export default function ApartmentTabsLayout() {
           title: 'Add',
           tabBarAccessibilityLabel: 'Add an expense',
           // Grey like the other icons: blue marks only the open tab.
-          tabBarIcon: () => <Ionicons name="add-circle" size={TAB_ICON_SIZE} color={muted} />,
+          tabBarIcon: () => <Ionicons name="add-circle" size={TAB_ICON_SIZES.add} color={muted} />,
         }}
         listeners={{
           tabPress: (event) => {
@@ -108,7 +110,7 @@ function TabIcon({
   size: number;
 }) {
   const [accent, muted] = useThemeColor(['accent', 'muted']);
-  return <Ionicons name={name} size={TAB_ICON_SIZE} color={focused ? accent : muted} />;
+  return <Ionicons name={name} size={size} color={focused ? accent : muted} />;
 }
 
 function HeaderActions({ apartmentId }: { apartmentId: string }) {

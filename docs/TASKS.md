@@ -74,6 +74,8 @@ These come from section 12 of the SRS, where each decision is written out in ful
 - [x] **1.9 Apartment shell.** Top bar with the apartment switcher, members and notification entries, the bottom navigation in the order Profile, Add, Expenses, and an empty dashboard. *(SRS 3.2, AC-13)* The Add tab arrives with task 1.17, and the notification entry with task 1.35.
 - [x] **1.10 Members and roles.** Member directory, promote and demote admins, the expense-creation permission, remove a member, leave an apartment, the rule that one admin must remain, and join and leave dates. *(FR-02.4, FR-02.5, FR-02.6, AC-11)*
 - [x] **1.11 Apartment settings.** Admin screen for name, location visibility, settlement day, approval window, expense categories and invite codes. *(FR-08.1)*
+- [x] **1.11.1 Invites by email.** The members screen's Add member sheet emails a join code through the `send-invite-email` Edge Function, with daily limits and no stored address, and still copies or shares a code. *(FR-02.2, [decision 0010](decisions/0010-invite-emails.md))*
+- [ ] **1.11.2 Invite emails on the hosted project.** Create a Resend account, verify a sending domain, set `RESEND_API_KEY` and `INVITE_EMAIL_FROM` with `supabase secrets set`, push migration `20261116103827` with `db push --remote` after a `--dry-run`, deploy `send-invite-email`, and send one invite from a device. *(Owner: Resend account and a domain.)*
 
 ### Ledger core
 

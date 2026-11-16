@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import type { Json, Tables } from '@/types/database';
 
 import type { ValidExpense } from './draft';
+import { myExpensePosition } from './position';
 import type { Contribution, SplitMethod } from './split';
 
 export type ExpenseStatus = 'provisional' | 'disputed' | 'final' | 'void';
@@ -19,7 +20,15 @@ export type ExpenseListItem = Pick<
   | 'status'
   | 'paid_status'
   | 'created_at'
-> & { category: { name: string } | null };
+> & {
+  category: { name: string } | null;
+  /**
+   * What this expense means for the signed-in user: positive, they receive
+   * it; negative, they send it; null when it creates no debts (void, or a
+   * bill nobody has paid yet). Gross, before any payments.
+   */
+  my_position_minor: number | null;
+};
 
 export type Balance = {
   counterpartyId: string;
@@ -149,6 +158,7 @@ export async function setBillCollector(
 /** One page of the expenses dated in the month starting on monthStartDate, newest first. */
 export async function fetchExpensesPage(
   apartmentId: string,
+  userId: string,
   monthStartDate: string,
   nextMonthStartDate: string,
   page: number,
@@ -157,16 +167,32 @@ export async function fetchExpensesPage(
   const { data, error } = await supabase
     .from('expenses')
     .select(
-      'id, title, amount_minor, currency, expense_date, due_date, category_detail, status, paid_status, created_at, category:expense_categories(name)',
+      `id, title, amount_minor, currency, expense_date, due_date, category_detail, status, paid_status, created_at, revision,
+       category:expense_categories(name),
+       revisions:expense_revisions(revision,
+         my_splits:expense_splits(revision, amount_minor),
+         my_payers:expense_payers(revision, amount_minor))`,
     )
     .eq('apartment_id', apartmentId)
+    // Only the signed-in user's share and payment in each revision.
+    .eq('revisions.my_splits.user_id', userId)
+    .eq('revisions.my_payers.user_id', userId)
     .gte('expense_date', monthStartDate)
     .lt('expense_date', nextMonthStartDate)
     .order('expense_date', { ascending: false })
     .order('created_at', { ascending: false })
     .range(from, from + EXPENSES_PAGE_SIZE - 1);
   if (error) throw error;
-  return data;
+  return data.map(({ revision, revisions, ...expense }) => ({
+    ...expense,
+    my_position_minor: myExpensePosition({
+      status: expense.status,
+      paidStatus: expense.paid_status,
+      revision,
+      splits: revisions.flatMap((item) => item.my_splits),
+      payers: revisions.flatMap((item) => item.my_payers),
+    }),
+  }));
 }
 
 /**

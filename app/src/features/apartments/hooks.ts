@@ -31,6 +31,7 @@ import {
   removeMember,
   renameCategory,
   revokeInvite,
+  sendInviteEmail,
   setMemberCanAddExpense,
   setMemberRole,
   updateApartmentSettings,
@@ -262,7 +263,11 @@ export function useInviteActions(apartmentId: string) {
     onSuccess: refresh,
   });
   const revoke = useMutation({ mutationFn: revokeInvite, onSuccess: refresh });
-  return { create, revoke };
+  const sendEmail = useMutation({
+    mutationFn: (email: string) => sendInviteEmail(apartmentId, email),
+    onSuccess: refresh,
+  });
+  return { create, revoke, sendEmail };
 }
 
 export function useCategories(apartmentId: string) {

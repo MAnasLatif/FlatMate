@@ -29,3 +29,4 @@ Records are not edited after they are accepted, apart from their status. To chan
 | [0007](0007-offline-reading-and-live-sync.md) | Offline reading and live sync | Accepted |
 | [0008](0008-unread-dots-instead-of-an-inbox.md) | Unread dots instead of an inbox | Accepted |
 | [0009](0009-former-members-hiding-and-inviting-back.md) | Former members: hiding and inviting back | Accepted |
+| [0010](0010-invite-emails.md) | Invites sent by email | Accepted |

@@ -1,17 +1,10 @@
 import { router } from 'expo-router';
-import {
-  Button,
-  Card,
-  Chip,
-  PressableFeedback,
-  Separator,
-  Spinner,
-  Typography,
-} from 'heroui-native';
+import { Button, Card, PressableFeedback, Separator, Spinner, Typography } from 'heroui-native';
 import { type ReactNode, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 
 import { LoadError, LoadingRows, PendingSkeleton } from '@/components/query-states';
+import { StatusChip } from '@/components/status-chip';
 import { userErrorMessage } from '@/lib/errors';
 import { formatMinorUnits } from '@/lib/money';
 import { formatDate } from '@/lib/time';
@@ -179,9 +172,9 @@ function PairSummary({
           </Typography.Heading>
           {position.isProvisional ? (
             <View className="flex-row items-center gap-2">
-              <Chip size="sm" variant="soft" color="warning">
+              <StatusChip size="sm" variant="soft" color="warning">
                 Provisional
-              </Chip>
+              </StatusChip>
               <Typography.Paragraph type="body-xs" color="muted" className="flex-1">
                 Some of this can still change while flatmates can object.
               </Typography.Paragraph>

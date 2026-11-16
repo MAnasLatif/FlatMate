@@ -56,6 +56,12 @@
       "skillPath": "plugins/expo/skills/expo-upgrade/SKILL.md",
       "computedHash": "64e918ef206f6bfa450a20fb2668371d884c8d1003b6e947d825396da27c9fe0"
     },
+    "expoemu": {
+      "source": "MAnasLatif/expoemu",
+      "sourceType": "github",
+      "skillPath": "skills/expoemu/SKILL.md",
+      "computedHash": "5dbb97e529da61fbd17a64f8050ca62615b830e4edfc43bcf0ed49820aa11abd"
+    },
     "find-skills": {
       "source": "vercel-labs/skills",
       "sourceType": "github",

@@ -105,7 +105,7 @@ export const unreadMatches = {
       (item.recordType === 'payment' || item.recordType === 'ledger') &&
       item.counterpartyId === memberId,
 
-  /** Everything behind the Settle up button. */
+  /** Everything the settlement screen covers: payments, ledger entries and periods. */
   settlement:
     (apartmentId: string): UnreadMatch =>
     (item) =>

@@ -8,6 +8,8 @@ type EmailCodeFieldProps = {
   error?: string;
   /** Which email the code came from, when a screen asks for more than one. */
   label?: string;
+  /** Called with the code once every digit is entered. */
+  onComplete?: (code: string) => void;
 };
 
 /** The 6-digit code from a confirmation or password reset email. */
@@ -16,6 +18,7 @@ export function EmailCodeField({
   onChange,
   error,
   label = 'Code from the email',
+  onComplete,
 }: EmailCodeFieldProps) {
   return (
     <TextField isInvalid={error !== undefined}>
@@ -26,6 +29,7 @@ export function EmailCodeField({
         maxLength={EMAIL_CODE_LENGTH}
         value={value}
         onChange={onChange}
+        onComplete={onComplete}
         inputMode="numeric"
         isInvalid={error !== undefined}
         textInputProps={{

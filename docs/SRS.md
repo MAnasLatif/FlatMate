@@ -51,9 +51,9 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 
 ### 3.2 Apartment dashboard
 - Top bar: FlatMate's logo and name, with the open apartment's name under it (tapping either opens My Apartments); the notification bell and members icon on the other side. Apartment settings are not in the top bar.
-- No notification inbox: a red dot marks each place with an unread notification (an expense, Settle up, the members icon, another apartment in the switcher) and opening that place clears it ([decision 0008](decisions/0008-unread-dots-instead-of-an-inbox.md)).
-- Summary: `You'll Receive`, `You Owe`, `Net Balance`, and the user's share of expenses for the selected month.
-- Expense feed with month selector, search/filter, status indicators, and detail navigation.
+- No notification inbox: a red dot marks each place with an unread notification (an expense, the members icon, another apartment in the switcher) and opening that place clears it ([decision 0008](decisions/0008-unread-dots-instead-of-an-inbox.md)).
+- Summary: two widgets side by side, `You'll Receive` and `You'll Send`. Tapping one filters the expense feed below to the expenses on that side, those the user receives money for or sends money for (tapping again shows them all). What the user owes each person is on the members list. Then the user's share of expenses for the selected month. There is no net balance figure and no Settle up button on the dashboard.
+- Expense feed with month selector (arrows, or month and year wheels covering this year and last year), search/filter, status indicators, and detail navigation.
 - Bottom navigation **left Expenses List | center Add (+) | right Profile**, icons only and all the same size; Profile shows the user's photo, and only the open tab is coloured. The apartment dashboard/list is the main content area. The Profile tab has a plain header with a back arrow and sign-out instead of the apartment's top bar.
 - Member icon opens member directory; tapping a member opens a pairwise ledger.
 - Admin apartment settings accessible through a gear on an apartment in the selector and/or an appropriate admin entry.
@@ -82,7 +82,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 
 ### FR-02 Apartment Lifecycle
 - FR-02.1 Create apartment with unique identifier and join code; creator becomes admin.
-- FR-02.2 A valid code sends a request to join; invalid/revoked/expired codes fail safely. Any current admin approves or declines the request, and the first to act decides; the person joins only when approved. The person sees their pending requests and can cancel them, and may ask again after a decline (join-code rate limits still apply). Admins are notified of requests, and the person of the decision. Admin can rotate/revoke codes.
+- FR-02.2 A valid code sends a request to join; invalid/revoked/expired codes fail safely. Any current admin approves or declines the request, and the first to act decides; the person joins only when approved. The person sees their pending requests and can cancel them, and may ask again after a decline (join-code rate limits still apply). Admins are notified of requests, and the person of the decision. Admin can rotate/revoke codes. An admin can also type an email address and have FlatMate email a code, limited to 20 emails a day per admin and 3 a day per address per apartment; the address is not stored ([decision 0010](decisions/0010-invite-emails.md)).
 - FR-02.3 Multiple memberships per user; all apartment balances and settings remain isolated.
 - FR-02.4 Member may leave; admin may remove member. Historical transactions remain immutable/auditable; outstanding dues and disputes remain attached to the former member. An admin may remove a former member from the members list, which hides them there and changes no record, and may invite a former member back; accepting makes them a member again ([decision 0009](decisions/0009-former-members-hiding-and-inviting-back.md)).
 - FR-02.5 Track join/leave effective dates. Do not automatically include a member in expenses outside their eligible occupancy interval; explicit overrides require permission and history.

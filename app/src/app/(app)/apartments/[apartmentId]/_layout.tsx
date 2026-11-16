@@ -18,7 +18,14 @@ export default function ApartmentLayout() {
   }, [userId, apartmentId]);
 
   return (
-    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', ...pushTransition }}>
+    <Stack
+      screenOptions={{
+        headerBackButtonDisplayMode: 'minimal',
+        // No line under the header.
+        headerShadowVisible: false,
+        ...pushTransition,
+      }}
+    >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="members" options={{ title: 'Members' }} />
       <Stack.Screen name="ledger/[memberId]" options={{ title: 'Balance' }} />

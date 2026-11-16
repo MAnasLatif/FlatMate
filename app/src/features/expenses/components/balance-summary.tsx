@@ -1,24 +1,32 @@
-import { Card, Chip, Separator, Typography } from 'heroui-native';
+import { Card, PressableFeedback, Typography } from 'heroui-native';
 import { useMemo } from 'react';
 import { View } from 'react-native';
 
 import { LoadError, PendingSkeleton } from '@/components/query-states';
 import { userErrorMessage } from '@/lib/errors';
 import { formatMinorUnits } from '@/lib/money';
-import { ordinal } from '@/lib/time';
 
 import { summarizeBalances } from '../balances';
 import { useMyBalances } from '../hooks';
 
-/** What the signed-in user will receive, owes and nets to in an apartment (SRS FR-06.1). */
+/** Which expenses the list below shows: those the user receives for, or sends for. */
+export type ExpenseFilter = 'receive' | 'send';
+
+/**
+ * What the signed-in user will receive and send in an apartment (SRS FR-06.1),
+ * as two widgets side by side. Tapping one filters the expense list below to
+ * the expenses on that side, and tapping it again shows them all.
+ */
 export function BalanceSummary({
   apartmentId,
   currency,
-  settlementDay,
+  filter,
+  onFilterChange,
 }: {
   apartmentId: string;
   currency: string;
-  settlementDay: number;
+  filter: ExpenseFilter | null;
+  onFilterChange: (filter: ExpenseFilter | null) => void;
 }) {
   const balances = useMyBalances(apartmentId);
   const summary = useMemo(
@@ -27,7 +35,7 @@ export function BalanceSummary({
   );
 
   if (balances.isPending) {
-    return <PendingSkeleton className="h-44 rounded-2xl" accessibilityLabel="Loading balances" />;
+    return <PendingSkeleton className="h-28 rounded-2xl" accessibilityLabel="Loading balances" />;
   }
   if (!summary) {
     return (
@@ -39,57 +47,42 @@ export function BalanceSummary({
   }
 
   const money = (amountMinor: number) => `${formatMinorUnits(amountMinor)} ${currency}`;
-  const isProvisional = summary.oweIsProvisional || summary.receiveIsProvisional;
+  const toggle = (next: ExpenseFilter) => onFilterChange(filter === next ? null : next);
 
   return (
-    <Card>
-      <Card.Body className="gap-4">
-        <View className="flex-row gap-4">
-          <Figure
-            label="You'll receive"
-            amount={money(summary.receiveMinor)}
-            tone={summary.receiveMinor > 0 ? 'positive' : 'neutral'}
-            isProvisional={summary.receiveIsProvisional}
-          />
-          <Figure
-            label="You owe"
-            amount={money(summary.oweMinor)}
-            tone={summary.oweMinor > 0 ? 'negative' : 'neutral'}
-            isProvisional={summary.oweIsProvisional}
-          />
-        </View>
-        <Separator />
-        <Figure
-          label="Net balance"
-          amount={money(Math.abs(summary.netMinor))}
-          caption={
-            summary.netMinor > 0
-              ? 'You are owed overall'
-              : summary.netMinor < 0
-                ? 'You owe overall'
-                : 'You are all square'
-          }
-          tone={summary.netMinor > 0 ? 'positive' : summary.netMinor < 0 ? 'negative' : 'neutral'}
-          isProvisional={isProvisional}
+    <View className="gap-3">
+      <View className="flex-row gap-3">
+        <TotalWidget
+          label="You'll receive"
+          amount={money(summary.receiveMinor)}
+          tone={summary.receiveMinor > 0 ? 'positive' : 'neutral'}
+          isSelected={filter === 'receive'}
+          hint="Shows only the expenses you receive money for"
+          onPress={() => toggle('receive')}
         />
-        {summary.heldOweMinor > 0 || summary.heldReceiveMinor > 0 ? (
-          <Typography.Paragraph type="body-xs" color="muted">
-            Held by open disputes and not counted above:{' '}
-            {[
-              summary.heldReceiveMinor > 0 ? `${money(summary.heldReceiveMinor)} to you` : null,
-              summary.heldOweMinor > 0 ? `${money(summary.heldOweMinor)} from you` : null,
-            ]
-              .filter(Boolean)
-              .join(', ')}
-            .
-          </Typography.Paragraph>
-        ) : null}
+        <TotalWidget
+          label="You'll send"
+          amount={money(summary.oweMinor)}
+          tone={summary.oweMinor > 0 ? 'negative' : 'neutral'}
+          isSelected={filter === 'send'}
+          hint="Shows only the expenses you send money for"
+          onPress={() => toggle('send')}
+        />
+      </View>
+
+      {summary.heldOweMinor > 0 || summary.heldReceiveMinor > 0 ? (
         <Typography.Paragraph type="body-xs" color="muted">
-          {isProvisional ? 'Provisional amounts can still change while flatmates can object. ' : ''}
-          Balances settle on the {ordinal(settlementDay)} of each month.
+          Held by open disputes and not counted above:{' '}
+          {[
+            summary.heldReceiveMinor > 0 ? `${money(summary.heldReceiveMinor)} to you` : null,
+            summary.heldOweMinor > 0 ? `${money(summary.heldOweMinor)} from you` : null,
+          ]
+            .filter(Boolean)
+            .join(', ')}
+          .
         </Typography.Paragraph>
-      </Card.Body>
-    </Card>
+      ) : null}
+    </View>
   );
 }
 
@@ -99,41 +92,41 @@ const TONE_CLASSES = {
   neutral: undefined,
 } as const;
 
-function Figure({
+function TotalWidget({
   label,
   amount,
-  caption,
   tone,
-  isProvisional,
+  isSelected,
+  hint,
+  onPress,
 }: {
   label: string;
   amount: string;
-  caption?: string;
   tone: keyof typeof TONE_CLASSES;
-  isProvisional: boolean;
+  isSelected: boolean;
+  hint: string;
+  onPress: () => void;
 }) {
   return (
-    <View
-      className="flex-1 gap-1"
-      accessible
-      accessibilityLabel={[label, amount, caption, isProvisional ? 'provisional' : null]
-        .filter(Boolean)
-        .join(', ')}
+    <PressableFeedback
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}, ${amount}`}
+      accessibilityHint={hint}
+      accessibilityState={{ selected: isSelected }}
+      className="flex-1 rounded-3xl"
     >
-      <Typography.Paragraph type="body-xs" color="muted">
-        {label}
-      </Typography.Paragraph>
-      <Typography.Heading type="h5" className={TONE_CLASSES[tone]}>
-        {amount}
-      </Typography.Heading>
-      {caption ? <Typography.Paragraph type="body-xs">{caption}</Typography.Paragraph> : null}
-      {isProvisional ? (
-        <View className="flex-row">
-          <Chip size="sm" variant="soft" color="warning">
-            Provisional
-          </Chip>
-        </View>
-      ) : null}
-    </View>
+      {/* The border is always there, so selecting a widget does not move anything. */}
+      <Card className={`flex-1 border-2 ${isSelected ? 'border-accent' : 'border-transparent'}`}>
+        <Card.Body className="gap-1">
+          <Typography.Paragraph type="body-xs" color="muted">
+            {label}
+          </Typography.Paragraph>
+          <Typography.Heading type="h5" className={TONE_CLASSES[tone]}>
+            {amount}
+          </Typography.Heading>
+        </Card.Body>
+      </Card>
+    </PressableFeedback>
   );
 }

@@ -1,13 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import {
-  Button,
-  Chip,
-  PressableFeedback,
-  Separator,
-  Typography,
-  useThemeColor,
-} from 'heroui-native';
+import { Button, PressableFeedback, Separator, Typography, useThemeColor } from 'heroui-native';
 import { useRef, useState } from 'react';
 import ReanimatedSwipeable, {
   type SwipeableMethods,
@@ -16,6 +9,7 @@ import ReanimatedSwipeable, {
 import { View } from 'react-native';
 
 import { LoadError, LoadingRows } from '@/components/query-states';
+import { StatusChip } from '@/components/status-chip';
 import { userErrorMessage } from '@/lib/errors';
 
 import type { MyAccount } from '../api';
@@ -132,9 +126,9 @@ function AccountRow({ account, onDelete }: { account: MyAccount; onDelete: () =>
           <Typography.Paragraph type="body-sm">{account.accountIdentifier}</Typography.Paragraph>
         </View>
         {account.isPreferred ? (
-          <Chip size="sm" variant="soft" color="accent">
+          <StatusChip size="sm" variant="soft" color="accent">
             Preferred
-          </Chip>
+          </StatusChip>
         ) : null}
         <Ionicons name="chevron-forward" size={18} color={accent} />
       </PressableFeedback>

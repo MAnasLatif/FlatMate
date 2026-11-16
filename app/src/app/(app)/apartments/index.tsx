@@ -25,6 +25,8 @@ export default function MyApartmentsScreen() {
 
   return (
     <Screen
+      // Under the stack's header, which already clears the status bar.
+      padTop={false}
       freshness={apartments}
       refreshing={apartments.isRefetching}
       onRefresh={() => void apartments.refetch()}

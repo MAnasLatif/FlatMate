@@ -4,22 +4,25 @@ import Stack from 'expo-router/stack';
 import {
   Button,
   Card,
-  Chip,
   Menu,
   PressableFeedback,
   Separator,
   Typography,
   useThemeColor,
 } from 'heroui-native';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
+import { StatusChip } from '@/components/status-chip';
 import type { Member } from '@/features/apartments/api';
 import { JoinRequests } from '@/features/apartments/components/join-requests';
-import { SendInviteButton } from '@/features/apartments/components/send-invite-button';
+import {
+  AddMemberButton,
+  AddMemberSheet,
+} from '@/features/apartments/components/add-member-button';
 import { APARTMENT_ERROR_MESSAGES } from '@/features/apartments/errors';
 import {
   useApartment,
@@ -51,6 +54,7 @@ export default function MembersScreen() {
   const balances = usePairBalances(apartmentId);
   const actions = useMemberActions(apartmentId);
   useMarkSeen(unreadMatches.members(apartmentId));
+  const [isAddingMember, setAddingMember] = useState(false);
 
   if (members.isPending) {
     return (
@@ -89,12 +93,7 @@ export default function MembersScreen() {
       <Stack.Screen
         options={{
           headerRight: viewerIsAdmin
-            ? () => (
-                <SendInviteButton
-                  apartmentId={apartmentId}
-                  apartmentName={apartment.data?.name ?? 'our apartment'}
-                />
-              )
+            ? () => <AddMemberButton onPress={() => setAddingMember(true)} />
             : undefined,
         }}
       />
@@ -109,6 +108,14 @@ export default function MembersScreen() {
         balances={balances}
         currency={apartment.data?.currency}
       />
+      {viewerIsAdmin ? (
+        <AddMemberSheet
+          apartmentId={apartmentId}
+          apartmentName={apartment.data?.name ?? 'our apartment'}
+          isOpen={isAddingMember}
+          onOpenChange={setAddingMember}
+        />
+      ) : null}
     </>
   );
 }
@@ -220,9 +227,9 @@ function MembersList({
                     ) : null}
                     {invited.has(member.userId) ? (
                       <View className="flex-row">
-                        <Chip size="sm" variant="secondary">
+                        <StatusChip size="sm" variant="secondary">
                           Invited back
-                        </Chip>
+                        </StatusChip>
                       </View>
                     ) : null}
                   </View>
@@ -314,14 +321,14 @@ function MemberRow({
             ) : null}
             <View className="flex-row flex-wrap gap-2">
               {member.role === 'admin' ? (
-                <Chip size="sm" variant="secondary">
+                <StatusChip size="sm" variant="secondary">
                   Admin
-                </Chip>
+                </StatusChip>
               ) : null}
               {member.canAddExpense ? null : (
-                <Chip size="sm" variant="tertiary">
+                <StatusChip size="sm" variant="tertiary">
                   Cannot add expenses
-                </Chip>
+                </StatusChip>
               )}
             </View>
           </View>

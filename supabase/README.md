@@ -56,6 +56,26 @@ In every hosted project, turn off **Allow public access** under Realtime setting
 
 A trigger on `audit_events` creates one `notifications` row per person to tell (`private.notification_recipients`), and pg_cron calls the `deliver-push` Edge Function in `functions/` while pushes are due. The function needs the `PUSH_DELIVERY_SECRET` secret, and the database needs the Vault secrets `project_url` and `push_delivery_secret`; until both are set nothing is pushed, and the app's unread dots still work. Setup, local and hosted, and troubleshooting: [docs/NOTIFICATIONS.md](../docs/NOTIFICATIONS.md). Tests: `tests/database/notifications_test.sql`.
 
+## Invite emails
+
+Admins can email a join code from the app ([decision 0010](../docs/decisions/0010-invite-emails.md)). The `send-invite-email` Edge Function calls `private.prepare_invite_email` as the signed-in admin, which checks the address, applies the daily limits and creates the code, then sends the email through Resend. If sending fails, the code is revoked. Only a hash of the address is stored. Tests: `tests/database/invite_emails_test.sql`.
+
+**Local:** add these lines to `supabase/functions/.env` and serve the functions with `npx supabase@3.1.0 functions serve --env-file supabase/functions/.env`. Emails appear in Mailpit at http://127.0.0.1:54324.
+
+```sh
+INVITE_EMAIL_FROM=FlatMate <invites@flatmate.local>
+MAILPIT_URL=http://supabase_inbucket_FlatMate:8025
+```
+
+**Hosted:** create a [Resend](https://resend.com) account, verify the domain you send from, and create an API key with sending access only. Then:
+
+```sh
+npx supabase@3.1.0 secrets set RESEND_API_KEY=<the key> "INVITE_EMAIL_FROM=FlatMate <invites@your-domain>"
+npx supabase@3.1.0 functions deploy send-invite-email
+```
+
+Until both secrets are set the function answers `not_configured`, and the app suggests sharing a code instead. The function's logs, under **Edge Functions** in the dashboard, record `sent` and `send_failed` with the provider's status code, never an address or a code.
+
 ## Supabase CLI
 
 The project uses **Supabase CLI 3.1.0**, the same version CI installs. You also need Docker running. The CLI can be used without installing it, through npx:

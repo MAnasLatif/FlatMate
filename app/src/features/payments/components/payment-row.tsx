@@ -1,6 +1,7 @@
-import { Chip, PressableFeedback, Typography } from 'heroui-native';
+import { PressableFeedback, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
+import { StatusChip } from '@/components/status-chip';
 import { UnreadDot, withUnread } from '@/features/notifications/components/unread-dot';
 import { formatMinorUnits } from '@/lib/money';
 import { formatDate } from '@/lib/time';
@@ -41,9 +42,9 @@ export function PaymentRow({
           {formatDate(payment.paidAt)}
         </Typography.Paragraph>
       </View>
-      <Chip size="sm" variant="soft" color={status.color}>
+      <StatusChip size="sm" variant="soft" color={status.color}>
         {status.label}
-      </Chip>
+      </StatusChip>
     </PressableFeedback>
   );
 }
