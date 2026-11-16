@@ -1,8 +1,9 @@
 -- Repeatable expenses (SRS FR-04, AC-02, AC-05; tasks 2.1 to 2.3).
 --
 -- Admins set up a template in the apartment's settings: a title, how often it
--- repeats (every 1, 3 or 12 months), the bill day, how many days members have
--- to pay it, who will pay the bill, and how it is shared.
+-- repeats, when, how many days members have to pay it, who will pay the bill,
+-- and how it is shared. It repeats every day, every 1 or 2 weeks from its
+-- first date, or every 1, 3 or 12 months on a day of the month.
 --
 --   Fixed     A known amount, such as rent. On the bill day a scheduled job
 --             adds it as an unpaid bill with the template's split.
@@ -15,7 +16,7 @@
 -- is an ordinary unpaid bill: it has no creditor until a member pays it
 -- (SRS section 12, item 5), it can be disputed, and an admin can edit one
 -- month's charge through the usual versioned edit without changing the
--- template (FR-04.4). Template changes apply to months not yet charged
+-- template (FR-04.4). Template changes apply to charges not yet made
 -- (FR-04.5).
 
 -- Tables ---------------------------------------------------------------------------------
@@ -27,10 +28,13 @@ create table public.recurring_templates (
   kind text not null,
   -- Fixed templates only. A variable bill's amount is entered each time.
   amount_minor bigint,
-  interval_months integer not null,
-  -- The day of the month the bill arrives. 29 to 31 fall on the last day of
-  -- shorter months.
-  bill_day integer not null,
+  -- Every day, every 1 or 2 weeks, or every 1, 3 or 12 months.
+  repeat_unit text not null,
+  repeat_every integer not null,
+  -- Monthly units only: the day of the month the bill arrives. 29 to 31 fall
+  -- on the last day of shorter months. Daily and weekly bills repeat from
+  -- their first date, so a weekly one keeps that date's weekday.
+  bill_day integer,
   -- The charge is due this many days after the bill day; null for no due date.
   due_after_days integer,
   -- Who will pay the bill (decision 16): named on each charge, which notifies them.
@@ -39,9 +43,9 @@ create table public.recurring_templates (
   -- (amount_minor, fixed templates only), validated by private.compute_shares.
   split_method text not null,
   participants jsonb not null,
-  -- The first day of the next billing period to charge. Moves forward as
-  -- periods are charged, so editing a template only affects later periods.
-  next_period date not null,
+  -- The next bill date to charge. Moves forward as charges are made, so
+  -- editing a template only affects later charges.
+  next_bill_date date not null,
   paused_at timestamptz,
   -- Archived, never deleted: its charges keep pointing at it.
   archived_at timestamptz,
@@ -56,20 +60,23 @@ create table public.recurring_templates (
     (kind = 'fixed' and amount_minor > 0 and amount_minor <= 1000000000000)
     or (kind = 'variable' and amount_minor is null)
   ),
-  constraint recurring_templates_interval_valid check (interval_months in (1, 3, 12)),
-  constraint recurring_templates_bill_day_valid check (bill_day between 1 and 31),
+  constraint recurring_templates_repeat_valid check (
+    (repeat_unit, repeat_every) in (('day', 1), ('week', 1), ('week', 2), ('month', 1), ('month', 3), ('month', 12))
+  ),
+  constraint recurring_templates_bill_day_valid check (
+    (repeat_unit = 'month' and bill_day between 1 and 31) or (repeat_unit <> 'month' and bill_day is null)
+  ),
   constraint recurring_templates_due_valid check (due_after_days is null or due_after_days between 0 and 90),
   constraint recurring_templates_split_valid check (
     split_method in ('equal', 'percentage', 'fixed') and (kind = 'fixed' or split_method <> 'fixed')
   ),
   constraint recurring_templates_participants_valid check (jsonb_typeof(participants) = 'array'),
-  constraint recurring_templates_period_valid check (next_period = date_trunc('month', next_period)::date),
   constraint recurring_templates_request_unique unique (apartment_id, client_request_id)
 );
 
 create index recurring_templates_apartment on public.recurring_templates (apartment_id, created_at)
 where archived_at is null;
-create index recurring_templates_due on public.recurring_templates (next_period)
+create index recurring_templates_due on public.recurring_templates (next_bill_date)
 where paused_at is null and archived_at is null;
 
 create trigger recurring_templates_set_updated_at
@@ -86,6 +93,8 @@ create table public.recurring_instances (
   id uuid primary key default gen_random_uuid(),
   template_id uuid not null references public.recurring_templates (id) on delete restrict,
   apartment_id uuid not null references public.apartments (id) on delete cascade,
+  -- What makes a charge unique: the month for monthly units, so a changed
+  -- bill day cannot charge a month twice, and the bill date otherwise.
   billing_period date not null,
   bill_date date not null,
   state text not null,
@@ -156,7 +165,35 @@ as $$
   select (now() at time zone a.timezone)::date from public.apartments a where a.id = p_apartment_id;
 $$;
 
+-- The bill date after p_date: the bill day in a later month, or a number of
+-- days or weeks on.
+create function private.following_bill_date(p_date date, p_unit text, p_every integer, p_bill_day integer)
+returns date
+language sql
+immutable
+set search_path = ''
+as $$
+  select case p_unit
+    when 'month' then private.period_bill_date(
+      (date_trunc('month', p_date) + make_interval(months => p_every))::date, p_bill_day)
+    when 'week' then p_date + 7 * p_every
+    else p_date + p_every
+  end;
+$$;
+
+-- The unique key of a charge on p_date (see recurring_instances.billing_period).
+create function private.billing_period_of(p_date date, p_unit text)
+returns date
+language sql
+immutable
+set search_path = ''
+as $$
+  select case when p_unit = 'month' then date_trunc('month', p_date)::date else p_date end;
+$$;
+
 revoke execute on function private.period_bill_date(date, integer) from public;
+revoke execute on function private.following_bill_date(date, text, integer, integer) from public;
+revoke execute on function private.billing_period_of(date, text) from public;
 revoke execute on function private.apartment_today(uuid) from public;
 
 -- Validation -----------------------------------------------------------------------------
@@ -167,7 +204,8 @@ create function private.require_valid_template(
   p_title text,
   p_kind text,
   p_amount_minor bigint,
-  p_interval_months integer,
+  p_repeat_unit text,
+  p_repeat_every integer,
   p_bill_day integer,
   p_due_after_days integer,
   p_split_method text,
@@ -193,11 +231,15 @@ begin
   if p_kind = 'variable' and p_amount_minor is not null then
     raise exception 'variable_amount_not_allowed' using errcode = '22023';
   end if;
-  if p_interval_months is null or p_interval_months not in (1, 3, 12) then
+  if (p_repeat_unit, p_repeat_every) is null
+     or (p_repeat_unit, p_repeat_every) not in (('day', 1), ('week', 1), ('week', 2), ('month', 1), ('month', 3), ('month', 12)) then
     raise exception 'invalid_interval' using errcode = '22023';
   end if;
-  if p_bill_day is null or p_bill_day not between 1 and 31 then
+  if p_repeat_unit = 'month' and (p_bill_day is null or p_bill_day not between 1 and 31) then
     raise exception 'invalid_bill_day' using errcode = '22023';
+  end if;
+  if p_repeat_unit <> 'month' and p_bill_day is not null then
+    raise exception 'bill_day_for_monthly_only' using errcode = '22023';
   end if;
   if p_due_after_days is not null and p_due_after_days not between 0 and 90 then
     raise exception 'invalid_due_after_days' using errcode = '22023';
@@ -216,7 +258,7 @@ begin
 end;
 $$;
 
-revoke execute on function private.require_valid_template(uuid, text, text, bigint, integer, integer, integer, text, jsonb, uuid)
+revoke execute on function private.require_valid_template(uuid, text, text, bigint, text, integer, integer, integer, text, jsonb, uuid)
 from public;
 
 -- Charging -------------------------------------------------------------------------------
@@ -302,7 +344,7 @@ $$;
 
 revoke execute on function private.post_recurring_charge(uuid, bigint, text, jsonb, date, uuid, uuid) from public;
 
--- Charges one template's next period and moves it on to the following one.
+-- Charges one template's next bill date and moves it on to the following one.
 -- A fixed template whose split still holds is charged at once; anything else
 -- waits for an admin, who is notified. The caller locks the template.
 create function private.charge_next_period(p_template_id uuid)
@@ -318,18 +360,20 @@ declare
   split_holds boolean;
 begin
   select * into template from public.recurring_templates where id = p_template_id;
-  bill_date := private.period_bill_date(template.next_period, template.bill_day);
+  bill_date := template.next_bill_date;
 
   insert into public.recurring_instances (template_id, apartment_id, billing_period, bill_date, state, reason)
   values (
-    template.id, template.apartment_id, template.next_period, bill_date, 'waiting',
+    template.id, template.apartment_id, private.billing_period_of(bill_date, template.repeat_unit),
+    bill_date, 'waiting',
     case template.kind when 'fixed' then 'split_needs_review' else 'amount_needed' end
   )
   on conflict (template_id, billing_period) do nothing
   returning id into instance_id;
 
   update public.recurring_templates
-  set next_period = (template.next_period + make_interval(months => template.interval_months))::date
+  set next_bill_date = private.following_bill_date(
+    bill_date, template.repeat_unit, template.repeat_every, template.bill_day)
   where id = template.id;
 
   -- Already charged by an earlier run.
@@ -366,8 +410,8 @@ $$;
 revoke execute on function private.charge_next_period(uuid) from public;
 
 -- Charges every template whose bill day has come in its apartment's
--- timezone. A template that missed several periods, because the job was
--- down, catches up one period per pass. Rows another run holds are left for
+-- timezone. A template that missed several charges, because the job was
+-- down, catches up one charge per pass, and a daily one finishes on later runs. Rows another run holds are left for
 -- the next one. Returns how many periods it charged or opened.
 create function private.charge_due_recurring()
 returns integer
@@ -386,8 +430,8 @@ begin
       from public.recurring_templates t
       join public.apartments a on a.id = t.apartment_id
       where t.paused_at is null and t.archived_at is null
-        and private.period_bill_date(t.next_period, t.bill_day) <= (now() at time zone a.timezone)::date
-      order by t.next_period
+        and t.next_bill_date <= (now() at time zone a.timezone)::date
+      order by t.next_bill_date
       limit 500
       for update of t skip locked
     loop
@@ -407,20 +451,23 @@ select cron.schedule('charge-repeatable-expenses', '*/15 * * * *', $$ select pri
 
 -- Managing templates ---------------------------------------------------------------------
 
--- p_first_period is the month of the first charge. Left out, it is this month
--- if the bill day has not passed yet, otherwise next month.
+-- p_first_date is the first bill date, today or later. A monthly one is a bill
+-- day within the next year, and may be this month's even if it has passed,
+-- which charges it at once. Left out, it is the next bill day still to come
+-- for a monthly template, and today otherwise.
 create function private.create_recurring_template(
   p_apartment_id uuid,
   p_title text,
   p_kind text,
   p_amount_minor bigint,
-  p_interval_months integer,
+  p_repeat_unit text,
+  p_repeat_every integer,
   p_bill_day integer,
   p_due_after_days integer,
   p_split_method text,
   p_participants jsonb,
   p_collector_id uuid,
-  p_first_period date,
+  p_first_date date,
   p_client_request_id uuid
 )
 returns uuid
@@ -432,7 +479,7 @@ declare
   admin_id uuid := private.require_admin(p_apartment_id);
   today date := private.apartment_today(p_apartment_id);
   this_month date := date_trunc('month', today)::date;
-  first_period date := date_trunc('month', p_first_period)::date;
+  first_date date := p_first_date;
   existing uuid;
   new_template uuid;
 begin
@@ -445,43 +492,56 @@ begin
   end if;
 
   perform private.require_valid_template(
-    p_apartment_id, p_title, p_kind, p_amount_minor, p_interval_months, p_bill_day, p_due_after_days,
-    p_split_method, p_participants, p_collector_id
+    p_apartment_id, p_title, p_kind, p_amount_minor, p_repeat_unit, p_repeat_every, p_bill_day,
+    p_due_after_days, p_split_method, p_participants, p_collector_id
   );
 
-  if first_period is null then
-    first_period := case when private.period_bill_date(this_month, p_bill_day) >= today
-                         then this_month
-                         else (this_month + interval '1 month')::date end;
-  elsif first_period < this_month or first_period > (this_month + interval '12 months')::date then
-    raise exception 'invalid_first_period' using errcode = '22023';
+  if p_repeat_unit = 'month' then
+    if first_date is null then
+      first_date := private.period_bill_date(this_month, p_bill_day);
+      if first_date < today then
+        first_date := private.following_bill_date(first_date, 'month', 1, p_bill_day);
+      end if;
+    elsif first_date <> private.period_bill_date(first_date, p_bill_day)
+          or first_date < this_month or first_date >= (this_month + interval '13 months')::date then
+      raise exception 'invalid_first_date' using errcode = '22023';
+    end if;
+  else
+    first_date := coalesce(first_date, today);
+    if first_date < today or first_date > (today + interval '1 year')::date then
+      raise exception 'invalid_first_date' using errcode = '22023';
+    end if;
   end if;
 
   insert into public.recurring_templates (
-    apartment_id, title, kind, amount_minor, interval_months, bill_day, due_after_days,
-    collector_id, split_method, participants, next_period, created_by, client_request_id
+    apartment_id, title, kind, amount_minor, repeat_unit, repeat_every, bill_day, due_after_days,
+    collector_id, split_method, participants, next_bill_date, created_by, client_request_id
   )
   values (
-    p_apartment_id, btrim(p_title), p_kind, p_amount_minor, p_interval_months, p_bill_day, p_due_after_days,
-    p_collector_id, p_split_method, p_participants, first_period, admin_id, p_client_request_id
+    p_apartment_id, btrim(p_title), p_kind, p_amount_minor, p_repeat_unit, p_repeat_every, p_bill_day,
+    p_due_after_days, p_collector_id, p_split_method, p_participants, first_date, admin_id,
+    p_client_request_id
   )
   returning id into new_template;
 
   insert into public.audit_events (apartment_id, actor_id, entity_type, entity_id, action, details)
   values (p_apartment_id, admin_id, 'recurring_template', new_template, 'created',
-          jsonb_build_object('kind', p_kind, 'first_period', first_period));
+          jsonb_build_object('kind', p_kind, 'first_date', first_date));
 
   return new_template;
 end;
 $$;
 
--- Changes apply from the next period not yet charged (FR-04.5). Charges
--- already made, and bills waiting for an amount, are left as they are.
+-- Changes apply from the next charge not yet made (FR-04.5). Charges already
+-- made, and bills waiting for an amount, are left as they are. The next charge
+-- keeps its date, except that a monthly one moves to the new bill day in its
+-- month, or the month after if that day has passed.
 create function private.update_recurring_template(
   p_template_id uuid,
   p_title text,
   p_amount_minor bigint,
-  p_interval_months integer,
+  p_repeat_unit text,
+  p_repeat_every integer,
   p_bill_day integer,
   p_due_after_days integer,
   p_split_method text,
@@ -496,6 +556,8 @@ as $$
 declare
   template public.recurring_templates;
   admin_id uuid;
+  today date;
+  next_date date;
 begin
   select * into template from public.recurring_templates where id = p_template_id for update;
   if template.id is null or not private.is_apartment_admin(template.apartment_id) then
@@ -508,15 +570,29 @@ begin
 
   -- The kind stays as created: a fixed rent does not become a variable bill.
   perform private.require_valid_template(
-    template.apartment_id, p_title, template.kind, p_amount_minor, p_interval_months, p_bill_day,
-    p_due_after_days, p_split_method, p_participants, p_collector_id
+    template.apartment_id, p_title, template.kind, p_amount_minor, p_repeat_unit, p_repeat_every,
+    p_bill_day, p_due_after_days, p_split_method, p_participants, p_collector_id
   );
+
+  next_date := template.next_bill_date;
+  if p_repeat_unit = 'month' then
+    next_date := private.period_bill_date(next_date, p_bill_day);
+    -- A paused template catches up when it resumes.
+    if template.paused_at is null then
+      today := private.apartment_today(template.apartment_id);
+      while next_date < today loop
+        next_date := private.following_bill_date(next_date, 'month', 1, p_bill_day);
+      end loop;
+    end if;
+  end if;
 
   update public.recurring_templates
   set title = btrim(p_title),
       amount_minor = p_amount_minor,
-      interval_months = p_interval_months,
+      repeat_unit = p_repeat_unit,
+      repeat_every = p_repeat_every,
       bill_day = p_bill_day,
+      next_bill_date = next_date,
       due_after_days = p_due_after_days,
       split_method = p_split_method,
       participants = p_participants,
@@ -525,7 +601,7 @@ begin
 
   insert into public.audit_events (apartment_id, actor_id, entity_type, entity_id, action, details)
   values (template.apartment_id, admin_id, 'recurring_template', template.id, 'edited',
-          jsonb_build_object('from_period', template.next_period));
+          jsonb_build_object('from_date', next_date));
 end;
 $$;
 
@@ -541,7 +617,7 @@ declare
   template public.recurring_templates;
   admin_id uuid;
   today date;
-  resume_period date;
+  resume_date date;
 begin
   select * into template from public.recurring_templates where id = p_template_id for update;
   if template.id is null or not private.is_apartment_admin(template.apartment_id) then
@@ -555,17 +631,18 @@ begin
     return;
   end if;
 
-  resume_period := template.next_period;
+  resume_date := template.next_bill_date;
   if not p_paused then
     today := private.apartment_today(template.apartment_id);
-    while private.period_bill_date(resume_period, template.bill_day) < today loop
-      resume_period := (resume_period + make_interval(months => template.interval_months))::date;
+    while resume_date < today loop
+      resume_date := private.following_bill_date(
+        resume_date, template.repeat_unit, template.repeat_every, template.bill_day);
     end loop;
   end if;
 
   update public.recurring_templates
   set paused_at = case when p_paused then now() end,
-      next_period = resume_period
+      next_bill_date = resume_date
   where id = template.id;
 
   insert into public.audit_events (apartment_id, actor_id, entity_type, entity_id, action)
@@ -684,14 +761,14 @@ begin
 end;
 $$;
 
-revoke execute on function private.create_recurring_template(uuid, text, text, bigint, integer, integer, integer, text, jsonb, uuid, date, uuid) from public;
-revoke execute on function private.update_recurring_template(uuid, text, bigint, integer, integer, integer, text, jsonb, uuid) from public;
+revoke execute on function private.create_recurring_template(uuid, text, text, bigint, text, integer, integer, integer, text, jsonb, uuid, date, uuid) from public;
+revoke execute on function private.update_recurring_template(uuid, text, bigint, text, integer, integer, integer, text, jsonb, uuid) from public;
 revoke execute on function private.set_recurring_template_paused(uuid, boolean) from public;
 revoke execute on function private.archive_recurring_template(uuid) from public;
 revoke execute on function private.post_recurring_bill(uuid, bigint, text, jsonb, date, uuid) from public;
 revoke execute on function private.skip_recurring_bill(uuid) from public;
-grant execute on function private.create_recurring_template(uuid, text, text, bigint, integer, integer, integer, text, jsonb, uuid, date, uuid) to authenticated;
-grant execute on function private.update_recurring_template(uuid, text, bigint, integer, integer, integer, text, jsonb, uuid) to authenticated;
+grant execute on function private.create_recurring_template(uuid, text, text, bigint, text, integer, integer, integer, text, jsonb, uuid, date, uuid) to authenticated;
+grant execute on function private.update_recurring_template(uuid, text, bigint, text, integer, integer, integer, text, jsonb, uuid) to authenticated;
 grant execute on function private.set_recurring_template_paused(uuid, boolean) to authenticated;
 grant execute on function private.archive_recurring_template(uuid) to authenticated;
 grant execute on function private.post_recurring_bill(uuid, bigint, text, jsonb, date, uuid) to authenticated;
@@ -704,13 +781,14 @@ create function public.create_recurring_template(
   p_title text,
   p_kind text,
   p_amount_minor bigint,
-  p_interval_months integer,
+  p_repeat_unit text,
+  p_repeat_every integer,
   p_bill_day integer,
   p_due_after_days integer,
   p_split_method text,
   p_participants jsonb,
   p_collector_id uuid default null,
-  p_first_period date default null,
+  p_first_date date default null,
   p_client_request_id uuid default null
 )
 returns uuid
@@ -719,8 +797,8 @@ security invoker
 set search_path = ''
 as $$
   select private.create_recurring_template(
-    p_apartment_id, p_title, p_kind, p_amount_minor, p_interval_months, p_bill_day, p_due_after_days,
-    p_split_method, p_participants, p_collector_id, p_first_period, p_client_request_id
+    p_apartment_id, p_title, p_kind, p_amount_minor, p_repeat_unit, p_repeat_every, p_bill_day,
+    p_due_after_days, p_split_method, p_participants, p_collector_id, p_first_date, p_client_request_id
   );
 $$;
 
@@ -728,7 +806,8 @@ create function public.update_recurring_template(
   p_template_id uuid,
   p_title text,
   p_amount_minor bigint,
-  p_interval_months integer,
+  p_repeat_unit text,
+  p_repeat_every integer,
   p_bill_day integer,
   p_due_after_days integer,
   p_split_method text,
@@ -741,7 +820,7 @@ security invoker
 set search_path = ''
 as $$
   select private.update_recurring_template(
-    p_template_id, p_title, p_amount_minor, p_interval_months, p_bill_day, p_due_after_days,
+    p_template_id, p_title, p_amount_minor, p_repeat_unit, p_repeat_every, p_bill_day, p_due_after_days,
     p_split_method, p_participants, p_collector_id
   );
 $$;
@@ -785,14 +864,14 @@ security invoker
 set search_path = ''
 as $$ select private.skip_recurring_bill(p_instance_id) $$;
 
-revoke execute on function public.create_recurring_template(uuid, text, text, bigint, integer, integer, integer, text, jsonb, uuid, date, uuid) from public, anon;
-revoke execute on function public.update_recurring_template(uuid, text, bigint, integer, integer, integer, text, jsonb, uuid) from public, anon;
+revoke execute on function public.create_recurring_template(uuid, text, text, bigint, text, integer, integer, integer, text, jsonb, uuid, date, uuid) from public, anon;
+revoke execute on function public.update_recurring_template(uuid, text, bigint, text, integer, integer, integer, text, jsonb, uuid) from public, anon;
 revoke execute on function public.set_recurring_template_paused(uuid, boolean) from public, anon;
 revoke execute on function public.archive_recurring_template(uuid) from public, anon;
 revoke execute on function public.post_recurring_bill(uuid, bigint, text, jsonb, date, uuid) from public, anon;
 revoke execute on function public.skip_recurring_bill(uuid) from public, anon;
-grant execute on function public.create_recurring_template(uuid, text, text, bigint, integer, integer, integer, text, jsonb, uuid, date, uuid) to authenticated;
-grant execute on function public.update_recurring_template(uuid, text, bigint, integer, integer, integer, text, jsonb, uuid) to authenticated;
+grant execute on function public.create_recurring_template(uuid, text, text, bigint, text, integer, integer, integer, text, jsonb, uuid, date, uuid) to authenticated;
+grant execute on function public.update_recurring_template(uuid, text, bigint, text, integer, integer, integer, text, jsonb, uuid) to authenticated;
 grant execute on function public.set_recurring_template_paused(uuid, boolean) to authenticated;
 grant execute on function public.archive_recurring_template(uuid) to authenticated;
 grant execute on function public.post_recurring_bill(uuid, bigint, text, jsonb, date, uuid) to authenticated;

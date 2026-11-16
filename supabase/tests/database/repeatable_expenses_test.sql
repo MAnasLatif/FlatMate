@@ -2,7 +2,7 @@
 -- an admin (SRS FR-04, AC-02, AC-05).
 begin;
 
-select plan(40);
+select plan(50);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111111', 'anas@example.test', '{"display_name": "Anas"}'),
@@ -62,7 +62,8 @@ create function pg_temp.due_since(template uuid, months integer) returns void la
 begin
   perform set_config('role', 'postgres', true);
   update public.recurring_templates
-  set next_period = (pg_temp.this_month() - make_interval(months => months))::date
+  set next_bill_date = private.period_bill_date(
+    (pg_temp.this_month() - make_interval(months => months))::date, bill_day)
   where id = template;
 end;
 $$;
@@ -95,46 +96,50 @@ select is(private.period_bill_date('2027-04-01', 5), '2027-04-05'::date, 'any ot
 
 select pg_temp.act_as(pg_temp.z());
 select throws_ok(
-  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 1, 1, 9,
+  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 'month', 1, 1, 9,
        'equal', pg_temp.everyone()) $$,
   '42501', 'not_admin', 'a member cannot add a repeatable expense, even through the API');
 
 select pg_temp.act_as(pg_temp.a());
 select throws_ok(
-  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Electricity', 'variable', 500000, 1, 5, null,
+  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Electricity', 'variable', 500000, 'month', 1, 5, null,
        'equal', pg_temp.everyone()) $$,
   '22023', 'variable_amount_not_allowed', 'a variable bill has no amount ahead of time');
 select throws_ok(
-  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Electricity', 'variable', null, 1, 5, null,
+  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Electricity', 'variable', null, 'month', 1, 5, null,
        'fixed', jsonb_build_array(jsonb_build_object('user_id', pg_temp.a(), 'amount_minor', 1))) $$,
   '22023', 'fixed_split_needs_fixed_amount', 'nor fixed shares');
 select throws_ok(
-  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 2, 1, null,
+  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 'month', 2, 1, null,
        'equal', pg_temp.everyone()) $$,
   '22023', 'invalid_interval', 'it repeats every 1, 3 or 12 months');
 select throws_ok(
-  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 1, 1, null,
+  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 'month', 1, 1, null,
        'fixed', jsonb_build_array(jsonb_build_object('user_id', pg_temp.a(), 'amount_minor', 100))) $$,
   '22023', null, 'fixed shares must add up to the amount');
 select throws_ok(
-  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 1, 1, null,
+  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 'month', 1, 1, null,
        'equal', jsonb_build_array(jsonb_build_object('user_id', pg_temp.s()))) $$,
   '22023', 'participant_not_member', 'only members can share it');
 select throws_ok(
-  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 1, 1, null,
-       'equal', pg_temp.everyone(), p_first_period => (pg_temp.this_month() - interval '1 month')::date) $$,
-  '22023', 'invalid_first_period', 'the first charge cannot be in a past month');
+  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 'month', 1, 1, null,
+       'equal', pg_temp.everyone(), p_first_date => (pg_temp.this_month() - interval '1 month')::date) $$,
+  '22023', 'invalid_first_date', 'the first charge cannot be in a past month');
+select throws_ok(
+  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 'month', 1, 1, null,
+       'equal', pg_temp.everyone(), p_first_date => (pg_temp.this_month() + interval '1 month 1 day')::date) $$,
+  '22023', 'invalid_first_date', 'a monthly first charge falls on its bill day');
 
 insert into vals values ('rent', public.create_recurring_template(
-  pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 1, 1, 9, 'equal', pg_temp.everyone(),
+  pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 'month', 1, 1, 9, 'equal', pg_temp.everyone(),
   p_collector_id => pg_temp.z(), p_client_request_id => 'aaaaaaaa-0000-0000-0000-000000000001')::text);
 select is(
   public.create_recurring_template(
-    pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 1, 1, 9, 'equal', pg_temp.everyone(),
+    pg_temp.v('flat'), 'Rent', 'fixed', 9000000, 'month', 1, 1, 9, 'equal', pg_temp.everyone(),
     p_collector_id => pg_temp.z(), p_client_request_id => 'aaaaaaaa-0000-0000-0000-000000000001'),
   pg_temp.v('rent'), 'a retried request returns the same template');
 select is(
-  (select next_period from public.recurring_templates where id = pg_temp.v('rent')),
+  (select next_bill_date from public.recurring_templates where id = pg_temp.v('rent')),
   case when pg_temp.today() = pg_temp.this_month() then pg_temp.this_month()
        else (pg_temp.this_month() + interval '1 month')::date end,
   'the first charge is the next bill day still to come');
@@ -143,7 +148,7 @@ select is(
 select public.set_member_role(pg_temp.v('flat'), pg_temp.z(), 'admin');
 select pg_temp.act_as(pg_temp.z());
 insert into vals values ('power', public.create_recurring_template(
-  pg_temp.v('flat'), 'Electricity', 'variable', null, 1, 5, 7, 'equal', pg_temp.everyone())::text);
+  pg_temp.v('flat'), 'Electricity', 'variable', null, 'month', 1, 5, 7, 'equal', pg_temp.everyone())::text);
 select is((select count(*)::int from public.recurring_templates where apartment_id = pg_temp.v('flat')), 2,
   'a second admin can add one and sees them all');
 
@@ -155,8 +160,8 @@ select throws_ok($$ select public.archive_recurring_template(pg_temp.v('rent')) 
 -- Fixed charges --------------------------------------------------------------------------
 
 select pg_temp.due_since(pg_temp.v('rent'), 1);
-select pg_temp.due_since(pg_temp.v('power'), 0);
 update public.recurring_templates set bill_day = 1 where id = pg_temp.v('power');
+select pg_temp.due_since(pg_temp.v('power'), 0);
 select is(pg_temp.charge(), 3, 'the job charges last month and this month for rent, and opens this month''s electricity');
 select is(pg_temp.charge(), 0, 'running it again charges nothing twice');
 
@@ -164,7 +169,7 @@ select is(
   (select count(*)::int from public.recurring_instances where template_id = pg_temp.v('rent') and state = 'posted'),
   2, 'each period of a fixed template is charged once');
 select is(
-  (select next_period from public.recurring_templates where id = pg_temp.v('rent')),
+  (select next_bill_date from public.recurring_templates where id = pg_temp.v('rent')),
   (pg_temp.this_month() + interval '1 month')::date, 'and the template moves on to next month');
 
 insert into vals select 'rent_now', i.expense_id::text from public.recurring_instances i
@@ -236,7 +241,7 @@ select is(
 -- Changes, pausing and people who leave --------------------------------------------------
 
 select pg_temp.act_as(pg_temp.a());
-select public.update_recurring_template(pg_temp.v('rent'), 'Rent', 9600000, 1, 1, 9, 'equal', pg_temp.everyone());
+select public.update_recurring_template(pg_temp.v('rent'), 'Rent', 9600000, 'month', 1, 1, 9, 'equal', pg_temp.everyone());
 select is((select amount_minor from public.expenses where id = pg_temp.v('rent_now')), 9000000::bigint,
   'a new rent applies to later months; this month''s charge stays');
 
@@ -247,7 +252,7 @@ select pg_temp.act_as(pg_temp.a());
 select public.set_recurring_template_paused(pg_temp.v('rent'), false);
 reset role;
 select ok(
-  (select private.period_bill_date(next_period, bill_day) >= pg_temp.today()
+  (select next_bill_date >= pg_temp.today()
    from public.recurring_templates where id = pg_temp.v('rent')),
   'resuming skips the months it was paused');
 
@@ -273,6 +278,50 @@ select lives_ok(
     where template_id = pg_temp.v('rent') and billing_period = (pg_temp.this_month() + interval '1 month')::date)),
   'an admin can skip a period');
 select lives_ok($$ select public.archive_recurring_template(pg_temp.v('rent')) $$, 'and archive a template');
+
+-- Daily and weekly -----------------------------------------------------------------------
+
+create function pg_temp.us() returns jsonb language sql as $$
+  select jsonb_build_array(jsonb_build_object('user_id', pg_temp.a()), jsonb_build_object('user_id', pg_temp.z()))
+$$;
+
+select throws_ok(
+  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Cleaner', 'fixed', 100000, 'week', 3, null, null,
+       'equal', pg_temp.us()) $$,
+  '22023', 'invalid_interval', 'weeks repeat every 1 or 2 weeks');
+select throws_ok(
+  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Cleaner', 'fixed', 100000, 'week', 1, 5, null,
+       'equal', pg_temp.us()) $$,
+  '22023', 'bill_day_for_monthly_only', 'a weekly charge has no day of the month');
+select throws_ok(
+  $$ select public.create_recurring_template(pg_temp.v('flat'), 'Cleaner', 'fixed', 100000, 'day', 1, null, null,
+       'equal', pg_temp.us(), p_first_date => pg_temp.today() - 1) $$,
+  '22023', 'invalid_first_date', 'a daily charge cannot start in the past');
+
+insert into vals values ('cleaner', public.create_recurring_template(
+  pg_temp.v('flat'), 'Cleaner', 'fixed', 30000, 'day', 1, null, null, 'equal', pg_temp.us())::text);
+insert into vals values ('trash', public.create_recurring_template(
+  pg_temp.v('flat'), 'Trash collection', 'fixed', 50000, 'week', 2, null, 3, 'equal', pg_temp.us(),
+  p_first_date => pg_temp.today())::text);
+select is((select next_bill_date from public.recurring_templates where id = pg_temp.v('cleaner')),
+  pg_temp.today(), 'a daily charge starts today unless told otherwise');
+
+reset role;
+update public.recurring_templates set next_bill_date = pg_temp.today() - 2 where id = pg_temp.v('cleaner');
+update public.recurring_templates set next_bill_date = pg_temp.today() - 28 where id = pg_temp.v('trash');
+select is(pg_temp.charge(), 6, 'the job catches up three days of cleaning and three fortnights of trash');
+select results_eq(
+  $$ select bill_date from public.recurring_instances where template_id = pg_temp.v('cleaner') order by 1 $$,
+  $$ values (pg_temp.today() - 2), (pg_temp.today() - 1), (pg_temp.today()) $$,
+  'a daily charge is made once a day');
+select is((select next_bill_date from public.recurring_templates where id = pg_temp.v('cleaner')),
+  pg_temp.today() + 1, 'and moves on to tomorrow');
+select is((select next_bill_date from public.recurring_templates where id = pg_temp.v('trash')),
+  pg_temp.today() + 14, 'a fortnightly charge moves on two weeks');
+select is(
+  (select count(distinct extract(isodow from bill_date))::int from public.recurring_instances
+   where template_id = pg_temp.v('trash')),
+  1, 'and keeps its weekday');
 
 select * from finish();
 rollback;
