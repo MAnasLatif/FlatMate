@@ -87,11 +87,13 @@ export function DateField({
       </PressableFeedback>
       <FieldError>{error}</FieldError>
 
-      {hasOpened ? (
-        <BottomSheet isOpen={isOpen} onOpenChange={setOpen}>
-          <BottomSheet.Portal>
-            <BottomSheet.Overlay />
-            <BottomSheet.Content>
+      {/* Always mounted: a sheet mounted already open does not appear, so the
+          first taps on the field did nothing. Only the calendar inside waits. */}
+      <BottomSheet isOpen={isOpen} onOpenChange={setOpen}>
+        <BottomSheet.Portal>
+          <BottomSheet.Overlay />
+          <BottomSheet.Content>
+            {hasOpened ? (
               <View className="gap-4">
                 <View className="flex-row items-center justify-between">
                   <Button
@@ -152,10 +154,10 @@ export function DateField({
                   </Button>
                 ) : null}
               </View>
-            </BottomSheet.Content>
-          </BottomSheet.Portal>
-        </BottomSheet>
-      ) : null}
+            ) : null}
+          </BottomSheet.Content>
+        </BottomSheet.Portal>
+      </BottomSheet>
     </TextField>
   );
 }
