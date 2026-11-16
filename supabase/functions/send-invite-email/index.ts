@@ -2,13 +2,14 @@
 //
 // The app calls this with the admin's own token. Every decision lives in the
 // database: private.prepare_invite_email checks that the caller is an admin,
-// checks the address, applies the daily limits and creates the code. This
-// function only validates the request, asks for that code, and hands the email
-// to the provider. If the email cannot be sent, the code is revoked again.
+// checks the address, applies the daily limits and gives the apartment's one
+// join code. This function only validates the request, asks for that code, and
+// hands the email to the provider. The code is the one admins also share, so a
+// failed email leaves it as it is.
 //
 // It logs events and status codes, never addresses, names or codes.
 
-import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.119.0';
+import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 
 const RESEND_URL = 'https://api.resend.com/emails';
 const PROVIDER_TIMEOUT_MS = 10_000;
@@ -40,8 +41,6 @@ const DATABASE_ERRORS = new Set<ErrorKey>(['invalid_email', 'not_admin', 'rate_l
 
 type Prepared = {
   code: string;
-  invite_id: string;
-  valid_days: number;
   apartment_name: string;
   inviter_name: string | null;
 };
@@ -101,7 +100,7 @@ function inviteEmail(to: string, prepared: Prepared): Email {
       '2. Choose Join by code and enter the code.',
       `3. An admin of ${apartment} lets you in.`,
       '',
-      `The code works for ${prepared.valid_days} days. If you were not expecting this email, you can ignore it.`,
+      'If you were not expecting this email, you can ignore it.',
     ].join('\n'),
   };
 }
@@ -151,12 +150,6 @@ async function deliver(email: Email, from: string): Promise<{ ok: boolean; statu
   }
 }
 
-/** Takes the code back, so an email that never arrived leaves no working code. */
-async function revoke(supabase: SupabaseClient, inviteId: string): Promise<void> {
-  const { error } = await supabase.rpc('revoke_invite', { p_invite_id: inviteId });
-  if (error) console.error(JSON.stringify({ event: 'revoke_failed', code: error.code }));
-}
-
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return new Response(null, { status: 405 });
 
@@ -193,7 +186,6 @@ Deno.serve(async (request) => {
   const result = await deliver(inviteEmail(body.email, prepared), from);
   if (!result.ok) {
     console.error(JSON.stringify({ event: 'send_failed', status: result.status }));
-    await revoke(supabase, prepared.invite_id);
     return fail('send_failed');
   }
 
