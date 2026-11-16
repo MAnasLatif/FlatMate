@@ -133,6 +133,7 @@ function AccountForm({
       <TextField isRequired isInvalid={fieldError('provider') !== undefined}>
         <Label>{draft.kind === 'bank' ? 'Bank' : 'Wallet'}</Label>
         <Input
+          variant="secondary"
           value={draft.provider}
           onChangeText={(provider) => update({ provider })}
           placeholder={draft.kind === 'bank' ? 'Meezan Bank' : 'JazzCash'}
@@ -143,6 +144,7 @@ function AccountForm({
       <TextField isRequired isInvalid={fieldError('accountTitle') !== undefined}>
         <Label>Name on the account</Label>
         <Input
+          variant="secondary"
           value={draft.accountTitle}
           onChangeText={(accountTitle) => update({ accountTitle })}
           autoComplete="name"
@@ -153,6 +155,7 @@ function AccountForm({
       <TextField isRequired isInvalid={fieldError('accountIdentifier') !== undefined}>
         <Label>{draft.kind === 'bank' ? 'Account number or IBAN' : 'Wallet number'}</Label>
         <Input
+          variant="secondary"
           value={draft.accountIdentifier}
           onChangeText={(accountIdentifier) => update({ accountIdentifier })}
           autoCapitalize="characters"

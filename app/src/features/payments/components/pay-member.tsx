@@ -250,6 +250,7 @@ function PayForm({
           <TextField isInvalid={showErrors && checked.error !== undefined}>
             <Label>Amount you paid ({apartment.currency})</Label>
             <Input
+              variant="secondary"
               value={amount}
               onChangeText={setAmount}
               keyboardType="decimal-pad"
@@ -291,6 +292,7 @@ function PayForm({
           <TextField isInvalid={referenceError !== undefined}>
             <Label>Transaction reference (optional)</Label>
             <Input
+              variant="secondary"
               value={reference}
               onChangeText={setReference}
               placeholder="From your bank or wallet app"

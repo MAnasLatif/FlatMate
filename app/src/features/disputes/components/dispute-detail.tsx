@@ -323,6 +323,7 @@ function DisputeActions({
               {permissions.canRespond ? 'Message (needed to reject)' : 'Reason for your decision'}
             </Label>
             <TextArea
+              variant="secondary"
               value={message}
               onChangeText={setMessage}
               accessibilityLabel={permissions.canRespond ? 'Message' : 'Reason for your decision'}

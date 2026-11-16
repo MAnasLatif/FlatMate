@@ -171,6 +171,7 @@ function RaiseDisputeForm({
         <TextField isRequired isInvalid={showErrors && result.errors.share !== undefined}>
           <Label>Your fair share ({expense.currency})</Label>
           <Input
+            variant="secondary"
             value={draft.share}
             onChangeText={(share) => setDraft((current) => ({ ...current, share }))}
             keyboardType="decimal-pad"
@@ -186,6 +187,7 @@ function RaiseDisputeForm({
       <TextField isRequired isInvalid={showErrors && result.errors.reason !== undefined}>
         <Label>Why?</Label>
         <TextArea
+          variant="secondary"
           value={draft.reason}
           onChangeText={(reason) => setDraft((current) => ({ ...current, reason }))}
           placeholder="I was away that week, I did not use it…"

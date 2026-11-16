@@ -200,6 +200,7 @@ function PaymentContent({
                 <TextField isInvalid={reasonError !== null}>
                   <Label>Why are you declining it?</Label>
                   <TextArea
+                    variant="secondary"
                     value={reason}
                     onChangeText={setReason}
                     accessibilityLabel="Why you decline the payment"
