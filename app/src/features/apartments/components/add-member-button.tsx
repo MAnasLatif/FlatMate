@@ -1,29 +1,26 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as Clipboard from 'expo-clipboard';
 import {
   BottomSheet,
-  Button,
   FieldError,
-  Input,
+  InputGroup,
   Label,
   PressableFeedback,
-  Separator,
+  Spinner,
   TextField,
   Typography,
   useBottomSheetAwareHandlers,
   useThemeColor,
 } from 'heroui-native';
 import { useState } from 'react';
-import { Keyboard, Share, View } from 'react-native';
+import { Keyboard, View } from 'react-native';
 
 import { OnlineButton } from '@/components/online-button';
 import { HEADER_ICON_SIZE } from '@/components/screen-transitions';
 import { emailSchema } from '@/features/auth/schemas';
 import { userErrorMessage } from '@/lib/errors';
 
-import { APARTMENT_ERROR_MESSAGES, INVITE_EMAIL_ERROR_MESSAGES } from '../errors';
-import { useJoinCode, useJoinCodeActions } from '../hooks';
-import { joinCodeMessage } from '../join-code';
+import { INVITE_EMAIL_ERROR_MESSAGES } from '../errors';
+import { useJoinCodeActions } from '../hooks';
 
 /**
  * For admins, in the members screen's top bar: opens the `AddMemberSheet`.
@@ -45,19 +42,17 @@ export function AddMemberButton({ onPress }: { onPress: () => void }) {
   );
 }
 
-/** Invites someone: emails them a join code, or copies or shares one. */
+/** Invites someone by emailing them the apartment's join code. */
 export function AddMemberSheet({
   apartmentId,
-  apartmentName,
   isOpen,
   onOpenChange,
 }: {
   apartmentId: string;
-  apartmentName: string;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }) {
-  // Each opening starts a fresh form, and a fresh code if one is shared.
+  // Each opening starts a fresh form.
   const [openCount, setOpenCount] = useState(0);
   const [wasOpen, setWasOpen] = useState(isOpen);
   if (isOpen !== wasOpen) {
@@ -71,28 +66,19 @@ export function AddMemberSheet({
       <BottomSheet.Portal>
         <BottomSheet.Overlay />
         <BottomSheet.Content keyboardBehavior="interactive" keyboardBlurBehavior="restore">
-          <InviteOptions key={openCount} apartmentId={apartmentId} apartmentName={apartmentName} />
+          <InviteOptions key={openCount} apartmentId={apartmentId} />
         </BottomSheet.Content>
       </BottomSheet.Portal>
     </BottomSheet>
   );
 }
 
-function InviteOptions({
-  apartmentId,
-  apartmentName,
-}: {
-  apartmentId: string;
-  apartmentName: string;
-}) {
+function InviteOptions({ apartmentId }: { apartmentId: string }) {
   const { sendEmail } = useJoinCodeActions(apartmentId);
-  // The apartment's one code: the same one every time it is copied, shared or emailed.
-  const joinCode = useJoinCode(apartmentId, true);
   const { onFocus, onBlur } = useBottomSheetAwareHandlers();
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState<string>();
   const [sentTo, setSentTo] = useState<string>();
-  const [copied, setCopied] = useState(false);
   const accent = useThemeColor('accent');
 
   const send = () => {
@@ -111,16 +97,6 @@ function InviteOptions({
     });
   };
 
-  const withCode = (act: (message: string) => void) => {
-    if (joinCode.data) act(joinCodeMessage(apartmentName, joinCode.data));
-  };
-
-  const copy = () =>
-    withCode((message) => {
-      void Clipboard.setStringAsync(message).then(() => setCopied(true));
-    });
-  const share = () => withCode((message) => void Share.share({ message }));
-
   const sendError = sendEmail.error
     ? userErrorMessage(
         sendEmail.error,
@@ -134,16 +110,15 @@ function InviteOptions({
       <View className="gap-1">
         <BottomSheet.Title>Add member</BottomSheet.Title>
         <BottomSheet.Description>
-          Email someone the apartment&apos;s join code, or share it yourself. You let the person in
-          when they ask to join.
+          Email someone the apartment&apos;s join code. You let them in when they ask to join.
         </BottomSheet.Description>
       </View>
 
-      <View className="gap-3">
-        <TextField isInvalid={emailError !== undefined || sendError !== undefined}>
-          <Label>Email</Label>
+      <TextField isInvalid={emailError !== undefined || sendError !== undefined}>
+        <Label>Email</Label>
+        <InputGroup>
           {/* The grey field reads better than the white one on the white sheet. */}
-          <Input
+          <InputGroup.Input
             variant="secondary"
             value={email}
             onChangeText={(value) => {
@@ -162,63 +137,34 @@ function InviteOptions({
             returnKeyType="send"
             onSubmitEditing={send}
           />
-          <FieldError>{emailError ?? sendError}</FieldError>
-        </TextField>
-        {sentTo ? (
-          <Typography.Paragraph
-            type="body-sm"
-            className="text-success"
-            accessibilityLiveRegion="polite"
-          >
-            Invite sent to {sentTo}.
-          </Typography.Paragraph>
-        ) : null}
-        <OnlineButton onPress={send} isDisabled={sendEmail.isPending}>
-          {sendEmail.isPending ? 'Sending…' : 'Send invite'}
-        </OnlineButton>
-      </View>
-
-      <View className="flex-row items-center gap-3">
-        <Separator className="flex-1" />
-        <Typography.Paragraph type="body-xs" color="muted">
-          or share a code
+          <InputGroup.Suffix>
+            <OnlineButton
+              isIconOnly
+              size="sm"
+              variant="ghost"
+              onPress={send}
+              isDisabled={sendEmail.isPending}
+              accessibilityLabel={sendEmail.isPending ? 'Sending invite' : 'Send invite'}
+            >
+              {sendEmail.isPending ? (
+                <Spinner size="sm" />
+              ) : (
+                <Ionicons name="send" size={20} color={accent} />
+              )}
+            </OnlineButton>
+          </InputGroup.Suffix>
+        </InputGroup>
+        <FieldError>{emailError ?? sendError}</FieldError>
+      </TextField>
+      {sentTo ? (
+        <Typography.Paragraph
+          type="body-sm"
+          className="text-success"
+          accessibilityLiveRegion="polite"
+        >
+          Invite sent to {sentTo}.
         </Typography.Paragraph>
-        <Separator className="flex-1" />
-      </View>
-
-      <View className="gap-2">
-        <View className="flex-row gap-3">
-          <OnlineButton
-            variant="secondary"
-            className="flex-1"
-            onPress={copy}
-            isDisabled={!joinCode.data}
-            accessibilityLabel="Copy invite"
-          >
-            <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={accent} />
-            <Button.Label>{copied ? 'Copied' : 'Copy invite'}</Button.Label>
-          </OnlineButton>
-          <OnlineButton
-            variant="secondary"
-            className="flex-1"
-            onPress={share}
-            isDisabled={!joinCode.data}
-            accessibilityLabel="Share invite"
-          >
-            <Ionicons name="share-outline" size={18} color={accent} />
-            <Button.Label>Share invite</Button.Label>
-          </OnlineButton>
-        </View>
-        {joinCode.isLoadingError ? (
-          <Typography.Paragraph type="body-sm" className="text-danger">
-            {userErrorMessage(
-              joinCode.error,
-              'Could not load the join code. Try again.',
-              APARTMENT_ERROR_MESSAGES,
-            )}
-          </Typography.Paragraph>
-        ) : null}
-      </View>
+      ) : null}
     </View>
   );
 }

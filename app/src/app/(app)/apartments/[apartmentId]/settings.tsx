@@ -170,7 +170,6 @@ function MembersTab({
       <JoinCodeSection apartmentId={apartmentId} apartmentName={apartmentName} />
       <AddMemberSheet
         apartmentId={apartmentId}
-        apartmentName={apartmentName}
         isOpen={isAddingMember}
         onOpenChange={setAddingMember}
       />

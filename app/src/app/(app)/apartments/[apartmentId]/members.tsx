@@ -101,7 +101,6 @@ export default function MembersScreen() {
       {viewerIsAdmin ? (
         <AddMemberSheet
           apartmentId={apartmentId}
-          apartmentName={apartment.data?.name ?? 'our apartment'}
           isOpen={isAddingMember}
           onOpenChange={setAddingMember}
         />
