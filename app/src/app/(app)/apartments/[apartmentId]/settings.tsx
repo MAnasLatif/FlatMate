@@ -1,7 +1,16 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Button, Card, Input, Separator, Tabs, TextField, Typography } from 'heroui-native';
+import {
+  Button,
+  Card,
+  PressableFeedback,
+  Separator,
+  Tabs,
+  Typography,
+  useThemeColor,
+} from 'heroui-native';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Alert, Share, View } from 'react-native';
@@ -16,6 +25,7 @@ import {
   type ApartmentFormInput,
   type ApartmentFormOutput,
 } from '@/features/apartments/components/apartment-form-fields';
+import { CategorySheet } from '@/features/apartments/components/category-sheet';
 import { JoinRequests } from '@/features/apartments/components/join-requests';
 import { APARTMENT_ERROR_MESSAGES } from '@/features/apartments/errors';
 import {
@@ -28,7 +38,7 @@ import {
   useMyMembership,
   useUpdateApartmentSettings,
 } from '@/features/apartments/hooks';
-import { apartmentFormSchema, categoryNameSchema } from '@/features/apartments/schemas';
+import { apartmentFormSchema } from '@/features/apartments/schemas';
 import { RecurringSection } from '@/features/recurring/components/recurring-section';
 import { userErrorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/time';
@@ -304,99 +314,73 @@ function InvitesSection({
 
 function CategoriesSection({ apartmentId }: { apartmentId: string }) {
   const categories = useCategories(apartmentId);
-  const { add, rename, archive } = useCategoryActions(apartmentId);
-  const [newName, setNewName] = useState('');
-  const [newNameError, setNewNameError] = useState<string | undefined>();
+  const { archive } = useCategoryActions(apartmentId);
+  const [isSheetOpen, setSheetOpen] = useState(false);
+  // The category being renamed, or null when adding one.
+  const [editing, setEditing] = useState<Category | null>(null);
 
-  const submitNew = () => {
-    const parsed = categoryNameSchema.safeParse(newName);
-    if (!parsed.success) {
-      setNewNameError(parsed.error.issues[0]?.message);
-      return;
-    }
-    setNewNameError(undefined);
-    add.mutate(parsed.data, { onSuccess: () => setNewName('') });
+  const openSheet = (category: Category | null) => {
+    setEditing(category);
+    setSheetOpen(true);
   };
 
-  const error = add.error ?? rename.error ?? archive.error;
-
   return (
-    <Card>
-      <Card.Body className="gap-4">
-        <Card.Title>Expense categories</Card.Title>
-        <FormAlert
-          message={
-            error
-              ? userErrorMessage(
-                  error,
-                  'Could not update the categories.',
-                  APARTMENT_ERROR_MESSAGES,
-                )
-              : null
-          }
+    <View className="gap-3">
+      <FormAlert
+        message={
+          archive.error
+            ? userErrorMessage(
+                archive.error,
+                'Could not archive the category.',
+                APARTMENT_ERROR_MESSAGES,
+              )
+            : null
+        }
+      />
+      {categories.isPending ? <LoadingRows count={3} /> : null}
+      {categories.isLoadingError ? (
+        <LoadError
+          message={userErrorMessage(categories.error, 'Could not load the categories.')}
+          onRetry={() => void categories.refetch()}
         />
-        {categories.isLoadingError ? (
-          <LoadError
-            message={userErrorMessage(categories.error, 'Could not load the categories.')}
-            onRetry={() => void categories.refetch()}
-          />
-        ) : null}
-        <View className="gap-2">
-          {categories.data?.map((category) => (
-            <CategoryRow
-              key={category.id}
-              category={category}
-              onRename={(name) => rename.mutate({ categoryId: category.id, name })}
-              onArchive={() => archive.mutate(category.id)}
-              isBusy={rename.isPending || archive.isPending}
-            />
-          ))}
-        </View>
-        <Separator />
-        <TextField isInvalid={newNameError !== undefined}>
-          <Input
-            variant="secondary"
-            value={newName}
-            onChangeText={(text) => {
-              setNewName(text);
-              setNewNameError(undefined);
-            }}
-            placeholder="New category"
-            accessibilityLabel="New category name"
-            onSubmitEditing={submitNew}
-          />
-          {newNameError ? (
-            <Typography.Paragraph type="body-xs" className="text-danger">
-              {newNameError}
-            </Typography.Paragraph>
-          ) : null}
-        </TextField>
-        <OnlineButton variant="secondary" onPress={submitNew} isDisabled={add.isPending}>
-          {add.isPending ? 'Adding…' : 'Add category'}
-        </OnlineButton>
-      </Card.Body>
-    </Card>
+      ) : null}
+      {categories.data?.length === 0 ? (
+        <Typography.Paragraph type="body-sm" color="muted" className="text-center">
+          No categories yet. Add one below.
+        </Typography.Paragraph>
+      ) : null}
+      {categories.data?.map((category) => (
+        <CategoryRow
+          key={category.id}
+          category={category}
+          onPress={() => openSheet(category)}
+          onArchive={() => archive.mutate(category.id)}
+          isBusy={archive.isPending}
+        />
+      ))}
+      <OnlineButton variant="secondary" onPress={() => openSheet(null)}>
+        New category
+      </OnlineButton>
+      <CategorySheet
+        apartmentId={apartmentId}
+        isOpen={isSheetOpen}
+        onOpenChange={setSheetOpen}
+        category={editing}
+      />
+    </View>
   );
 }
 
 type CategoryRowProps = {
   category: Category;
-  onRename: (name: string) => void;
+  onPress: () => void;
   onArchive: () => void;
   isBusy: boolean;
 };
 
-function CategoryRow({ category, onRename, onArchive, isBusy }: CategoryRowProps) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(category.name);
-
-  const save = () => {
-    const parsed = categoryNameSchema.safeParse(name);
-    if (parsed.success && parsed.data !== category.name) {
-      onRename(parsed.data);
-    }
-    setEditing(false);
-  };
+/** One category as a card, like an expense on the home screen. Tapping it renames it. */
+function CategoryRow({ category, onPress, onArchive, isBusy }: CategoryRowProps) {
+  const danger = useThemeColor('danger');
 
   const confirmArchive = () => {
     Alert.alert(
@@ -409,37 +393,31 @@ function CategoryRow({ category, onRename, onArchive, isBusy }: CategoryRowProps
     );
   };
 
-  if (editing) {
-    return (
-      <View className="flex-row items-center gap-2">
-        <View className="flex-1">
-          <TextField>
-            <Input
-              variant="secondary"
-              value={name}
-              onChangeText={setName}
-              autoFocus
-              accessibilityLabel={`New name for ${category.name}`}
-              onSubmitEditing={save}
-            />
-          </TextField>
-        </View>
-        <OnlineButton size="sm" onPress={save}>
-          Save
-        </OnlineButton>
-      </View>
-    );
-  }
-
   return (
-    <View className="flex-row items-center gap-2">
-      <Typography.Paragraph className="flex-1">{category.name}</Typography.Paragraph>
-      <Button size="sm" variant="ghost" onPress={() => setEditing(true)} isDisabled={isBusy}>
-        Rename
-      </Button>
-      <OnlineButton size="sm" variant="ghost" onPress={confirmArchive} isDisabled={isBusy}>
-        Archive
-      </OnlineButton>
-    </View>
+    <PressableFeedback
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={category.name}
+      accessibilityHint="Opens it to rename"
+      className="rounded-3xl"
+    >
+      <Card>
+        <Card.Body className="flex-row items-center gap-2">
+          <Typography.Paragraph numberOfLines={1} className="flex-1">
+            {category.name}
+          </Typography.Paragraph>
+          <OnlineButton
+            isIconOnly
+            size="sm"
+            variant="ghost"
+            onPress={confirmArchive}
+            isDisabled={isBusy}
+            accessibilityLabel={`Archive ${category.name}`}
+          >
+            <Ionicons name="archive-outline" size={22} color={danger} />
+          </OnlineButton>
+        </Card.Body>
+      </Card>
+    </PressableFeedback>
   );
 }

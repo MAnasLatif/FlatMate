@@ -4,7 +4,15 @@ import { useLocalSearchParams } from 'expo-router';
 import SettingsScreen from '@/app/(app)/apartments/[apartmentId]/settings';
 import { renderWithProviders } from '@/test/render';
 
-import { type Apartment, fetchApartment, fetchMembers, type Member } from '../api';
+import {
+  addCategory,
+  type Apartment,
+  fetchApartment,
+  fetchCategories,
+  fetchMembers,
+  type Member,
+  renameCategory,
+} from '../api';
 
 const FLAT = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const ME = '11111111-1111-1111-1111-111111111111';
@@ -22,6 +30,8 @@ jest.mock('../api', () => ({
   fetchActiveInvites: jest.fn(async () => []),
   fetchJoinRequests: jest.fn(async () => []),
   fetchCategories: jest.fn(async () => []),
+  addCategory: jest.fn(async () => undefined),
+  renameCategory: jest.fn(async () => undefined),
 }));
 
 const apartment: Apartment = {
@@ -71,6 +81,36 @@ it('opens on the general settings and moves between the tabs', async () => {
   expect(screen.queryByText('Save settings')).not.toBeOnTheScreen();
 
   await user.press(screen.getByText('Expense control'));
-  expect(await screen.findByText('Expense categories')).toBeOnTheScreen();
+  expect(await screen.findByRole('button', { name: 'New category' })).toBeOnTheScreen();
   expect(screen.queryByText('Join codes')).not.toBeOnTheScreen();
+});
+
+it('adds a category from the drawer', async () => {
+  await renderWithProviders(<SettingsScreen />);
+  const user = userEvent.setup();
+
+  await user.press(await screen.findByText('Expense control'));
+  await user.press(await screen.findByRole('button', { name: 'New category' }));
+  await user.type(screen.getByTestId('category-name'), 'Gas');
+  await user.press(screen.getByTestId('category-save'));
+
+  expect(addCategory).toHaveBeenCalledWith(FLAT, 'Gas');
+});
+
+it('renames a category when it is tapped, in the same drawer', async () => {
+  jest.mocked(fetchCategories).mockResolvedValue([{ id: 'c-1', name: 'Groceries' }]);
+  await renderWithProviders(<SettingsScreen />);
+  const user = userEvent.setup();
+
+  await user.press(await screen.findByText('Expense control'));
+  await user.press(await screen.findByRole('button', { name: 'Groceries' }));
+  expect(screen.getByText('Rename category')).toBeOnTheScreen();
+  expect(screen.getByTestId('category-name')).toHaveDisplayValue('Groceries');
+  expect(screen.getByRole('button', { name: 'Archive Groceries' })).toBeOnTheScreen();
+
+  await user.clear(screen.getByTestId('category-name'));
+  await user.type(screen.getByTestId('category-name'), 'Food');
+  await user.press(screen.getByTestId('category-save'));
+
+  expect(renameCategory).toHaveBeenCalledWith('c-1', 'Food');
 });
