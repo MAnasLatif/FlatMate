@@ -7,6 +7,7 @@ import {
   Card,
   PressableFeedback,
   Separator,
+  Spinner,
   Tabs,
   Typography,
   useThemeColor,
@@ -235,7 +236,7 @@ function JoinCodeSection({
 }) {
   const joinCode = useJoinCode(apartmentId, true);
   const { change } = useJoinCodeActions(apartmentId);
-  const [accent, success] = useThemeColor(['accent', 'success']);
+  const [accent, success, muted] = useThemeColor(['accent', 'success', 'muted']);
   const [copied, setCopied] = useState(false);
   const code = joinCode.data;
 
@@ -280,9 +281,26 @@ function JoinCodeSection({
         ) : null}
         {code ? (
           <>
-            <Typography.Heading type="h2" className="text-center" selectable testID="join-code">
-              {code}
-            </Typography.Heading>
+            <View className="flex-row items-center justify-center gap-2">
+              <Typography.Heading type="h2" selectable testID="join-code">
+                {code}
+              </Typography.Heading>
+              <OnlineButton
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                onPress={confirmChange}
+                isDisabled={change.isPending}
+                accessibilityLabel="Change code"
+                accessibilityHint="Makes a new code; the current one stops working"
+              >
+                {change.isPending ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <Ionicons name="refresh" size={22} color={muted} />
+                )}
+              </OnlineButton>
+            </View>
             <View className="flex-row gap-3">
               <Button
                 variant="secondary"
@@ -305,9 +323,6 @@ function JoinCodeSection({
                 <Button.Label>Share</Button.Label>
               </Button>
             </View>
-            <OnlineButton variant="ghost" onPress={confirmChange} isDisabled={change.isPending}>
-              {change.isPending ? 'Changing…' : 'Change code'}
-            </OnlineButton>
             <Separator />
             <InviteByEmail apartmentId={apartmentId} />
           </>
