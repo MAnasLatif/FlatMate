@@ -15,7 +15,7 @@ import { userErrorMessage } from '@/lib/errors';
 import type { Category } from '../api';
 import { APARTMENT_ERROR_MESSAGES } from '../errors';
 import { useCategoryActions } from '../hooks';
-import { categoryNameSchema } from '../schemas';
+import { categoryNameSchema, isOtherCategoryName } from '../schemas';
 
 type CategorySheetProps = {
   apartmentId: string;
@@ -72,6 +72,11 @@ function CategoryForm({
     const parsed = categoryNameSchema.safeParse(name);
     if (!parsed.success) {
       setNameError(parsed.error.issues[0]?.message);
+      return;
+    }
+    // Other is kept for anything that fits nowhere else; nothing takes its name.
+    if (category !== null && isOtherCategoryName(parsed.data)) {
+      setNameError('Other is kept for anything that fits nowhere else. Choose another name.');
       return;
     }
     setNameError(undefined);

@@ -14,6 +14,7 @@ import { View } from 'react-native';
 import { ChoiceChips } from '@/components/choice-chips';
 import { DateField } from '@/components/form/date-field';
 import type { Category, Member } from '@/features/apartments/api';
+import { isOtherCategoryName } from '@/features/apartments/schemas';
 
 import { CATEGORY_DETAIL_MAX_LENGTH, type DraftResult, type ExpenseDraft } from '../draft';
 import { memberLabel } from '../member-label';
@@ -143,7 +144,7 @@ function DetailsSection({
 /** Whether the chosen category is the catch-all Other, which asks what it was. */
 function isOtherCategory(categories: readonly Category[], categoryId: string | null): boolean {
   const name = categories.find((category) => category.id === categoryId)?.name;
-  return name?.trim().toLowerCase() === 'other';
+  return name !== undefined && isOtherCategoryName(name);
 }
 
 /** Optional notes, last: most expenses need none. */

@@ -9,6 +9,7 @@ export const APARTMENT_ERROR_MESSAGES: Record<string, string> = {
   member_not_found: 'This person is no longer a member.',
   invalid_timezone: 'This time zone is not recognised. Use a name such as Asia/Karachi.',
   category_not_found: 'This category no longer exists.',
+  category_fixed: 'Other stays as it is, for anything that fits nowhere else.',
   invite_not_found: 'This code no longer exists.',
   still_a_member: 'This person is a member again, so they stay in the list.',
   already_member: 'This person is already a member.',

@@ -55,6 +55,14 @@ export const joinCodeSchema = z.object({
     .pipe(z.string().length(8, 'A join code has 8 letters and digits, such as 7KQ2-M9XD.')),
 });
 
+/**
+ * Whether a category is the catch-all Other. Every apartment keeps it as it
+ * is: the database refuses to rename or archive it.
+ */
+export function isOtherCategoryName(name: string): boolean {
+  return name.trim().toLowerCase() === 'other';
+}
+
 export const categoryNameSchema = z
   .string()
   .trim()

@@ -116,3 +116,18 @@ it('renames a category when it is tapped, in the same drawer', async () => {
 
   expect(renameCategory).toHaveBeenCalledWith('c-1', 'Food');
 });
+
+it('keeps Other as it is: it cannot be renamed or archived', async () => {
+  jest.mocked(fetchCategories).mockResolvedValue([
+    { id: 'c-1', name: 'Groceries' },
+    { id: 'c-2', name: 'Other' },
+  ]);
+  await renderWithProviders(<SettingsScreen />);
+  const user = userEvent.setup();
+
+  await user.press(await screen.findByText('Expense control'));
+  expect(await screen.findByText('For anything that fits nowhere else')).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Archive Groceries' })).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Archive Other' })).not.toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Other' })).not.toBeOnTheScreen();
+});

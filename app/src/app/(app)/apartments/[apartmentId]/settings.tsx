@@ -40,7 +40,7 @@ import {
   useMyMembership,
   useUpdateApartmentSettings,
 } from '@/features/apartments/hooks';
-import { apartmentFormSchema } from '@/features/apartments/schemas';
+import { apartmentFormSchema, isOtherCategoryName } from '@/features/apartments/schemas';
 import { useMarkSeen } from '@/features/notifications/hooks';
 import { unreadMatches } from '@/features/notifications/unread';
 import { RecurringSection } from '@/features/recurring/components/recurring-section';
@@ -406,9 +406,31 @@ type CategoryRowProps = {
   isBusy: boolean;
 };
 
-/** One category as a card, like an expense on the home screen. Tapping it renames it. */
+/**
+ * One category as a card, like an expense on the home screen. Tapping it
+ * renames it. Other is the catch-all every apartment keeps, so it has no actions.
+ */
 function CategoryRow({ category, onPress, onArchive, isBusy }: CategoryRowProps) {
-  const danger = useThemeColor('danger');
+  const [danger, muted] = useThemeColor(['danger', 'muted']);
+
+  if (isOtherCategoryName(category.name)) {
+    return (
+      <Card
+        accessible
+        accessibilityLabel={`${category.name}, kept for anything that fits nowhere else`}
+      >
+        <Card.Body className="flex-row items-center gap-2">
+          <View className="flex-1 gap-1">
+            <Typography.Paragraph numberOfLines={1}>{category.name}</Typography.Paragraph>
+            <Typography.Paragraph type="body-xs" color="muted">
+              For anything that fits nowhere else
+            </Typography.Paragraph>
+          </View>
+          <Ionicons name="lock-closed-outline" size={20} color={muted} />
+        </Card.Body>
+      </Card>
+    );
+  }
 
   const confirmArchive = () => {
     Alert.alert(
