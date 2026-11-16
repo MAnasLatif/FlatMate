@@ -1,7 +1,7 @@
 import { screen, userEvent } from '@testing-library/react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
-import { resendConfirmationCode } from '@/features/auth/api';
+import { confirmEmailWithCode, resendConfirmationCode } from '@/features/auth/api';
 import { renderWithProviders } from '@/test/render';
 
 import VerifyEmailScreen from '@/app/(auth)/verify-email';
@@ -42,6 +42,17 @@ describe('VerifyEmailScreen', () => {
     // Sent: the countdown starts again.
     expect(await screen.findByRole('button', { name: 'Resend in 1:00' })).toBeDisabled();
     expect(screen.getByText('A new code is on its way.')).toBeOnTheScreen();
+  });
+
+  it('sends the code as soon as the last digit is entered', async () => {
+    jest.mocked(useLocalSearchParams).mockReturnValue({ email, codeSent: '1' });
+    jest.mocked(confirmEmailWithCode).mockResolvedValue(undefined);
+    await renderWithProviders(<VerifyEmailScreen />);
+
+    await userEvent.setup().type(screen.getByLabelText('Code from the email'), '459229');
+
+    expect(confirmEmailWithCode).toHaveBeenCalledTimes(1);
+    expect(confirmEmailWithCode).toHaveBeenCalledWith(email, '459229');
   });
 
   it('goes back to the login screen from the link at the bottom', async () => {
