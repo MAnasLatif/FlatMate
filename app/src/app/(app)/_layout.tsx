@@ -14,7 +14,14 @@ export default function AppLayout() {
   useOpenTappedNotification(userId);
 
   return (
-    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal', ...pushTransition }}>
+    <Stack
+      screenOptions={{
+        headerBackButtonDisplayMode: 'minimal',
+        // No line under the header.
+        headerShadowVisible: false,
+        ...pushTransition,
+      }}
+    >
       <Stack.Screen name="(home)" options={{ headerShown: false }} />
       <Stack.Screen name="apartments/index" options={{ title: 'Your apartments' }} />
       <Stack.Screen name="profile" options={{ title: 'Profile' }} />

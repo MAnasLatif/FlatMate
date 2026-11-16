@@ -36,6 +36,8 @@ export default function ApartmentTabsLayout() {
         headerTitle: () => <ApartmentSwitcher apartmentId={apartmentId} />,
         headerTitleAlign: 'left',
         headerRight: () => <HeaderActions apartmentId={apartmentId} />,
+        // No line under the header; the dashboard shows it once its list scrolls.
+        headerShadowVisible: false,
         tabBarShowLabel: false,
         // No line above the bar.
         tabBarStyle: { borderTopWidth: 0, elevation: 0 },

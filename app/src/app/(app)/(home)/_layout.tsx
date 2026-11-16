@@ -22,6 +22,8 @@ export default function HomeTabsLayout() {
     <Tabs
       screenOptions={{
         ...tabTransition,
+        // No line under the header; the dashboard shows it once its list scrolls.
+        headerShadowVisible: false,
         tabBarShowLabel: false,
         headerShown: false,
         // No line above the bar.
