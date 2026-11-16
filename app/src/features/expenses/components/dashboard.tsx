@@ -5,6 +5,7 @@ import { FlatList, RefreshControl, View } from 'react-native';
 
 import { FreshnessBanner } from '@/components/freshness-banner';
 import { LoadError, LoadingRows, PendingSkeleton } from '@/components/query-states';
+import { useHeaderShadowOnScroll } from '@/components/use-header-shadow-on-scroll';
 import type { Apartment } from '@/features/apartments/api';
 import { useApartment } from '@/features/apartments/hooks';
 import { useIsUnread } from '@/features/notifications/hooks';
@@ -28,6 +29,7 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
   const apartmentQuery = useApartment(apartment.id);
   const [refreshing, setRefreshing] = useState(false);
   const isUnread = useIsUnread();
+  const headerShadow = useHeaderShadowOnScroll();
 
   // Pages are fetched by offset, so an expense added while scrolling can appear twice.
   const items = useMemo(() => uniqueById(expenses.data?.pages.flat() ?? []), [expenses.data]);
@@ -49,6 +51,8 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
 
   return (
     <FlatList
+      {...headerShadow}
+      testID="dashboard-list"
       className="flex-1 bg-background"
       contentContainerClassName="gap-3 px-5 pb-8 pt-4"
       data={items}

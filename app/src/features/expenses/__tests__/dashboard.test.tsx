@@ -1,4 +1,4 @@
-import { screen, userEvent } from '@testing-library/react-native';
+import { fireEvent, screen, userEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
 import {
@@ -21,7 +21,12 @@ import {
 import { Dashboard } from '../components/dashboard';
 
 jest.mock('@/lib/supabase', () => ({ supabase: {} }));
-jest.mock('expo-router', () => ({ router: { push: jest.fn() }, useLocalSearchParams: jest.fn() }));
+const mockSetOptions = jest.fn();
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn() },
+  useLocalSearchParams: jest.fn(),
+  useNavigation: () => ({ setOptions: mockSetOptions }),
+}));
 jest.mock('../api', () => ({
   ...jest.requireActual('../api'),
   fetchExpensesPage: jest.fn(),
@@ -147,6 +152,26 @@ it('lists below a total only the people behind it, and hides the list on a secon
 
   await user.press(screen.getByRole('button', { name: "You'll receive, 66.66 PKR" }));
   expect(screen.queryByText('Ajmal')).not.toBeOnTheScreen();
+});
+
+it('shows the line under the header only once the list is scrolled', async () => {
+  await renderWithProviders(<Dashboard apartment={apartment} />);
+  const list = await screen.findByTestId('dashboard-list');
+  expect(mockSetOptions).toHaveBeenLastCalledWith({ headerShadowVisible: false });
+
+  const scrollTo = (y: number) =>
+    fireEvent.scroll(list, {
+      nativeEvent: {
+        contentOffset: { x: 0, y },
+        contentSize: { width: 400, height: 2000 },
+        layoutMeasurement: { width: 400, height: 800 },
+      },
+    });
+  await scrollTo(40);
+  expect(mockSetOptions).toHaveBeenLastCalledWith({ headerShadowVisible: true });
+
+  await scrollTo(0);
+  expect(mockSetOptions).toHaveBeenLastCalledWith({ headerShadowVisible: false });
 });
 
 it('says so when there is nobody to pay', async () => {
