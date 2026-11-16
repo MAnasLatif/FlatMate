@@ -25,6 +25,8 @@ export function MonthSelector({
         variant="ghost"
         onPress={() => onChange(addMonths(month, -1))}
         accessibilityLabel="Previous month"
+        // A small button is 40dp; this makes the touch area the 48dp minimum.
+        hitSlop={4}
       >
         <Ionicons name="chevron-back" size={20} color={iconColor} />
       </Button>
@@ -38,6 +40,7 @@ export function MonthSelector({
         onPress={() => onChange(addMonths(month, 1))}
         isDisabled={isLatest}
         accessibilityLabel="Next month"
+        hitSlop={4}
       >
         <Ionicons name="chevron-forward" size={20} color={iconColor} />
       </Button>
