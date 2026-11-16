@@ -36,8 +36,9 @@ export function MonthSelector({
   const earliestMonth = `${latestYear - YEARS_SHOWN + 1}-01-01`;
 
   return (
-    <>
-      {/* The sheet stays outside this row, so it takes no room in it. */}
+    // The sheet sits outside the arrow row, so it takes no room in it, and
+    // inside this View, so it takes no gap in the screen around it.
+    <View>
       <View className="flex-row items-center justify-between">
         <MonthArrow
           direction="back"
@@ -81,7 +82,7 @@ export function MonthSelector({
           </BottomSheet.Content>
         </BottomSheet.Portal>
       </BottomSheet>
-    </>
+    </View>
   );
 }
 
