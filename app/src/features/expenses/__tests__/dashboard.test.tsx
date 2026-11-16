@@ -86,7 +86,7 @@ beforeEach(() => {
   jest.mocked(fetchUnreadNotifications).mockResolvedValue([]);
 });
 
-it('shows what the user will receive and send, marked provisional (SRS 5.1)', async () => {
+it('shows what the user will receive and send (SRS 5.1)', async () => {
   balances.mockResolvedValue([
     { counterpartyId: 'z', finalMinor: 0, provisionalMinor: -6667, disputedMinor: 0 },
     { counterpartyId: 'j', finalMinor: 0, provisionalMinor: -6666, disputedMinor: 0 },
@@ -94,10 +94,11 @@ it('shows what the user will receive and send, marked provisional (SRS 5.1)', as
   await renderWithProviders(<Dashboard apartment={apartment} />);
 
   expect(
-    await screen.findByRole('button', { name: "You'll receive, 133.33 PKR, provisional" }),
+    await screen.findByRole('button', { name: "You'll receive, 133.33 PKR" }),
   ).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: "You'll send, 0.00 PKR" })).toBeOnTheScreen();
   expect(screen.queryByText('Net balance')).not.toBeOnTheScreen();
+  expect(screen.queryByText('Provisional')).not.toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: /Settle up/ })).not.toBeOnTheScreen();
 });
 
@@ -132,7 +133,7 @@ it('lists below a total only the people behind it, and hides the list on a secon
   ).toBeOnTheScreen();
   expect(screen.queryByText('Ajmal')).not.toBeOnTheScreen();
 
-  await user.press(screen.getByRole('button', { name: "You'll receive, 66.66 PKR, provisional" }));
+  await user.press(screen.getByRole('button', { name: "You'll receive, 66.66 PKR" }));
   expect(
     await screen.findByRole('button', { name: 'Ajmal pays you, 66.66 PKR, provisional' }),
   ).toBeOnTheScreen();
@@ -144,7 +145,7 @@ it('lists below a total only the people behind it, and hides the list on a secon
     params: { apartmentId: apartment.id, memberId: 'j' },
   });
 
-  await user.press(screen.getByRole('button', { name: "You'll receive, 66.66 PKR, provisional" }));
+  await user.press(screen.getByRole('button', { name: "You'll receive, 66.66 PKR" }));
   expect(screen.queryByText('Ajmal')).not.toBeOnTheScreen();
 });
 

@@ -60,7 +60,6 @@ export function BalanceSummary({
           label="You'll receive"
           amount={money(summary.receiveMinor)}
           tone={summary.receiveMinor > 0 ? 'positive' : 'neutral'}
-          isProvisional={summary.receiveIsProvisional}
           isSelected={shown === 'receive'}
           hint="Lists who pays you"
           onPress={() => toggle('receive')}
@@ -69,7 +68,6 @@ export function BalanceSummary({
           label="You'll send"
           amount={money(summary.oweMinor)}
           tone={summary.oweMinor > 0 ? 'negative' : 'neutral'}
-          isProvisional={summary.oweIsProvisional}
           isSelected={shown === 'send'}
           hint="Lists whom you pay"
           onPress={() => toggle('send')}
@@ -111,7 +109,6 @@ function TotalWidget({
   label,
   amount,
   tone,
-  isProvisional,
   isSelected,
   hint,
   onPress,
@@ -119,7 +116,6 @@ function TotalWidget({
   label: string;
   amount: string;
   tone: keyof typeof TONE_CLASSES;
-  isProvisional: boolean;
   isSelected: boolean;
   hint: string;
   onPress: () => void;
@@ -128,9 +124,7 @@ function TotalWidget({
     <PressableFeedback
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={[label, amount, isProvisional ? 'provisional' : null]
-        .filter(Boolean)
-        .join(', ')}
+      accessibilityLabel={`${label}, ${amount}`}
       accessibilityHint={hint}
       accessibilityState={{ expanded: isSelected }}
       className="flex-1 rounded-3xl"
@@ -144,13 +138,6 @@ function TotalWidget({
           <Typography.Heading type="h5" className={TONE_CLASSES[tone]}>
             {amount}
           </Typography.Heading>
-          {isProvisional ? (
-            <View className="flex-row">
-              <StatusChip size="sm" variant="soft" color="warning">
-                Provisional
-              </StatusChip>
-            </View>
-          ) : null}
         </Card.Body>
       </Card>
     </PressableFeedback>
