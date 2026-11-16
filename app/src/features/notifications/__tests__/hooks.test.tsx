@@ -33,6 +33,7 @@ const recorded: NotificationTarget = {
   apartmentId: 'apt',
   recordType: 'payment',
   recordId: 'pay-1',
+  type: 'payment.recorded',
 };
 
 function unread(overrides: Partial<UnreadNotification>): UnreadNotification {
@@ -40,6 +41,7 @@ function unread(overrides: Partial<UnreadNotification>): UnreadNotification {
     id: 'n-1',
     apartmentId: 'apt',
     recordType: 'expense',
+    type: 'expense.created',
     recordId: 'e-1',
     expenseId: null,
     counterpartyId: null,

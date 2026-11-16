@@ -77,7 +77,9 @@ it('opens on the general settings and moves between the tabs', async () => {
 
   await user.press(screen.getByText('Manage members'));
   expect(await screen.findByText('Join codes')).toBeOnTheScreen();
-  expect(screen.getByText('Members and former members')).toBeOnTheScreen();
+  expect(await screen.findByText('Anas (you)')).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Your actions' })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Add member' })).toBeOnTheScreen();
   expect(screen.queryByText('Save settings')).not.toBeOnTheScreen();
 
   await user.press(screen.getByText('Expense control'));

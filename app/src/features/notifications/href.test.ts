@@ -34,6 +34,23 @@ describe('notificationHref', () => {
     });
   });
 
+  it('opens the settings for a request to join, and the members screen for anything else', () => {
+    expect(
+      notificationHref({
+        apartmentId,
+        recordType: 'members',
+        recordId: 'r',
+        type: 'join_request.requested',
+      }),
+    ).toEqual({
+      pathname: '/apartments/[apartmentId]/settings',
+      params: { apartmentId, tab: 'members' },
+    });
+    expect(
+      notificationHref({ apartmentId, recordType: 'members', recordId: 'u', type: 'member.left' }),
+    ).toEqual({ pathname: '/apartments/[apartmentId]/members', params: { apartmentId } });
+  });
+
   it('falls back to the apartment when the record is missing', () => {
     expect(notificationHref({ apartmentId, recordType: 'expense', recordId: null })).toEqual({
       pathname: '/apartments/[apartmentId]',

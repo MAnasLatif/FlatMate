@@ -226,6 +226,7 @@ function unread(overrides: Partial<UnreadNotification>): UnreadNotification {
     id: 'n1',
     apartmentId: apartment.id,
     recordType: 'expense',
+    type: 'expense.created',
     recordId: 'e1',
     expenseId: null,
     counterpartyId: null,

@@ -21,6 +21,8 @@ export type NotificationTarget = {
   apartmentId: string;
   recordType: NotificationRecordType;
   recordId: string | null;
+  /** What happened, such as 'join_request.requested'. */
+  type: string;
 };
 
 /**
@@ -29,13 +31,14 @@ export type NotificationTarget = {
  */
 export const UNREAD_LIMIT = 500;
 
-const TARGET_COLUMNS = 'id, apartment_id, record_type, record_id';
+const TARGET_COLUMNS = 'id, apartment_id, record_type, record_id, type';
 
 type TargetRow = {
   id: string;
   apartment_id: string;
   record_type: string;
   record_id: string | null;
+  type: string;
 };
 
 function toTarget(row: TargetRow): NotificationTarget {
@@ -44,6 +47,7 @@ function toTarget(row: TargetRow): NotificationTarget {
     apartmentId: row.apartment_id,
     recordType: row.record_type as NotificationRecordType,
     recordId: row.record_id,
+    type: row.type,
   };
 }
 

@@ -5,9 +5,7 @@ import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
 import { SharedAccounts } from '@/features/accounts/components/shared-accounts';
 import type { Member } from '@/features/apartments/api';
-import { MemberActionsMenu } from '@/features/apartments/components/member-actions-menu';
 import { useApartment, useApartmentId, useMembers } from '@/features/apartments/hooks';
-import { useCurrentUserId } from '@/features/auth/session-provider';
 import { PairLedger } from '@/features/expenses/components/pair-ledger';
 import { PairPayments } from '@/features/payments/components/pair-payments';
 import { useMarkSeen } from '@/features/notifications/hooks';
@@ -20,7 +18,6 @@ export default function PairLedgerScreen() {
   useMarkSeen(unreadMatches.ledgerWith(apartmentId, memberId));
   const apartment = useApartment(apartmentId);
   const members = useMembers(apartmentId);
-  const userId = useCurrentUserId();
 
   if (apartment.isPending || members.isPending) {
     return (
@@ -48,20 +45,11 @@ export default function PairLedgerScreen() {
 
   const member = latestMembership(members.data, memberId);
   const name = member?.displayName ?? 'This member';
-  const viewerIsAdmin = members.data.some(
-    (item) => item.userId === userId && item.leftAt === null && item.role === 'admin',
-  );
   return (
     <>
       <Stack.Screen
         options={{
           title: name,
-          // An admin manages the person from their page: roles, removal, or for a
-          // former member, inviting them back or removing them from the list.
-          headerRight:
-            viewerIsAdmin && member && member.userId !== userId
-              ? () => <MemberActionsMenu apartmentId={apartmentId} member={member} />
-              : undefined,
         }}
       />
       <PairLedger

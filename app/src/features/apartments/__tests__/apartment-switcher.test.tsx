@@ -30,6 +30,7 @@ const mine = (id: string) => ({ role: 'member', apartment: { id, name: id } }) a
 const unreadIn = (apartmentId: string): UnreadNotification => ({
   id: `n-${apartmentId}`,
   apartmentId,
+  type: 'expense.created',
   recordType: 'expense',
   recordId: 'e1',
   expenseId: null,

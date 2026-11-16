@@ -1,9 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
 import { Menu, useThemeColor } from 'heroui-native';
 import { Alert } from 'react-native';
 
-import { HEADER_ICON_SIZE } from '@/components/screen-transitions';
 import { useIsOnline } from '@/lib/network';
 import { userErrorMessage } from '@/lib/errors';
 
@@ -16,19 +14,23 @@ function showError(error: unknown, messages: Record<string, string>) {
 }
 
 /**
- * The admin's actions on another person, in the top bar of their page. A
- * current member can be made an admin, allowed or stopped from adding
- * expenses, or removed. A former member can be invited back or removed from
- * the list. The database checks that the viewer is an admin.
+ * An admin's actions on one person, on their row in the apartment's settings.
+ * A current member can be made an admin, allowed or stopped from adding
+ * expenses, or removed. The admin's own row offers stepping down and their
+ * own expense permission; they leave the apartment rather than remove
+ * themselves. A former member can be invited back or removed from the list.
+ * The database checks that the viewer is an admin.
  */
 export function MemberActionsMenu({
   apartmentId,
   member,
+  isViewer = false,
 }: {
   apartmentId: string;
   member: Member;
+  isViewer?: boolean;
 }) {
-  const iconColor = useThemeColor('foreground');
+  const iconColor = useThemeColor('muted');
   const isOnline = useIsOnline();
   const isFormer = member.leftAt !== null;
   const actions = useMemberActions(apartmentId);
@@ -69,11 +71,7 @@ export function MemberActionsMenu({
         {
           text: 'Remove from list',
           style: 'destructive',
-          onPress: () =>
-            former.hide.mutate(member.userId, {
-              onSuccess: () => router.back(),
-              onError,
-            }),
+          onPress: () => former.hide.mutate(member.userId, { onError }),
         },
       ],
     );
@@ -92,11 +90,11 @@ export function MemberActionsMenu({
     <Menu>
       <Menu.Trigger
         accessibilityRole="button"
-        accessibilityLabel={`Actions for ${name}`}
+        accessibilityLabel={isViewer ? 'Your actions' : `Actions for ${name}`}
         isDisabled={isBusy || !isOnline}
         hitSlop={8}
       >
-        <Ionicons name="ellipsis-vertical" size={HEADER_ICON_SIZE} color={iconColor} />
+        <Ionicons name="ellipsis-vertical" size={22} color={iconColor} />
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Overlay />
@@ -134,7 +132,11 @@ export function MemberActionsMenu({
                 }
               >
                 <Menu.ItemTitle>
-                  {member.role === 'admin' ? 'Remove admin role' : 'Make admin'}
+                  {member.role === 'admin'
+                    ? isViewer
+                      ? 'Step down as admin'
+                      : 'Remove admin role'
+                    : 'Make admin'}
                 </Menu.ItemTitle>
               </Menu.Item>
               <Menu.Item
@@ -149,9 +151,11 @@ export function MemberActionsMenu({
                   {member.canAddExpense ? 'Stop adding expenses' : 'Allow adding expenses'}
                 </Menu.ItemTitle>
               </Menu.Item>
-              <Menu.Item variant="danger" onPress={confirmRemove}>
-                <Menu.ItemTitle>Remove from apartment</Menu.ItemTitle>
-              </Menu.Item>
+              {isViewer ? null : (
+                <Menu.Item variant="danger" onPress={confirmRemove}>
+                  <Menu.ItemTitle>Remove from apartment</Menu.ItemTitle>
+                </Menu.Item>
+              )}
             </>
           )}
         </Menu.Content>

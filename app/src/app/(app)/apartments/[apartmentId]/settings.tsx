@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as Clipboard from 'expo-clipboard';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import {
   Button,
   Card,
@@ -25,8 +25,10 @@ import {
   type ApartmentFormInput,
   type ApartmentFormOutput,
 } from '@/features/apartments/components/apartment-form-fields';
+import { AddMemberSheet } from '@/features/apartments/components/add-member-button';
 import { CategorySheet } from '@/features/apartments/components/category-sheet';
 import { JoinRequests } from '@/features/apartments/components/join-requests';
+import { ManageMembers } from '@/features/apartments/components/manage-members';
 import { APARTMENT_ERROR_MESSAGES } from '@/features/apartments/errors';
 import {
   useActiveInvites,
@@ -39,6 +41,8 @@ import {
   useUpdateApartmentSettings,
 } from '@/features/apartments/hooks';
 import { apartmentFormSchema } from '@/features/apartments/schemas';
+import { useMarkSeen } from '@/features/notifications/hooks';
+import { unreadMatches } from '@/features/notifications/unread';
 import { RecurringSection } from '@/features/recurring/components/recurring-section';
 import { userErrorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/time';
@@ -131,19 +135,7 @@ function SettingsTabs({
       </Tabs.Content>
       <Tabs.Content value="members" className="flex-1">
         <Screen padTop={false}>
-          <JoinRequests apartmentId={apartment.id} />
-          <InvitesSection apartmentId={apartment.id} apartmentName={apartment.name} />
-          <Button
-            variant="secondary"
-            onPress={() =>
-              router.push({
-                pathname: '/apartments/[apartmentId]/members',
-                params: { apartmentId: apartment.id },
-              })
-            }
-          >
-            Members and former members
-          </Button>
+          <MembersTab apartmentId={apartment.id} apartmentName={apartment.name} />
         </Screen>
       </Tabs.Content>
       <Tabs.Content value="expenses" className="flex-1">
@@ -157,6 +149,39 @@ function SettingsTabs({
         </Screen>
       </Tabs.Content>
     </Tabs>
+  );
+}
+
+/**
+ * Managing who is in the apartment: people asking to join, the members with
+ * an admin's actions on each, adding someone, and join codes.
+ */
+function MembersTab({
+  apartmentId,
+  apartmentName,
+}: {
+  apartmentId: string;
+  apartmentName: string;
+}) {
+  const [isAddingMember, setAddingMember] = useState(false);
+  // Requests to join and declined invitations back are answered here.
+  useMarkSeen(unreadMatches.memberAdmin(apartmentId));
+
+  return (
+    <View className="gap-6">
+      <JoinRequests apartmentId={apartmentId} />
+      <ManageMembers apartmentId={apartmentId} />
+      <OnlineButton variant="secondary" onPress={() => setAddingMember(true)}>
+        Add member
+      </OnlineButton>
+      <InvitesSection apartmentId={apartmentId} apartmentName={apartmentName} />
+      <AddMemberSheet
+        apartmentId={apartmentId}
+        apartmentName={apartmentName}
+        isOpen={isAddingMember}
+        onOpenChange={setAddingMember}
+      />
+    </View>
   );
 }
 
@@ -213,6 +238,7 @@ function InvitesSection({
   apartmentName: string;
 }) {
   const invites = useActiveInvites(apartmentId, true);
+  const danger = useThemeColor('danger');
   const { create, revoke } = useInviteActions(apartmentId);
   const [newCode, setNewCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -292,16 +318,18 @@ function InvitesSection({
             </Typography.Paragraph>
             {invites.data.map((invite) => (
               <View key={invite.id} className="flex-row items-center justify-between gap-3">
-                <Typography.Paragraph type="body-sm">
+                <Typography.Paragraph type="body-sm" className="flex-1">
                   Created {formatDate(invite.created_at)}, expires {formatDate(invite.expires_at)}
                 </Typography.Paragraph>
                 <OnlineButton
+                  isIconOnly
                   size="sm"
                   variant="ghost"
                   onPress={() => confirmRevoke(invite.id)}
                   isDisabled={revoke.isPending}
+                  accessibilityLabel={`Revoke the code created ${formatDate(invite.created_at)}`}
                 >
-                  Revoke
+                  <Ionicons name="close-circle-outline" size={22} color={danger} />
                 </OnlineButton>
               </View>
             ))}
