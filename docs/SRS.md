@@ -100,7 +100,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 
 ### FR-04 Recurring Expenses
 - FR-04.1 Admin-only recurring template management; multiple admins may act. Recurring expenses are added and managed from the apartment's settings screen, which only admins reach; the Add (+) flow creates one-time expenses only.
-- FR-04.2 Fixed: predetermined amount and recurrence schedule (e.g. monthly rent), automatically instantiate once per cycle.
+- FR-04.2 Fixed: predetermined amount and recurrence schedule (e.g. monthly rent), automatically instantiate once per cycle. A template repeats every 1, 3 or 12 months on a bill day (29 to 31 fall on the last day of shorter months), with an optional number of days to pay and an optional member who will pay it. Each charge is an unpaid bill (section 12, items 5 and 16).
 - FR-04.3 Variable: expected monthly arrival day (e.g. electricity on the 5th); notify admins to enter actual amount, optional proof and due date. Do not create a financial charge with an invented amount.
 - FR-04.4 Each template has independent split rules, included/excluded members, and optional percentage/custom allocations; admins can override splits for one generated month without rewriting the template.
 - FR-04.5 Changes to recurring templates apply prospectively by default; historical instances remain unchanged.
@@ -198,9 +198,8 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 | `expense_payers` | id, expense_id, payer_user_id, amount_minor |
 | `expense_splits` | id, expense_id, member_user_id, amount_minor, split_rule_snapshot, status |
 | `expense_attachments` | id, expense_id, storage_path, uploaded_by, type |
-| `recurring_templates` | id, apartment_id, title, fixed_or_variable, amount_minor_nullable, schedule, expected_bill_day, enabled, created_by |
-| `recurring_split_rules` | id, template_id, member_user_id, allocation_type, allocation_value, excluded |
-| `recurring_instances` | id, template_id, billing_period, expense_id_nullable, state, UNIQUE(template_id,billing_period) |
+| `recurring_templates` | id, apartment_id, title, kind (fixed, variable), amount_minor (fixed only), interval_months (1, 3, 12), bill_day, due_after_days, collector_id, split_method, participants (the split, as `post_expense` takes it), next_period, paused_at, archived_at, created_by |
+| `recurring_instances` | id, template_id, billing_period, bill_date, state (waiting, posted, skipped), reason, expense_id, decided_by, UNIQUE(template_id,billing_period) |
 | `payments` | id, apartment_id, sender_user_id, recipient_user_id, amount_minor, currency, reference, proof_path, status, idempotency_key, recorded_at, final_after, receiving_account_id (cleared if the account is deleted) and a snapshot of it: paid_to_provider, paid_to_title, paid_to_identifier_masked |
 | `payment_allocations` | id, payment_id, obligation_reference, allocated_amount_minor |
 | `disputes` | id, apartment_id, subject_type, subject_id, raised_by, reason, proposed_amount_minor_nullable, state, created_at, resolved_at |
@@ -296,7 +295,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ## 12. Product Decisions
 
-Items 1–9 and 12 were decided on 2026-11-13, and items 13–17 on 2026-11-14 and 15. Items 10 and 11 are still open, and part of item 6.
+Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, and item 18 on 2026-11-16. Items 10 and 11 are still open, and part of item 6.
 
 1. **Explicit approval mode — decided.** Not part of the MVP. Every expense is accepted automatically, and affected members object within the window (FR-05). An optional approval mode (FR-03.8) may be reconsidered after release.
 2. **What a dispute holds — decided.** A dispute holds every share of the disputed expense until it is resolved, so settlement never sees inconsistent totals. Other expenses stay payable.
@@ -315,6 +314,7 @@ Items 1–9 and 12 were decided on 2026-11-13, and items 13–17 on 2026-11-14 a
 15. **No expense preview — decided.** The add and edit forms do not preview who will owe whom (FR-03.5).
 16. **Who will pay an unpaid bill — decided.** Naming a collector only records who is responsible and notifies them. It creates no debt; balances still change only when the bill is paid (FR-03.2, item 5).
 17. **Payments name the account they went into — decided.** Optional when recording a payment; the payment keeps a snapshot of the account so history survives edits and deletion (FR-07.3).
+18. **Repeatable bills are not categories — decided.** Rent, utilities and internet are set up as repeatable expenses, so new apartments no longer start with those categories and existing apartments archive them; expenses filed under them keep their category. A repeatable expense repeats every 1, 3 or 12 months (FR-04.2).
 
 
 ## 13. Suggested First Implementation Tasks

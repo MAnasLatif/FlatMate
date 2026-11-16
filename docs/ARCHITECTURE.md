@@ -48,7 +48,7 @@ flowchart LR
 | Financial operations | Postgres functions called by RPC | Transactional: posting expenses, payments, reversals, dispute resolution, settlement. |
 | Split validation and rounding | Database | The app checks the form as it is filled in. The server decides. |
 | Receipts and payment proofs | Supabase Storage | Private buckets, accessed with signed URLs. |
-| Scheduled work | pg_cron jobs calling Postgres functions | Objection-window deadlines and settlement periods today; recurring charges and reminders later. Idempotent and timezone-aware. |
+| Scheduled work | pg_cron jobs calling Postgres functions | Objection-window deadlines, settlement periods and repeatable charges today; reminders later. Idempotent and timezone-aware. |
 | Change events | Realtime Broadcast, sent by `private.emit_change` from database triggers | One event for every visible change, on an apartment or user topic, with no data in it. The app's event router refetches through RLS. |
 | Offline reading | Encrypted saved query cache on the phone (`app/src/lib/saved-cache.ts`) | A copy of what the user already loaded, never a source of truth. |
 | Notifications | A trigger on `audit_events` creates them; pg_cron calls the `deliver-push` Edge Function, which sends them through the Expo push service | Push text is generic and carries no names, amounts or account details; in the app, behind sign-in, a red dot marks the record each one is about ([decision 0008](decisions/0008-unread-dots-instead-of-an-inbox.md)). Setup: [NOTIFICATIONS.md](NOTIFICATIONS.md). |

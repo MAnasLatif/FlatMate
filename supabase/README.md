@@ -25,7 +25,7 @@ The database is where FlatMate's rules are enforced. The mobile app is an untrus
 - **Authorization** is done with row-level security on every table that holds apartment data, checking membership and role.
 - **Financial operations** (posting an expense, recording or reversing a payment, resolving a dispute, closing a settlement) are transactional Postgres functions, so they either complete fully or not at all.
 - **Money arithmetic** (split validation, rounding, allocation sums) is checked on the server, using integer minor units.
-- **Scheduled work** (objection-window deadlines and settlement periods today; recurring charges and reminders later) runs as pg_cron jobs calling `private` functions. It is idempotent and uses each apartment's timezone.
+- **Scheduled work** (objection-window deadlines, settlement periods and repeatable charges today; reminders later) runs as pg_cron jobs calling `private` functions. It is idempotent and uses each apartment's timezone.
 - **Change events.** The app is event-driven ([decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md)): every write that changes data another member, or the same user on another device, can see must send a change event. Apartment changes do it by writing an `audit_events` row in the same transaction, which a trigger turns into an event; a table clients write directly needs its own trigger calling `private.emit_change`. `tests/database/change_event_coverage_test.sql` fails when a function writes data without recording it or sending an event, or a table clients write has no event trigger; its allow-list names the few exceptions and why.
 
 The proposed data model is in [section 6 of the SRS](../docs/SRS.md#6-supabase-data-architecture-proposed).
@@ -55,6 +55,10 @@ In every hosted project, turn off **Allow public access** under Realtime setting
 ## Notifications
 
 A trigger on `audit_events` creates one `notifications` row per person to tell (`private.notification_recipients`), and pg_cron calls the `deliver-push` Edge Function in `functions/` while pushes are due. The function needs the `PUSH_DELIVERY_SECRET` secret, and the database needs the Vault secrets `project_url` and `push_delivery_secret`; until both are set nothing is pushed, and the app's unread dots still work. Setup, local and hosted, and troubleshooting: [docs/NOTIFICATIONS.md](../docs/NOTIFICATIONS.md). Tests: `tests/database/notifications_test.sql`.
+
+## Repeatable expenses
+
+Admins manage `recurring_templates` through the `*_recurring_template` functions; only admins can read them. Every 15 minutes the `charge-repeatable-expenses` cron job calls `private.charge_due_recurring`, which opens one `recurring_instances` row per template and billing period once the bill day has come in the apartment's timezone. A fixed template is charged at once as an unpaid bill with its split. A variable one, or a fixed one whose split names someone who has left, waits for an admin, who is notified (`recurring_bill.amount_needed`, `recurring_bill.needs_review`) and enters it with `post_recurring_bill` or skips it. The unique period per template makes the job safe to run twice. Tests: `tests/database/repeatable_expenses_test.sql`.
 
 ## Invite emails
 
