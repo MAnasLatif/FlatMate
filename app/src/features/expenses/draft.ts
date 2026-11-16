@@ -189,7 +189,6 @@ export function validateDraft(
   minorUnitDigits = 2,
 ): DraftResult {
   const errors: DraftResult['errors'] = {};
-  const format = (amountMinor: number) => formatMinorUnits(amountMinor, minorUnitDigits);
 
   const title = draft.title.trim();
   if (title.length === 0) errors.title = 'Enter what the expense was for.';
@@ -223,49 +222,9 @@ export function validateDraft(
     errors.description = `Use at most ${DESCRIPTION_MAX_LENGTH} characters.`;
   }
 
-  const included = memberIds.filter((id) => !draft.excluded.includes(id));
-  let participants: SplitParticipant[] | undefined;
-  if (included.length === 0) {
-    errors.split = SPLIT_MESSAGES.no_participants;
-  } else if (draft.splitMethod === 'equal') {
-    participants = included.map((userId) => ({ userId }));
-  } else if (draft.splitMethod === 'percentage') {
-    const parsed = included.map((userId) => ({
-      userId,
-      basisPoints: parsePercentageToBasisPoints(draft.percentages[userId] ?? ''),
-    }));
-    if (parsed.some((item) => item.basisPoints === null)) {
-      errors.split = 'Enter a percentage for everyone included, such as 50 or 33.33.';
-    } else {
-      const total = parsed.reduce((sum, item) => sum + (item.basisPoints ?? 0), 0);
-      if (total !== FULL_PERCENTAGE_BASIS_POINTS) {
-        errors.split = `Percentages must add up to 100%. They add up to ${formatMinorUnits(total, 2)}%.`;
-      } else {
-        participants = parsed.map((item) => ({
-          userId: item.userId,
-          basisPoints: item.basisPoints ?? 0,
-        }));
-      }
-    }
-  } else {
-    const parsed = included.map((userId) => ({
-      userId,
-      amountMinor: parseAmountToMinorUnits(draft.fixedAmounts[userId] ?? '', minorUnitDigits),
-    }));
-    if (parsed.some((item) => item.amountMinor === null)) {
-      errors.split = 'Enter an amount for everyone included, or 0.';
-    } else if (amountMinor !== null && amountMinor > 0) {
-      const total = parsed.reduce((sum, item) => sum + (item.amountMinor ?? 0), 0);
-      if (total !== amountMinor) {
-        errors.split = `The amounts must add up to ${format(amountMinor)}. They add up to ${format(total)}.`;
-      } else {
-        participants = parsed.map((item) => ({
-          userId: item.userId,
-          amountMinor: item.amountMinor ?? 0,
-        }));
-      }
-    }
-  }
+  const split = validateSplit(draft, memberIds, amountMinor, minorUnitDigits);
+  if (split.error) errors.split = split.error;
+  const participants = split.participants;
 
   let shares: Share[] | undefined;
   if (participants && errors.amount === undefined && amountMinor !== null) {
@@ -311,6 +270,71 @@ export function validateDraft(
           }
         : undefined,
   };
+}
+
+/** How an expense is shared, as the user enters it. */
+export type SplitInput = Pick<
+  ExpenseDraft,
+  'splitMethod' | 'excluded' | 'percentages' | 'fixedAmounts'
+>;
+
+/**
+ * Checks a split and returns its participants for the database. Fixed shares
+ * are checked against `amountMinor`, and wait while it is null or zero.
+ * `memberIds` are the people the form lists; anyone not excluded is included.
+ */
+export function validateSplit(
+  input: SplitInput,
+  memberIds: readonly string[],
+  amountMinor: number | null,
+  minorUnitDigits = 2,
+): { participants?: SplitParticipant[]; error?: string } {
+  const format = (value: number) => formatMinorUnits(value, minorUnitDigits);
+  const included = memberIds.filter((id) => !input.excluded.includes(id));
+  let participants: SplitParticipant[] | undefined;
+  let error: string | undefined;
+  if (included.length === 0) {
+    error = SPLIT_MESSAGES.no_participants;
+  } else if (input.splitMethod === 'equal') {
+    participants = included.map((userId) => ({ userId }));
+  } else if (input.splitMethod === 'percentage') {
+    const parsed = included.map((userId) => ({
+      userId,
+      basisPoints: parsePercentageToBasisPoints(input.percentages[userId] ?? ''),
+    }));
+    if (parsed.some((item) => item.basisPoints === null)) {
+      error = 'Enter a percentage for everyone included, such as 50 or 33.33.';
+    } else {
+      const total = parsed.reduce((sum, item) => sum + (item.basisPoints ?? 0), 0);
+      if (total !== FULL_PERCENTAGE_BASIS_POINTS) {
+        error = `Percentages must add up to 100%. They add up to ${formatMinorUnits(total, 2)}%.`;
+      } else {
+        participants = parsed.map((item) => ({
+          userId: item.userId,
+          basisPoints: item.basisPoints ?? 0,
+        }));
+      }
+    }
+  } else {
+    const parsed = included.map((userId) => ({
+      userId,
+      amountMinor: parseAmountToMinorUnits(input.fixedAmounts[userId] ?? '', minorUnitDigits),
+    }));
+    if (parsed.some((item) => item.amountMinor === null)) {
+      error = 'Enter an amount for everyone included, or 0.';
+    } else if (amountMinor !== null && amountMinor > 0) {
+      const total = parsed.reduce((sum, item) => sum + (item.amountMinor ?? 0), 0);
+      if (total !== amountMinor) {
+        error = `The amounts must add up to ${format(amountMinor)}. They add up to ${format(total)}.`;
+      } else {
+        participants = parsed.map((item) => ({
+          userId: item.userId,
+          amountMinor: item.amountMinor ?? 0,
+        }));
+      }
+    }
+  }
+  return error ? { error } : { participants };
 }
 
 /**
