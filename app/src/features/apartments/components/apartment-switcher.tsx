@@ -30,10 +30,13 @@ export function ApartmentSwitcher({ apartmentId }: { apartmentId: string }) {
       onPress={() => router.push('/apartments')}
       accessibilityRole="button"
       accessibilityLabel={withUnread(`${name}. Switch apartment`, unread)}
-      className="flex-row items-center gap-2"
+      // The badge's box adds 6 points, so the logo and text are 12 apart.
+      className="flex-row items-center gap-1.5"
     >
       <UnreadBadge count={unread}>
-        <AppLogo size={44} />
+        {/* As tall as the two lines of text beside it, from the top of the
+            name to the bottom of the apartment. */}
+        <AppLogo markHeight={36} />
       </UnreadBadge>
       <View>
         <Typography.Heading type="h5" numberOfLines={1}>
