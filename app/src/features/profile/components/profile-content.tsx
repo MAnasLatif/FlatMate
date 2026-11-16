@@ -164,6 +164,7 @@ function NameSection({ userId, currentName }: { userId: string; currentName: str
         name="displayName"
         label="Your name"
         description={status}
+        variant="secondary"
         autoComplete="name"
         textContentType="name"
         returnKeyType="done"
