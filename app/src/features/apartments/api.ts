@@ -1,3 +1,4 @@
+import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 import { supabase } from '@/lib/supabase';
@@ -338,6 +339,28 @@ export async function fetchActiveInvites(apartmentId: string): Promise<Invite[]>
 }
 
 /** Returns the code, which is shown only now: the database keeps a hash. */
+/**
+ * Emails a join code to `email` through the send-invite-email Edge Function.
+ * Fails with an Error whose message is the function's error key, such as
+ * `rate_limited`, or `unreachable` when the function could not be reached.
+ */
+export async function sendInviteEmail(apartmentId: string, email: string): Promise<void> {
+  const { error } = await supabase.functions.invoke('send-invite-email', {
+    body: { apartmentId, email },
+  });
+  if (!error) return;
+  if (error instanceof FunctionsHttpError) {
+    const body: unknown = await (error.context as Response).json().catch(() => null);
+    const key =
+      typeof body === 'object' && body !== null && 'error' in body && typeof body.error === 'string'
+        ? body.error
+        : 'unknown';
+    throw new Error(key);
+  }
+  if (error instanceof FunctionsFetchError) throw new Error('unreachable');
+  throw error;
+}
+
 export async function createInvite(apartmentId: string, validDays: number): Promise<string> {
   const { data, error } = await supabase.rpc('create_invite', {
     p_apartment_id: apartmentId,

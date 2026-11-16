@@ -23,3 +23,13 @@ export const REJOIN_ERROR_MESSAGES: Record<string, string> = {
   invite_not_found: 'This invitation is no longer available.',
   invite_not_pending: 'This invitation was already answered or withdrawn.',
 };
+
+/** Sentences for the errors of emailing an invite (the send-invite-email function). */
+export const INVITE_EMAIL_ERROR_MESSAGES: Record<string, string> = {
+  ...APARTMENT_ERROR_MESSAGES,
+  invalid_email: 'Enter a valid email address.',
+  rate_limited: 'Too many invites have been emailed today. Try again tomorrow, or share a code.',
+  send_failed: 'The email could not be sent. Try again, or share a code instead.',
+  not_configured: 'Email invites are not set up yet. Share a code instead.',
+  unreachable: 'Could not reach FlatMate. Check your connection and try again.',
+};

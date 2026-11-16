@@ -10,7 +10,7 @@ import {
   Typography,
   useThemeColor,
 } from 'heroui-native';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
@@ -19,7 +19,10 @@ import { Screen } from '@/components/screen';
 import { StatusChip } from '@/components/status-chip';
 import type { Member } from '@/features/apartments/api';
 import { JoinRequests } from '@/features/apartments/components/join-requests';
-import { SendInviteButton } from '@/features/apartments/components/send-invite-button';
+import {
+  AddMemberButton,
+  AddMemberSheet,
+} from '@/features/apartments/components/add-member-button';
 import { APARTMENT_ERROR_MESSAGES } from '@/features/apartments/errors';
 import {
   useApartment,
@@ -51,6 +54,7 @@ export default function MembersScreen() {
   const balances = usePairBalances(apartmentId);
   const actions = useMemberActions(apartmentId);
   useMarkSeen(unreadMatches.members(apartmentId));
+  const [isAddingMember, setAddingMember] = useState(false);
 
   if (members.isPending) {
     return (
@@ -89,12 +93,7 @@ export default function MembersScreen() {
       <Stack.Screen
         options={{
           headerRight: viewerIsAdmin
-            ? () => (
-                <SendInviteButton
-                  apartmentId={apartmentId}
-                  apartmentName={apartment.data?.name ?? 'our apartment'}
-                />
-              )
+            ? () => <AddMemberButton onPress={() => setAddingMember(true)} />
             : undefined,
         }}
       />
@@ -109,6 +108,14 @@ export default function MembersScreen() {
         balances={balances}
         currency={apartment.data?.currency}
       />
+      {viewerIsAdmin ? (
+        <AddMemberSheet
+          apartmentId={apartmentId}
+          apartmentName={apartment.data?.name ?? 'our apartment'}
+          isOpen={isAddingMember}
+          onOpenChange={setAddingMember}
+        />
+      ) : null}
     </>
   );
 }
