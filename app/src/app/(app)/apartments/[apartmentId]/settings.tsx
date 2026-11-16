@@ -5,8 +5,9 @@ import { useLocalSearchParams } from 'expo-router';
 import { Button, Card, PressableFeedback, Tabs, Typography, useThemeColor } from 'heroui-native';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Alert, Share, View } from 'react-native';
+import { Share, View } from 'react-native';
 
+import { useConfirm } from '@/components/confirm-dialog';
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
 import { LoadError, LoadingRows } from '@/components/query-states';
@@ -240,19 +241,17 @@ function JoinCodeSection({
   const [copied, setCopied] = useState(false);
   const code = joinCode.data;
 
+  const { confirm, dialog } = useConfirm();
+
   const confirmChange = () =>
-    Alert.alert(
-      'Change the join code?',
-      'The current code stops working. Anyone you shared it with will need the new one.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Change code',
-          style: 'destructive',
-          onPress: () => change.mutate(undefined, { onSuccess: () => setCopied(false) }),
-        },
-      ],
-    );
+    confirm({
+      title: 'Change the join code?',
+      description:
+        'The current code stops working. Anyone you shared it with will need the new one.',
+      confirmLabel: 'Change code',
+      isDestructive: true,
+      onConfirm: () => change.mutate(undefined, { onSuccess: () => setCopied(false) }),
+    });
 
   return (
     <Card>
@@ -313,6 +312,7 @@ function JoinCodeSection({
             </OnlineButton>
           </>
         ) : null}
+        {dialog}
       </Card.Body>
     </Card>
   );
@@ -321,6 +321,7 @@ function JoinCodeSection({
 function CategoriesSection({ apartmentId }: { apartmentId: string }) {
   const categories = useCategories(apartmentId);
   const { archive } = useCategoryActions(apartmentId);
+  const { confirm, dialog } = useConfirm();
   const [isSheetOpen, setSheetOpen] = useState(false);
   // The category being renamed, or null when adding one.
   const [editing, setEditing] = useState<Category | null>(null);
@@ -360,7 +361,16 @@ function CategoriesSection({ apartmentId }: { apartmentId: string }) {
           key={category.id}
           category={category}
           onPress={() => openSheet(category)}
-          onArchive={() => archive.mutate(category.id)}
+          onArchive={() =>
+            confirm({
+              title: `Archive "${category.name}"?`,
+              description:
+                'It will no longer be offered for new expenses. Expenses that already use it keep it.',
+              confirmLabel: 'Archive',
+              isDestructive: true,
+              onConfirm: () => archive.mutate(category.id),
+            })
+          }
           isBusy={archive.isPending}
         />
       ))}
@@ -373,6 +383,7 @@ function CategoriesSection({ apartmentId }: { apartmentId: string }) {
         onOpenChange={setSheetOpen}
         category={editing}
       />
+      {dialog}
     </View>
   );
 }
@@ -380,6 +391,7 @@ function CategoriesSection({ apartmentId }: { apartmentId: string }) {
 type CategoryRowProps = {
   category: Category;
   onPress: () => void;
+  /** Asks first, then archives. */
   onArchive: () => void;
   isBusy: boolean;
 };
@@ -410,17 +422,6 @@ function CategoryRow({ category, onPress, onArchive, isBusy }: CategoryRowProps)
     );
   }
 
-  const confirmArchive = () => {
-    Alert.alert(
-      `Archive "${category.name}"?`,
-      'It will no longer be offered for new expenses. Expenses that already use it keep it.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Archive', style: 'destructive', onPress: onArchive },
-      ],
-    );
-  };
-
   return (
     <PressableFeedback
       onPress={onPress}
@@ -438,7 +439,7 @@ function CategoryRow({ category, onPress, onArchive, isBusy }: CategoryRowProps)
             isIconOnly
             size="sm"
             variant="ghost"
-            onPress={confirmArchive}
+            onPress={onArchive}
             isDisabled={isBusy}
             accessibilityLabel={`Archive ${category.name}`}
           >

@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
 import { Button, Card, Separator, Typography } from 'heroui-native';
 import { useMemo, useState } from 'react';
-import { Alert } from 'react-native';
 
+import { useConfirm } from '@/components/confirm-dialog';
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
 import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
@@ -180,20 +180,17 @@ function TemplateActions({
 }) {
   const { setPaused, archive } = useTemplateActions(apartmentId);
   const error = setPaused.error ?? archive.error;
+  const { confirm, dialog } = useConfirm();
 
   const confirmArchive = () =>
-    Alert.alert(
-      `Remove ${template.title}?`,
-      'It stops for good. Charges already made stay, and a bill still waiting for an amount can still be entered.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => archive.mutate(template.id, { onSuccess: () => router.back() }),
-        },
-      ],
-    );
+    confirm({
+      title: `Remove ${template.title}?`,
+      description:
+        'It stops for good. Charges already made stay, and a bill still waiting for an amount can still be entered.',
+      confirmLabel: 'Remove',
+      isDestructive: true,
+      onConfirm: () => archive.mutate(template.id, { onSuccess: () => router.back() }),
+    });
 
   return (
     <Card>
@@ -224,6 +221,7 @@ function TemplateActions({
           Remove
         </OnlineButton>
       </Card.Body>
+      {dialog}
     </Card>
   );
 }

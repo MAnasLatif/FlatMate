@@ -1,5 +1,5 @@
 import { screen, userEvent, waitFor } from '@testing-library/react-native';
-import { Alert, Share } from 'react-native';
+import { Share } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams } from 'expo-router';
 
@@ -8,6 +8,7 @@ import { renderWithProviders } from '@/test/render';
 
 import {
   addCategory,
+  archiveCategory,
   type Apartment,
   fetchApartment,
   fetchCategories,
@@ -36,6 +37,7 @@ jest.mock('../api', () => ({
   fetchCategories: jest.fn(async () => []),
   addCategory: jest.fn(async () => undefined),
   renameCategory: jest.fn(async () => undefined),
+  archiveCategory: jest.fn(async () => undefined),
 }));
 
 const apartment: Apartment = {
@@ -137,7 +139,6 @@ it('keeps Other as it is: it cannot be renamed or archived', async () => {
 });
 
 it('shows the one join code to copy or share, and changes it after asking', async () => {
-  const alert = jest.spyOn(Alert, 'alert');
   const share = jest
     .spyOn(Share, 'share')
     .mockResolvedValue({ action: 'sharedAction', activityType: undefined });
@@ -155,8 +156,24 @@ it('shows the one join code to copy or share, and changes it after asking', asyn
   });
 
   await user.press(screen.getByRole('button', { name: 'Change code' }));
-  const buttons = alert.mock.calls[0]?.[2] ?? [];
-  buttons.find((button) => button.text === 'Change code')?.onPress?.();
+  // The app's own dialog asks first; its button has the same name.
+  expect(await screen.findByText('Change the join code?')).toBeOnTheScreen();
+  const [, confirmButton] = screen.getAllByRole('button', { name: 'Change code' });
+  await user.press(confirmButton);
   await waitFor(() => expect(screen.getByTestId('join-code')).toHaveTextContent('WXYZ-6789'));
   expect(changeJoinCode).toHaveBeenCalledTimes(1);
+});
+
+it("asks in the app's dialog before archiving a category", async () => {
+  jest.mocked(fetchCategories).mockResolvedValue([{ id: 'c-1', name: 'Groceries' }]);
+  await renderWithProviders(<SettingsScreen />);
+  const user = userEvent.setup();
+
+  await user.press(await screen.findByText('Expense control'));
+  await user.press(await screen.findByRole('button', { name: 'Archive Groceries' }));
+  expect(await screen.findByText('Archive "Groceries"?')).toBeOnTheScreen();
+  expect(archiveCategory).not.toHaveBeenCalled();
+
+  await user.press(screen.getByRole('button', { name: 'Archive' }));
+  await waitFor(() => expect(jest.mocked(archiveCategory).mock.calls[0]?.[0]).toBe('c-1'));
 });

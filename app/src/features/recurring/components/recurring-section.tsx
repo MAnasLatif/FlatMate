@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { Button, Card, PressableFeedback, Separator, Typography } from 'heroui-native';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
+import { useConfirm } from '@/components/confirm-dialog';
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
 import { LoadError, LoadingRows } from '@/components/query-states';
@@ -71,6 +72,7 @@ export function RecurringSection({
 function WaitingBills({ apartmentId }: { apartmentId: string }) {
   const bills = useWaitingBills(apartmentId);
   const { skip } = useBillActions(apartmentId);
+  const { confirm, dialog } = useConfirm();
 
   if (bills.isLoadingError) {
     return (
@@ -83,14 +85,13 @@ function WaitingBills({ apartmentId }: { apartmentId: string }) {
   if (!bills.data || bills.data.length === 0) return null;
 
   const confirmSkip = (bill: WaitingBill) =>
-    Alert.alert(
-      `Skip ${bill.template.title} for ${formatDate(bill.billDate)}?`,
-      'Nothing is charged for this period. Later periods carry on as usual.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Skip', style: 'destructive', onPress: () => skip.mutate(bill.id) },
-      ],
-    );
+    confirm({
+      title: `Skip ${bill.template.title} for ${formatDate(bill.billDate)}?`,
+      description: 'Nothing is charged for this period. Later periods carry on as usual.',
+      confirmLabel: 'Skip',
+      isDestructive: true,
+      onConfirm: () => skip.mutate(bill.id),
+    });
 
   return (
     <Card testID="waiting-bills">
@@ -139,6 +140,7 @@ function WaitingBills({ apartmentId }: { apartmentId: string }) {
           </View>
         ))}
       </Card.Body>
+      {dialog}
     </Card>
   );
 }
