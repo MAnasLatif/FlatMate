@@ -36,7 +36,7 @@ import { useMarkSeen } from '@/features/notifications/hooks';
 import { unreadMatches } from '@/features/notifications/unread';
 import { RecurringSection } from '@/features/recurring/components/recurring-section';
 import { userErrorMessage } from '@/lib/errors';
-import { formatDate } from '@/lib/time';
+import { formatDateTime } from '@/lib/time';
 
 export default function ApartmentSettingsScreen() {
   const apartmentId = useApartmentId();
@@ -258,9 +258,11 @@ function InvitesSection({ apartmentId }: { apartmentId: string }) {
         <Card key={invite.id}>
           <Card.Body className="flex-row items-center gap-2">
             <View className="flex-1 gap-1">
-              <Typography.Paragraph>Expires {formatDate(invite.expires_at)}</Typography.Paragraph>
+              <Typography.Paragraph>
+                Expires {formatDateTime(new Date(invite.expires_at))}
+              </Typography.Paragraph>
               <Typography.Paragraph type="body-xs" color="muted">
-                Created {formatDate(invite.created_at)}
+                Created {formatDateTime(new Date(invite.created_at))}
               </Typography.Paragraph>
             </View>
             <OnlineButton
@@ -269,7 +271,7 @@ function InvitesSection({ apartmentId }: { apartmentId: string }) {
               variant="ghost"
               onPress={() => confirmRevoke(invite.id)}
               isDisabled={revoke.isPending}
-              accessibilityLabel={`Delete the code that expires ${formatDate(invite.expires_at)}`}
+              accessibilityLabel={`Delete the code that expires ${formatDateTime(new Date(invite.expires_at))}`}
             >
               <Ionicons name="trash-outline" size={22} color={danger} />
             </OnlineButton>
