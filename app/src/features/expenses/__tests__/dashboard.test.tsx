@@ -74,6 +74,7 @@ function expense(overrides: Partial<ExpenseListItem>): ExpenseListItem {
     paid_status: 'paid',
     created_at: '2026-11-13T09:00:00Z',
     category: null,
+    my_position_minor: null,
     ...overrides,
   };
 }
@@ -194,6 +195,19 @@ it('keeps disputed amounts out of the totals and says so', async () => {
   ).toBeOnTheScreen();
 });
 
+it('shows on each expense what the user receives or sends for it', async () => {
+  expensesPage.mockResolvedValue([
+    expense({ id: 'e1', title: 'Cleaning', my_position_minor: 50_000 }),
+    expense({ id: 'e2', title: 'Water', my_position_minor: -3000 }),
+    expense({ id: 'e3', title: 'Gas', my_position_minor: 0 }),
+  ]);
+  await renderWithProviders(<Dashboard apartment={apartment} />);
+
+  expect(await screen.findByText("You'll receive 500.00 PKR")).toBeOnTheScreen();
+  expect(screen.getByText("You'll send 30.00 PKR")).toBeOnTheScreen();
+  expect(screen.getAllByText(/You'll (receive|send) \d/)).toHaveLength(2);
+});
+
 it("lists the month's expenses with their status and the user's share", async () => {
   monthlyShare.mockResolvedValue(6667);
   expensesPage.mockResolvedValue([
@@ -208,7 +222,13 @@ it("lists the month's expenses with their status and the user's share", async ()
   expect(screen.getByText('Unpaid bill')).toBeOnTheScreen();
   expect(screen.getByText('Final')).toBeOnTheScreen();
   expect(await screen.findByText('66.67 PKR')).toBeOnTheScreen();
-  expect(expensesPage).toHaveBeenCalledWith(apartment.id, thisMonth, addMonths(thisMonth, 1), 0);
+  expect(expensesPage).toHaveBeenCalledWith(
+    apartment.id,
+    '11111111-1111-1111-1111-111111111111',
+    thisMonth,
+    addMonths(thisMonth, 1),
+    0,
+  );
 });
 
 it('opens an expense from the feed', async () => {
@@ -282,7 +302,13 @@ it('steps back a month but not past the current one', async () => {
 
   const lastMonth = addMonths(thisMonth, -1);
   expect(await screen.findByText(`No expenses in ${formatMonth(lastMonth)}`)).toBeOnTheScreen();
-  expect(expensesPage).toHaveBeenCalledWith(apartment.id, lastMonth, thisMonth, 0);
+  expect(expensesPage).toHaveBeenCalledWith(
+    apartment.id,
+    '11111111-1111-1111-1111-111111111111',
+    lastMonth,
+    thisMonth,
+    0,
+  );
   expect(monthlyShare).toHaveBeenCalledWith(apartment.id, lastMonth);
   expect(screen.getByRole('button', { name: 'Next month' })).toBeEnabled();
 });

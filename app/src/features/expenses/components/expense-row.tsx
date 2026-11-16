@@ -9,7 +9,8 @@ import type { ExpenseListItem } from '../api';
 import { ExpenseStatusChips } from './expense-status';
 
 /**
- * One expense in the feed: what it was, when, how much, and its status. Opens
+ * One expense in the feed: what it was, when, how much, what the user receives
+ * or sends for it, and its status. Opens
  * its details. A red dot means a notification about it, or a dispute on it, is
  * unread.
  */
@@ -30,6 +31,7 @@ export function ExpenseRow({
       : undefined,
   ].filter(Boolean);
   const isVoid = expense.status === 'void';
+  const position = expense.my_position_minor;
 
   return (
     <PressableFeedback
@@ -54,6 +56,16 @@ export function ExpenseRow({
             <Typography.Paragraph type="body-xs" color="muted" numberOfLines={1}>
               {details.join(' · ')}
             </Typography.Paragraph>
+            {position ? (
+              <Typography.Paragraph
+                type="body-xs"
+                weight="semibold"
+                className={position > 0 ? 'text-success' : 'text-danger'}
+              >
+                {position > 0 ? "You'll receive" : "You'll send"}{' '}
+                {formatMinorUnits(Math.abs(position))} {expense.currency}
+              </Typography.Paragraph>
+            ) : null}
           </View>
           <View className="items-end gap-1">
             <Typography.Paragraph
