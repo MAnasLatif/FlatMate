@@ -52,8 +52,8 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 ### 3.2 Apartment dashboard
 - Top bar: FlatMate's logo and name, with the open apartment's name under it (tapping either opens My Apartments); the notification bell and members icon on the other side. Apartment settings are not in the top bar.
 - No notification inbox: a red dot marks each place with an unread notification (an expense, the members icon, another apartment in the switcher) and opening that place clears it ([decision 0008](decisions/0008-unread-dots-instead-of-an-inbox.md)).
-- Summary: two widgets side by side, `You'll Receive` and `You'll Send`. Tapping one lists below it only the people behind that total (tapping again hides the list); each person opens the pairwise ledger. Then the user's share of expenses for the selected month. There is no net balance figure and no Settle up button on the dashboard.
-- Expense feed with month selector, search/filter, status indicators, and detail navigation.
+- Summary: two widgets side by side, `You'll Receive` and `You'll Send`. Tapping one filters the expense feed below to the expenses on that side, those the user receives money for or sends money for (tapping again shows them all). What the user owes each person is on the members list. Then the user's share of expenses for the selected month. There is no net balance figure and no Settle up button on the dashboard.
+- Expense feed with month selector (arrows, or month and year wheels covering this year and last year), search/filter, status indicators, and detail navigation.
 - Bottom navigation **left Expenses List | center Add (+) | right Profile**, icons only and all the same size; Profile shows the user's photo, and only the open tab is coloured. The apartment dashboard/list is the main content area. The Profile tab has a plain header with a back arrow and sign-out instead of the apartment's top bar.
 - Member icon opens member directory; tapping a member opens a pairwise ledger.
 - Admin apartment settings accessible through a gear on an apartment in the selector and/or an appropriate admin entry.
