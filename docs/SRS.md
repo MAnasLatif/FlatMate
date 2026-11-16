@@ -295,7 +295,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ## 12. Product Decisions
 
-Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, and item 18 on 2026-11-16. Items 10 and 11 are still open, and part of item 6.
+Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, and item 19 on 2026-11-17. Items 10 and 11 are still open, and part of item 6.
 
 1. **Explicit approval mode — decided.** Not part of the MVP. Every expense is accepted automatically, and affected members object within the window (FR-05). An optional approval mode (FR-03.8) may be reconsidered after release.
 2. **What a dispute holds — decided.** A dispute holds every share of the disputed expense until it is resolved, so settlement never sees inconsistent totals. Other expenses stay payable.
@@ -315,6 +315,7 @@ Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 1
 16. **Who will pay an unpaid bill — decided.** Naming a collector only records who is responsible and notifies them. It creates no debt; balances still change only when the bill is paid (FR-03.2, item 5).
 17. **Payments name the account they went into — decided.** Optional when recording a payment; the payment keeps a snapshot of the account so history survives edits and deletion (FR-07.3).
 18. **Repeatable bills are not categories — decided.** Rent, utilities and internet are set up as repeatable expenses, so new apartments no longer start with those categories and existing apartments archive them; expenses filed under them keep their category. A repeatable expense repeats daily, weekly, every 2 weeks, monthly, every 3 months or yearly (FR-04.2).
+19. **Admins see working join codes — decided.** New join codes are kept readable as well as hashed, so an apartment's admins can see and share each code that still works in the settings; nobody else can read them. Joining still matches on the hash. Codes made before this change stay hidden.
 
 
 ## 13. Suggested First Implementation Tasks

@@ -1,7 +1,7 @@
 -- Join codes: creation by admins, joining, expiry, revocation and rate limiting.
 begin;
 
-select plan(24);
+select plan(26);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111111', 'anas@example.test', '{"display_name": "Anas"}'),
@@ -36,8 +36,23 @@ reset role;
 select is(
   (select code_hash from public.apartment_invites),
   encode(extensions.digest(replace((select val from vals where name = 'code'), '-', ''), 'sha256'), 'hex'),
-  'only the SHA-256 hash of the code is stored'
+  'joining matches on the SHA-256 hash of the code'
 );
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');
+select is(
+  (select code from public.apartment_invites),
+  (select val from vals where name = 'code'),
+  'the apartment''s admins can read the code, to share it again'
+);
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+select is_empty(
+  $$ select code from public.apartment_invites $$,
+  'nobody else can read it'
+);
+
+reset role;
 
 select is(
   private.normalize_invite_code(' abcd-oil1 '),
