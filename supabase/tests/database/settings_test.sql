@@ -1,7 +1,7 @@
 -- Apartment settings and expense categories.
 begin;
 
-select plan(14);
+select plan(17);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111111', 'anas@example.test', '{"display_name": "Anas"}'),
@@ -128,6 +128,27 @@ select lives_ok(
 select lives_ok(
   $$ select public.add_category(pg_temp.flat(), 'Gas bill') $$,
   'an archived name can be used again'
+);
+
+insert into vals select 'other', id::text from public.expense_categories
+where apartment_id = pg_temp.flat() and name = 'Other';
+
+select throws_ok(
+  format('select public.rename_category(%L, %L)', (select val from vals where name = 'other'), 'Misc'),
+  '42501', 'category_fixed',
+  'Other cannot be renamed'
+);
+
+select throws_ok(
+  format('select public.archive_category(%L)', (select val from vals where name = 'other')),
+  '42501', 'category_fixed',
+  'or archived'
+);
+
+select throws_ok(
+  format('select public.rename_category(%L, %L)', (select val from vals where name = 'gas'), ' other '),
+  '42501', 'category_fixed',
+  'and no other category can be renamed to take its place'
 );
 
 select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
