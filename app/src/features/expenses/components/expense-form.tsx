@@ -75,7 +75,7 @@ function DetailsSection({
           variant="secondary"
           value={draft.title}
           onChangeText={(title) => update({ title })}
-          placeholder="Cleaning, groceries, rent…"
+          placeholder="Cleaning, groceries, repairs…"
           accessibilityLabel="What was it for?"
         />
         <FieldError>{error('title')}</FieldError>

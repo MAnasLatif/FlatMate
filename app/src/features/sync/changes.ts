@@ -6,6 +6,7 @@ import { expenseKeys } from '@/features/expenses/hooks';
 import { notificationKeys } from '@/features/notifications/hooks';
 import { ACCOUNT_PAYMENTS_ROOT } from '@/features/payments/hooks';
 import { profileKeys } from '@/features/profile/hooks';
+import { recurringKeys } from '@/features/recurring/hooks';
 import { settlementKeys } from '@/features/settlement/hooks';
 
 /**
@@ -26,6 +27,8 @@ export const APARTMENT_CHANGE_KINDS = [
   'member',
   'rejoin_invite',
   'offset',
+  'recurring_bill',
+  'recurring_template',
   'payment',
   'settlement_period',
   'profile',
@@ -64,6 +67,10 @@ const apartmentChanges: Record<ApartmentChangeKind, (scope: ApartmentScope) => Q
     expenseKeys.apartment(apartmentId),
   ],
   invite: ({ apartmentId }) => [apartmentKeys.invites(apartmentId)],
+  // Repeatable expenses, which only admins read. A bill entered or charged
+  // also sends an expense event for the charge itself.
+  recurring_template: ({ apartmentId }) => [recurringKeys.apartment(apartmentId)],
+  recurring_bill: ({ apartmentId }) => [recurringKeys.apartment(apartmentId)],
   // Someone asked to join, or a request was answered or cancelled; approving
   // also changes the members.
   join_request: ({ apartmentId }) => [

@@ -47,6 +47,12 @@ export function notificationHref(
       return { pathname: '/apartments/[apartmentId]/settlement', params: { apartmentId } };
     case 'apartment':
       break;
+    // A repeatable bill waiting for an admin, in the apartment's settings.
+    case 'recurring':
+      return {
+        pathname: '/apartments/[apartmentId]/settings',
+        params: { apartmentId, tab: 'recurring' },
+      };
     // A declined request: the apartment is not open to them, so go home.
     case 'join_request':
       return '/';

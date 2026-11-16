@@ -4,7 +4,7 @@ import type { Json, Tables } from '@/types/database';
 
 import type { ValidExpense } from './draft';
 import { myExpensePosition } from './position';
-import type { Contribution, SplitMethod } from './split';
+import type { Contribution, SplitMethod, SplitParticipant } from './split';
 
 export type ExpenseStatus = 'provisional' | 'disputed' | 'final' | 'void';
 
@@ -116,7 +116,7 @@ export async function postExpense(
     p_amount_minor: expense.amountMinor,
     p_expense_date: expense.expenseDate,
     p_split_method: expense.splitMethod,
-    p_participants: toRpcParticipants(expense),
+    p_participants: toRpcParticipants(expense.participants),
     p_payers: toRpcPayers(expense.payers),
     p_category_id: expense.categoryId ?? undefined,
     p_description: expense.description ?? undefined,
@@ -304,7 +304,7 @@ export async function editExpense(
     p_due_date: expense.dueDate as string,
     p_amount_minor: expense.amountMinor,
     p_split_method: expense.splitMethod,
-    p_participants: toRpcParticipants(expense),
+    p_participants: toRpcParticipants(expense.participants),
     p_payers: toRpcPayers(expense.payers),
     p_reason: reason ?? undefined,
   });
@@ -317,8 +317,9 @@ export async function voidExpense(expenseId: string): Promise<void> {
   if (error) throw error;
 }
 
-function toRpcParticipants(expense: Pick<ValidExpense, 'participants'>) {
-  return expense.participants.map((participant) => ({
+/** A split's participants as the database functions take them. */
+export function toRpcParticipants(participants: readonly SplitParticipant[]) {
+  return participants.map((participant) => ({
     user_id: participant.userId,
     ...(participant.basisPoints !== undefined ? { basis_points: participant.basisPoints } : {}),
     ...(participant.amountMinor !== undefined ? { amount_minor: participant.amountMinor } : {}),

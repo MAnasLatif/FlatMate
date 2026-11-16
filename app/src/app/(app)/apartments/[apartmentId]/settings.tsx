@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as Clipboard from 'expo-clipboard';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Button, Card, Input, Separator, Tabs, TextField, Typography } from 'heroui-native';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -29,6 +29,7 @@ import {
   useUpdateApartmentSettings,
 } from '@/features/apartments/hooks';
 import { apartmentFormSchema, categoryNameSchema } from '@/features/apartments/schemas';
+import { RecurringSection } from '@/features/recurring/components/recurring-section';
 import { userErrorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/time';
 
@@ -68,11 +69,16 @@ export default function ApartmentSettingsScreen() {
   return <SettingsTabs apartment={apartment.data} freshness={apartment} />;
 }
 
-type SettingsTab = 'general' | 'members' | 'expenses';
+const SETTINGS_TABS = ['general', 'members', 'expenses', 'recurring'] as const;
+type SettingsTab = (typeof SETTINGS_TABS)[number];
+
+function isSettingsTab(value: string | undefined): value is SettingsTab {
+  return SETTINGS_TABS.some((tab) => tab === value);
+}
 
 /**
  * The settings in tabs, with the tab bar fixed above the page that scrolls.
- * Recurring expenses join as a fourth tab when they are built (task 2.4).
+ * A link can open a tab with `?tab=`, as a waiting bill's notification does.
  */
 function SettingsTabs({
   apartment,
@@ -81,7 +87,8 @@ function SettingsTabs({
   apartment: Apartment;
   freshness: ReturnType<typeof useApartment>;
 }) {
-  const [tab, setTab] = useState<SettingsTab>('general');
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<SettingsTab>(isSettingsTab(params.tab) ? params.tab : 'general');
 
   return (
     <Tabs
@@ -101,6 +108,9 @@ function SettingsTabs({
           </Tabs.Trigger>
           <Tabs.Trigger value="expenses">
             <Tabs.Label>Expense control</Tabs.Label>
+          </Tabs.Trigger>
+          <Tabs.Trigger value="recurring">
+            <Tabs.Label>Repeatable expenses</Tabs.Label>
           </Tabs.Trigger>
         </Tabs.ScrollView>
       </Tabs.List>
@@ -129,6 +139,11 @@ function SettingsTabs({
       <Tabs.Content value="expenses" className="flex-1">
         <Screen padTop={false}>
           <CategoriesSection apartmentId={apartment.id} />
+        </Screen>
+      </Tabs.Content>
+      <Tabs.Content value="recurring" className="flex-1">
+        <Screen padTop={false}>
+          <RecurringSection apartmentId={apartment.id} currency={apartment.currency} />
         </Screen>
       </Tabs.Content>
     </Tabs>

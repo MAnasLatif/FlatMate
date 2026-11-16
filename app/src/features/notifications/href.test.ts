@@ -26,6 +26,12 @@ describe('notificationHref', () => {
       pathname: '/apartments/[apartmentId]/settlement',
       params: { apartmentId },
     });
+    expect(
+      notificationHref({ apartmentId, recordType: 'recurring', recordId: apartmentId }),
+    ).toEqual({
+      pathname: '/apartments/[apartmentId]/settings',
+      params: { apartmentId, tab: 'recurring' },
+    });
   });
 
   it('falls back to the apartment when the record is missing', () => {

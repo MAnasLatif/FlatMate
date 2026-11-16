@@ -132,6 +132,12 @@ export const unreadMatches = {
     (item) =>
       item.apartmentId === apartmentId && item.recordType === 'apartment',
 
+  /** Repeatable bills waiting for an admin, cleared on the repeatable expenses tab. */
+  recurring:
+    (apartmentId: string): UnreadMatch =>
+    (item) =>
+      item.apartmentId === apartmentId && item.recordType === 'recurring',
+
   /**
    * A declined request to join, or an invitation back to an apartment, cleared
    * where the user's requests and invitations are listed.
