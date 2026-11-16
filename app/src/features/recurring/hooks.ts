@@ -50,10 +50,10 @@ export function useSaveTemplate(apartmentId: string) {
     mutationFn: (
       input:
         | { templateId: string; value: ValidRecurring }
-        | { templateId: null; value: ValidRecurring; firstPeriod: string; requestId: string },
+        | { templateId: null; value: ValidRecurring; firstDate: string; requestId: string },
     ) =>
       input.templateId === null
-        ? createTemplate(apartmentId, input.value, input.firstPeriod, input.requestId)
+        ? createTemplate(apartmentId, input.value, input.firstDate, input.requestId)
         : updateTemplate(input.templateId, input.value).then(() => input.templateId),
     onSuccess: refresh,
   });

@@ -68,13 +68,13 @@ const rent: RecurringTemplate = {
   title: 'Rent',
   kind: 'fixed',
   amountMinor: 9_000_000,
-  intervalMonths: 1,
+  repeat: 'monthly',
   billDay: 1,
   dueAfterDays: 9,
   collectorId: null,
   splitMethod: 'equal',
   participants: [{ userId: ME }],
-  nextPeriod: '2026-12-01',
+  nextBillDate: '2026-12-01',
   isPaused: false,
 };
 
@@ -84,8 +84,9 @@ const electricity: RecurringTemplate = {
   title: 'Electricity',
   kind: 'variable',
   amountMinor: null,
-  intervalMonths: 3,
-  billDay: 5,
+  repeat: 'weekly',
+  billDay: null,
+  nextBillDate: '2026-12-07',
   isPaused: true,
 };
 
@@ -104,10 +105,11 @@ it('lists repeatable expenses in a fourth settings tab', async () => {
 
   await user.press(await screen.findByText('Repeatable expenses'));
   expect(await screen.findByText('Rent')).toBeOnTheScreen();
-  expect(screen.getByText('90,000.00 PKR · Every month on the 1st')).toBeOnTheScreen();
-  expect(
-    screen.getByText('Amount entered each time · Every 3 months on the 5th'),
-  ).toBeOnTheScreen();
+  expect(screen.getByText('Every month on the 1st · next Dec 1, 2026')).toBeOnTheScreen();
+  expect(screen.getByText('90,000.00 PKR')).toBeOnTheScreen();
+  // A paused expense shows no next date.
+  expect(screen.getByText('Every week on Monday')).toBeOnTheScreen();
+  expect(screen.getByText('Amount varies')).toBeOnTheScreen();
   expect(screen.getAllByText('Paused').length).toBeGreaterThan(0);
   expect(screen.queryByText('Waiting for you')).not.toBeOnTheScreen();
 

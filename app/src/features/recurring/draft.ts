@@ -14,10 +14,12 @@ import {
 import { minorUnitsToInput, parseAmountToMinorUnits } from '@/lib/money';
 import { addDays, addMonths, monthStart } from '@/lib/time';
 
-import type { IntervalMonths, RecurringKind, RecurringTemplate, WaitingBill } from './api';
+import type { RecurringKind, RecurringTemplate, WaitingBill } from './api';
+import { isMonthly, type Repeat } from './schedule';
 
-export const INTERVALS: readonly IntervalMonths[] = [1, 3, 12];
 export const MAX_DUE_AFTER_DAYS = 90;
+/** A daily or weekly expense can start up to a year ahead, as the database allows. */
+export const MAX_START_DAYS_AHEAD = 365;
 
 /** What the repeatable expense form holds while an admin edits it. Typed values stay text. */
 export type RecurringDraft = SplitInput & {
@@ -25,28 +27,35 @@ export type RecurringDraft = SplitInput & {
   kind: RecurringKind;
   /** Fixed only. */
   amount: string;
-  intervalMonths: IntervalMonths;
+  repeat: Repeat;
+  /** Monthly repeats only. */
   billDay: string;
   /** Days to pay after the bill day, or '' for no due date. */
   dueAfterDays: string;
   collectorId: string | null;
-  /** The month of the first charge, as its first day. Used when adding only. */
+  /** Monthly, when adding: the month of the first charge, as its first day. */
   firstPeriod: string;
+  /** Daily and weekly, when adding: the first charge, as YYYY-MM-DD. */
+  startDate: string;
 };
 
 export type ValidRecurring = {
   title: string;
   kind: RecurringKind;
   amountMinor: number | null;
-  intervalMonths: IntervalMonths;
-  billDay: number;
+  repeat: Repeat;
+  /** Null for daily and weekly repeats. */
+  billDay: number | null;
+  /** The first charge, when adding. */
+  firstDate: string;
   dueAfterDays: number | null;
   collectorId: string | null;
   splitMethod: SplitInput['splitMethod'];
   participants: SplitParticipant[];
 };
 
-export type RecurringField = 'title' | 'amount' | 'billDay' | 'dueAfterDays' | 'split';
+export type RecurringField =
+  'title' | 'amount' | 'billDay' | 'startDate' | 'dueAfterDays' | 'split';
 
 export type RecurringResult = {
   errors: Partial<Record<RecurringField, string>>;
@@ -76,11 +85,12 @@ export function newRecurringDraft(today: string): RecurringDraft {
     title: '',
     kind: 'fixed',
     amount: '',
-    intervalMonths: 1,
+    repeat: 'monthly',
     billDay: '1',
     dueAfterDays: '',
     collectorId: null,
     firstPeriod: nextFirstPeriod(1, today),
+    startDate: today,
     splitMethod: 'equal',
     excluded: [],
     percentages: {},
@@ -128,11 +138,13 @@ export function draftFromTemplate(
     kind: template.kind,
     amount:
       template.amountMinor === null ? '' : minorUnitsToInput(template.amountMinor, minorUnitDigits),
-    intervalMonths: template.intervalMonths,
-    billDay: String(template.billDay),
+    repeat: template.repeat,
+    // Switching a daily or weekly expense to monthly starts from the day of its next charge.
+    billDay: String(template.billDay ?? Number(template.nextBillDate.slice(8, 10))),
     dueAfterDays: template.dueAfterDays === null ? '' : String(template.dueAfterDays),
     collectorId: template.collectorId,
-    firstPeriod: template.nextPeriod,
+    firstPeriod: monthStart(template.nextBillDate),
+    startDate: template.nextBillDate,
     ...splitInputFrom(template.splitMethod, template.participants, memberIds, minorUnitDigits),
   };
 }
@@ -156,10 +168,14 @@ function parseWholeNumber(text: string): number | null {
   return /^\d{1,3}$/.test(trimmed) ? Number(trimmed) : null;
 }
 
-/** Checks the draft with the rules the database applies. `memberIds` are the current members. */
+/**
+ * Checks the draft with the rules the database applies. `memberIds` are the
+ * current members, and `today` is the apartment's date.
+ */
 export function validateRecurringDraft(
   draft: RecurringDraft,
   memberIds: readonly string[],
+  today: string,
   minorUnitDigits = 2,
 ): RecurringResult {
   const errors: RecurringResult['errors'] = {};
@@ -179,9 +195,23 @@ export function validateRecurringDraft(
     }
   }
 
-  const billDay = parseWholeNumber(draft.billDay);
-  if (billDay === null || billDay < 1 || billDay > 31) {
-    errors.billDay = 'Enter a day from 1 to 31.';
+  const monthly = isMonthly(draft.repeat);
+  let billDay: number | null = null;
+  let firstDate = draft.startDate;
+  if (monthly) {
+    billDay = parseWholeNumber(draft.billDay);
+    if (billDay === null || billDay < 1 || billDay > 31) {
+      errors.billDay = 'Enter a day from 1 to 31.';
+      billDay = null;
+    } else {
+      firstDate = billDateIn(draft.firstPeriod, billDay);
+    }
+  } else if (!isValidDate(draft.startDate)) {
+    errors.startDate = 'Choose the day of the first charge.';
+  } else if (draft.startDate < today) {
+    errors.startDate = 'The first charge cannot be in the past.';
+  } else if (draft.startDate > addDays(today, MAX_START_DAYS_AHEAD)) {
+    errors.startDate = 'Start within the next year.';
   }
 
   let dueAfterDays: number | null = null;
@@ -208,18 +238,18 @@ export function validateRecurringDraft(
       ? sharesOf(amountMinor, splitMethod, split.participants)
       : undefined;
 
-  const isValid = Object.keys(errors).length === 0 && split.participants && billDay !== null;
   return {
     errors,
     shares,
     value:
-      isValid && split.participants && billDay !== null
+      Object.keys(errors).length === 0 && split.participants
         ? {
             title,
             kind: draft.kind,
             amountMinor,
-            intervalMonths: draft.intervalMonths,
+            repeat: draft.repeat,
             billDay,
+            firstDate,
             dueAfterDays,
             // Only a current member can be asked to pay.
             collectorId:

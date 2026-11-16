@@ -58,7 +58,7 @@ A trigger on `audit_events` creates one `notifications` row per person to tell (
 
 ## Repeatable expenses
 
-Admins manage `recurring_templates` through the `*_recurring_template` functions; only admins can read them. Every 15 minutes the `charge-repeatable-expenses` cron job calls `private.charge_due_recurring`, which opens one `recurring_instances` row per template and billing period once the bill day has come in the apartment's timezone. A fixed template is charged at once as an unpaid bill with its split. A variable one, or a fixed one whose split names someone who has left, waits for an admin, who is notified (`recurring_bill.amount_needed`, `recurring_bill.needs_review`) and enters it with `post_recurring_bill` or skips it. The unique period per template makes the job safe to run twice. Tests: `tests/database/repeatable_expenses_test.sql`.
+Admins manage `recurring_templates` through the `*_recurring_template` functions; only admins can read them. Every 15 minutes the `charge-repeatable-expenses` cron job calls `private.charge_due_recurring`, which opens one `recurring_instances` row per template and billing period (the month for monthly repeats, the day for daily and weekly ones) once its bill date has come in the apartment's timezone. A fixed template is charged at once as an unpaid bill with its split. A variable one, or a fixed one whose split names someone who has left, waits for an admin, who is notified (`recurring_bill.amount_needed`, `recurring_bill.needs_review`) and enters it with `post_recurring_bill` or skips it. The unique period per template makes the job safe to run twice. Tests: `tests/database/repeatable_expenses_test.sql`.
 
 ## Invite emails
 

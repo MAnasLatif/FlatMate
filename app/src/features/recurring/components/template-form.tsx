@@ -6,20 +6,31 @@ import { ChoiceChips } from '@/components/choice-chips';
 import type { Member } from '@/features/apartments/api';
 import { SplitFields } from '@/features/expenses/components/split-fields';
 import { memberLabel } from '@/features/expenses/member-label';
-import { addMonths, formatDate, monthStart } from '@/lib/time';
+import { DateField } from '@/components/form/date-field';
+import { addDays, addMonths, formatDate, monthStart } from '@/lib/time';
 
-import type { IntervalMonths, RecurringKind } from '../api';
-import { billDateIn, nextFirstPeriod, type RecurringDraft, type RecurringResult } from '../draft';
+import type { RecurringKind } from '../api';
+import { isMonthly, type Repeat } from '../schedule';
+import {
+  billDateIn,
+  MAX_START_DAYS_AHEAD,
+  nextFirstPeriod,
+  type RecurringDraft,
+  type RecurringResult,
+} from '../draft';
 
 const KIND_CHOICES: { value: RecurringKind; label: string }[] = [
   { value: 'fixed', label: 'Same amount each time' },
   { value: 'variable', label: 'Amount changes' },
 ];
 
-const INTERVAL_CHOICES: { value: `${IntervalMonths}`; label: string }[] = [
-  { value: '1', label: 'Every month' },
-  { value: '3', label: 'Every 3 months' },
-  { value: '12', label: 'Every year' },
+const REPEAT_CHOICES: { value: Repeat; label: string }[] = [
+  { value: 'daily', label: 'Every day' },
+  { value: 'weekly', label: 'Every week' },
+  { value: 'fortnightly', label: 'Every 2 weeks' },
+  { value: 'monthly', label: 'Every month' },
+  { value: 'quarterly', label: 'Every 3 months' },
+  { value: 'yearly', label: 'Every year' },
 ];
 
 type TemplateFormProps = {
@@ -52,6 +63,7 @@ export function TemplateForm({
   const update = (patch: Partial<RecurringDraft>) =>
     setDraft((current) => ({ ...current, ...patch }));
   const isVariable = draft.kind === 'variable';
+  const monthly = isMonthly(draft.repeat);
 
   const billDay = Number(draft.billDay);
   const validDay = Number.isInteger(billDay) && billDay >= 1 && billDay <= 31;
@@ -128,40 +140,49 @@ export function TemplateForm({
         <Label>Repeats</Label>
         <ChoiceChips
           accessibilityLabel="How often it repeats"
-          choices={INTERVAL_CHOICES}
-          selected={`${draft.intervalMonths}`}
-          onSelect={(value) => update({ intervalMonths: Number(value) as IntervalMonths })}
+          choices={REPEAT_CHOICES}
+          selected={draft.repeat}
+          onSelect={(repeat) => update({ repeat })}
         />
+        {monthly ? null : (
+          <Description>
+            {draft.repeat === 'daily'
+              ? 'A charge is added every day from the first one.'
+              : 'A charge is added on the same weekday as the first one.'}
+          </Description>
+        )}
       </View>
 
-      <TextField isRequired isInvalid={error('billDay') !== undefined}>
-        <Label>{isVariable ? 'Day the bill arrives' : 'Day of the month it is added'}</Label>
-        <Input
-          variant="secondary"
-          value={draft.billDay}
-          onChangeText={(text) =>
-            setDraft((current) => {
-              const day = Number(text);
-              return {
-                ...current,
-                billDay: text,
-                // The first charge follows the day, until the admin picks another month.
-                firstPeriod:
-                  mode === 'add' && Number.isInteger(day) && day >= 1 && day <= 31
-                    ? nextFirstPeriod(day, today)
-                    : current.firstPeriod,
-              };
-            })
-          }
-          keyboardType="number-pad"
-          maxLength={2}
-          placeholder="1"
-          accessibilityLabel="Day of the month, 1 to 31"
-          testID="recurring-bill-day"
-        />
-        <Description>The 29th to 31st fall on the last day of shorter months.</Description>
-        <FieldError>{error('billDay')}</FieldError>
-      </TextField>
+      {monthly ? (
+        <TextField isRequired isInvalid={error('billDay') !== undefined}>
+          <Label>{isVariable ? 'Day the bill arrives' : 'Day of the month it is added'}</Label>
+          <Input
+            variant="secondary"
+            value={draft.billDay}
+            onChangeText={(text) =>
+              setDraft((current) => {
+                const day = Number(text);
+                return {
+                  ...current,
+                  billDay: text,
+                  // The first charge follows the day, until the admin picks another month.
+                  firstPeriod:
+                    mode === 'add' && Number.isInteger(day) && day >= 1 && day <= 31
+                      ? nextFirstPeriod(day, today)
+                      : current.firstPeriod,
+                };
+              })
+            }
+            keyboardType="number-pad"
+            maxLength={2}
+            placeholder="1"
+            accessibilityLabel="Day of the month, 1 to 31"
+            testID="recurring-bill-day"
+          />
+          <Description>The 29th to 31st fall on the last day of shorter months.</Description>
+          <FieldError>{error('billDay')}</FieldError>
+        </TextField>
+      ) : null}
 
       <TextField isInvalid={error('dueAfterDays') !== undefined}>
         <Label>Days to pay (optional)</Label>
@@ -181,7 +202,20 @@ export function TemplateForm({
         <FieldError>{error('dueAfterDays')}</FieldError>
       </TextField>
 
-      {mode === 'add' && firstChoices.length > 0 ? (
+      {mode === 'add' && !monthly ? (
+        <DateField
+          label={isVariable ? 'First bill' : 'First charge'}
+          isRequired
+          value={draft.startDate}
+          onChange={(startDate) => update({ startDate })}
+          today={today}
+          minDate={today}
+          maxDate={addDays(today, MAX_START_DAYS_AHEAD)}
+          error={error('startDate')}
+        />
+      ) : null}
+
+      {mode === 'add' && monthly && firstChoices.length > 0 ? (
         <View className="gap-2">
           <Label>{isVariable ? 'First bill' : 'First charge'}</Label>
           <ChoiceChips

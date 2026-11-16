@@ -12,6 +12,7 @@ const A = 'aaaaaaaa-0000-0000-0000-000000000001';
 const B = 'bbbbbbbb-0000-0000-0000-000000000002';
 const C = 'cccccccc-0000-0000-0000-000000000003';
 const MEMBERS = [A, B, C];
+const TODAY = '2026-11-16';
 
 describe('billDateIn', () => {
   it('keeps a day that exists in the month', () => {
@@ -45,7 +46,7 @@ describe('validateRecurringDraft', () => {
   };
 
   it('accepts a fixed rent split equally, with exact shares', () => {
-    const result = validateRecurringDraft({ ...rent, amount: '1000' }, MEMBERS);
+    const result = validateRecurringDraft({ ...rent, amount: '1000' }, MEMBERS, TODAY);
     expect(result.errors).toEqual({});
     expect(result.value).toMatchObject({
       title: 'Rent',
@@ -59,8 +60,10 @@ describe('validateRecurringDraft', () => {
   });
 
   it('needs an amount for a fixed template and none for a variable one', () => {
-    expect(validateRecurringDraft({ ...rent, amount: '' }, MEMBERS).errors.amount).toBeDefined();
-    const power = validateRecurringDraft({ ...rent, kind: 'variable', amount: '' }, MEMBERS);
+    expect(
+      validateRecurringDraft({ ...rent, amount: '' }, MEMBERS, TODAY).errors.amount,
+    ).toBeDefined();
+    const power = validateRecurringDraft({ ...rent, kind: 'variable', amount: '' }, MEMBERS, TODAY);
     expect(power.errors).toEqual({});
     expect(power.value?.amountMinor).toBeNull();
   });
@@ -69,6 +72,7 @@ describe('validateRecurringDraft', () => {
     const result = validateRecurringDraft(
       { ...rent, kind: 'variable', amount: '', splitMethod: 'fixed' },
       MEMBERS,
+      TODAY,
     );
     expect(result.value?.splitMethod).toBe('equal');
   });
@@ -83,25 +87,59 @@ describe('validateRecurringDraft', () => {
         percentages: { [A]: '50', [B]: '25', [C]: '20' },
       },
       MEMBERS,
+      TODAY,
     );
     expect(result.errors.split).toMatch(/add up to 100%/);
   });
 
   it('rejects bill days and due days out of range', () => {
     expect(
-      validateRecurringDraft({ ...rent, billDay: '32' }, MEMBERS).errors.billDay,
-    ).toBeDefined();
-    expect(validateRecurringDraft({ ...rent, billDay: '0' }, MEMBERS).errors.billDay).toBeDefined();
-    expect(
-      validateRecurringDraft({ ...rent, dueAfterDays: '91' }, MEMBERS).errors.dueAfterDays,
+      validateRecurringDraft({ ...rent, billDay: '32' }, MEMBERS, TODAY).errors.billDay,
     ).toBeDefined();
     expect(
-      validateRecurringDraft({ ...rent, dueAfterDays: '' }, MEMBERS).value?.dueAfterDays,
+      validateRecurringDraft({ ...rent, billDay: '0' }, MEMBERS, TODAY).errors.billDay,
+    ).toBeDefined();
+    expect(
+      validateRecurringDraft({ ...rent, dueAfterDays: '91' }, MEMBERS, TODAY).errors.dueAfterDays,
+    ).toBeDefined();
+    expect(
+      validateRecurringDraft({ ...rent, dueAfterDays: '' }, MEMBERS, TODAY).value?.dueAfterDays,
     ).toBeNull();
   });
 
+  it('keeps a monthly charge on its day, starting in the chosen month', () => {
+    const result = validateRecurringDraft(
+      { ...rent, billDay: '31', firstPeriod: '2027-02-01' },
+      MEMBERS,
+      TODAY,
+    );
+    expect(result.value).toMatchObject({ repeat: 'monthly', billDay: 31, firstDate: '2027-02-28' });
+  });
+
+  it('starts a daily or weekly charge on a date, with no day of the month', () => {
+    const weekly = validateRecurringDraft(
+      { ...rent, repeat: 'fortnightly', billDay: '', startDate: '2026-11-20' },
+      MEMBERS,
+      TODAY,
+    );
+    expect(weekly.errors).toEqual({});
+    expect(weekly.value).toMatchObject({
+      repeat: 'fortnightly',
+      billDay: null,
+      firstDate: '2026-11-20',
+    });
+    expect(
+      validateRecurringDraft({ ...rent, repeat: 'daily', startDate: '2026-11-15' }, MEMBERS, TODAY)
+        .errors.startDate,
+    ).toBeDefined();
+    expect(
+      validateRecurringDraft({ ...rent, repeat: 'daily', startDate: '2027-12-01' }, MEMBERS, TODAY)
+        .errors.startDate,
+    ).toBeDefined();
+  });
+
   it('drops a collector who is no longer a member', () => {
-    const result = validateRecurringDraft({ ...rent, collectorId: 'gone' }, MEMBERS);
+    const result = validateRecurringDraft({ ...rent, collectorId: 'gone' }, MEMBERS, TODAY);
     expect(result.value?.collectorId).toBeNull();
   });
 });
@@ -116,7 +154,7 @@ describe('waiting bills', () => {
       title: 'Electricity',
       kind: 'variable',
       amountMinor: null,
-      intervalMonths: 1,
+      repeat: 'monthly',
       billDay: 5,
       dueAfterDays: 7,
       collectorId: C,
@@ -126,7 +164,7 @@ describe('waiting bills', () => {
         { userId: B, basisPoints: 2500 },
         { userId: C, basisPoints: 2500 },
       ],
-      nextPeriod: '2026-12-01',
+      nextBillDate: '2026-12-05',
       isPaused: false,
     },
   };

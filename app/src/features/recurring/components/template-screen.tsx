@@ -15,7 +15,7 @@ import { formatDate, todayInTimeZone } from '@/lib/time';
 import { randomUuid } from '@/lib/uuid';
 
 import type { RecurringTemplate } from '../api';
-import { billDateIn, draftFromTemplate, newRecurringDraft, validateRecurringDraft } from '../draft';
+import { draftFromTemplate, newRecurringDraft, validateRecurringDraft } from '../draft';
 import { RECURRING_ERROR_MESSAGES } from '../errors';
 import { useRecurringTemplates, useSaveTemplate, useTemplateActions } from '../hooks';
 import { TemplateForm } from './template-form';
@@ -114,7 +114,10 @@ function TemplateEditor({
   const [requestId] = useState(randomUuid);
   const [showErrors, setShowErrors] = useState(false);
   const save = useSaveTemplate(apartment.id);
-  const result = useMemo(() => validateRecurringDraft(draft, memberIds), [draft, memberIds]);
+  const result = useMemo(
+    () => validateRecurringDraft(draft, memberIds, today),
+    [draft, memberIds, today],
+  );
 
   const submit = () => {
     setShowErrors(true);
@@ -122,7 +125,7 @@ function TemplateEditor({
     save.mutate(
       template
         ? { templateId: template.id, value: result.value }
-        : { templateId: null, value: result.value, firstPeriod: draft.firstPeriod, requestId },
+        : { templateId: null, value: result.value, firstDate: result.value.firstDate, requestId },
       { onSuccess: () => router.back() },
     );
   };
@@ -132,9 +135,7 @@ function TemplateEditor({
       {template ? (
         <Typography.Paragraph type="body-sm" color="muted">
           {`Changes apply from the next ${template.kind === 'fixed' ? 'charge' : 'bill'}${
-            template.isPaused
-              ? ''
-              : `, on ${formatDate(billDateIn(template.nextPeriod, template.billDay))}`
+            template.isPaused ? '' : `, on ${formatDate(template.nextBillDate)}`
           }. Charges already made stay as they are; to change one, edit its expense.`}
         </Typography.Paragraph>
       ) : null}

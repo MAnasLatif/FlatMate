@@ -4,9 +4,10 @@ import { supabase } from '@/lib/supabase';
 import type { Json } from '@/types/database';
 
 import type { ValidBill, ValidRecurring } from './draft';
+import { type Repeat, repeatOf, REPEATS } from './schedule';
 
 export type RecurringKind = 'fixed' | 'variable';
-export type IntervalMonths = 1 | 3 | 12;
+export type { Repeat } from './schedule';
 
 /** A repeatable expense as admins manage it (SRS FR-04). Only admins can read these. */
 export type RecurringTemplate = {
@@ -15,16 +16,19 @@ export type RecurringTemplate = {
   kind: RecurringKind;
   /** Fixed templates only. */
   amountMinor: number | null;
-  intervalMonths: IntervalMonths;
-  /** 1 to 31; 29 to 31 fall on the last day of shorter months. */
-  billDay: number;
+  repeat: Repeat;
+  /**
+   * Monthly repeats only: 1 to 31, where 29 to 31 fall on the last day of
+   * shorter months. Daily and weekly ones repeat from their first date.
+   */
+  billDay: number | null;
   /** The charge is due this many days after the bill day; null for no due date. */
   dueAfterDays: number | null;
   collectorId: string | null;
   splitMethod: SplitMethod;
   participants: SplitParticipant[];
-  /** The first day of the next month to charge, as YYYY-MM-DD. */
-  nextPeriod: string;
+  /** The next bill date to charge, as YYYY-MM-DD. */
+  nextBillDate: string;
   isPaused: boolean;
 };
 
@@ -39,20 +43,21 @@ export type WaitingBill = {
 };
 
 const TEMPLATE_COLUMNS =
-  'id, title, kind, amount_minor, interval_months, bill_day, due_after_days, collector_id, split_method, participants, next_period, paused_at';
+  'id, title, kind, amount_minor, repeat_unit, repeat_every, bill_day, due_after_days, collector_id, split_method, participants, next_bill_date, paused_at';
 
 type TemplateRow = {
   id: string;
   title: string;
   kind: string;
   amount_minor: number | null;
-  interval_months: number;
-  bill_day: number;
+  repeat_unit: string;
+  repeat_every: number;
+  bill_day: number | null;
   due_after_days: number | null;
   collector_id: string | null;
   split_method: string;
   participants: Json;
-  next_period: string;
+  next_bill_date: string;
   paused_at: string | null;
 };
 
@@ -62,13 +67,13 @@ function toTemplate(row: TemplateRow): RecurringTemplate {
     title: row.title,
     kind: row.kind as RecurringKind,
     amountMinor: row.amount_minor,
-    intervalMonths: row.interval_months as IntervalMonths,
+    repeat: repeatOf(row.repeat_unit, row.repeat_every),
     billDay: row.bill_day,
     dueAfterDays: row.due_after_days,
     collectorId: row.collector_id,
     splitMethod: row.split_method as SplitMethod,
     participants: fromRpcParticipants(row.participants),
-    nextPeriod: row.next_period,
+    nextBillDate: row.next_bill_date,
     isPaused: row.paused_at !== null,
   };
 }
@@ -119,7 +124,7 @@ export async function fetchWaitingBills(apartmentId: string): Promise<WaitingBil
 export async function createTemplate(
   apartmentId: string,
   input: ValidRecurring,
-  firstPeriod: string,
+  firstDate: string,
   requestId: string,
 ): Promise<string> {
   const { data, error } = await supabase.rpc('create_recurring_template', {
@@ -128,13 +133,12 @@ export async function createTemplate(
     p_kind: input.kind,
     // The generated types say number; a variable bill sends no amount.
     p_amount_minor: input.amountMinor as number,
-    p_interval_months: input.intervalMonths,
-    p_bill_day: input.billDay,
+    ...repeatArgs(input),
     p_due_after_days: input.dueAfterDays as number,
     p_split_method: input.splitMethod,
     p_participants: toRpcParticipants(input.participants),
     p_collector_id: input.collectorId ?? undefined,
-    p_first_period: firstPeriod,
+    p_first_date: firstDate,
     p_client_request_id: requestId,
   });
   if (error) throw error;
@@ -146,14 +150,23 @@ export async function updateTemplate(templateId: string, input: ValidRecurring):
     p_template_id: templateId,
     p_title: input.title,
     p_amount_minor: input.amountMinor as number,
-    p_interval_months: input.intervalMonths,
-    p_bill_day: input.billDay,
+    ...repeatArgs(input),
     p_due_after_days: input.dueAfterDays as number,
     p_split_method: input.splitMethod,
     p_participants: toRpcParticipants(input.participants),
     p_collector_id: input.collectorId ?? undefined,
   });
   if (error) throw error;
+}
+
+/** How often it repeats, as the database functions take it. */
+function repeatArgs(input: Pick<ValidRecurring, 'repeat' | 'billDay'>) {
+  return {
+    p_repeat_unit: REPEATS[input.repeat].unit,
+    p_repeat_every: REPEATS[input.repeat].every,
+    // The generated types say number; daily and weekly repeats send none.
+    p_bill_day: input.billDay as number,
+  };
 }
 
 export async function setTemplatePaused(templateId: string, paused: boolean): Promise<void> {
