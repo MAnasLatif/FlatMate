@@ -112,6 +112,7 @@ export type Database = {
       apartment_invites: {
         Row: {
           apartment_id: string;
+          code: string | null;
           code_hash: string;
           created_at: string;
           created_by: string | null;
@@ -122,6 +123,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           apartment_id: string;
+          code?: string | null;
           code_hash: string;
           created_at?: string;
           created_by?: string | null;
@@ -131,6 +133,7 @@ export type Database = {
         };
         Update: {
           apartment_id?: string;
+          code?: string | null;
           code_hash?: string;
           created_at?: string;
           created_by?: string | null;

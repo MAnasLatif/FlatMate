@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { zodResolver } from '@hookform/resolvers/zod';
+import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams } from 'expo-router';
-import { Card, PressableFeedback, Tabs, Typography, useThemeColor } from 'heroui-native';
+import { Button, Card, PressableFeedback, Tabs, Typography, useThemeColor } from 'heroui-native';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Alert, View } from 'react-native';
@@ -36,7 +37,8 @@ import { useMarkSeen } from '@/features/notifications/hooks';
 import { unreadMatches } from '@/features/notifications/unread';
 import { RecurringSection } from '@/features/recurring/components/recurring-section';
 import { userErrorMessage } from '@/lib/errors';
-import { formatDateTime } from '@/lib/time';
+import { formatTimeLeft } from '@/lib/time';
+import { useNow } from '@/lib/use-now';
 
 export default function ApartmentSettingsScreen() {
   const apartmentId = useApartmentId();
@@ -222,13 +224,18 @@ function DetailsSection({ apartment }: { apartment: Apartment }) {
 }
 
 /**
- * Join codes that still work, each a card that can be deleted. Codes are
- * created and shared from Add member, so nothing shows while none works.
+ * Join codes that still work, each a card with the code, the time left, and
+ * buttons to copy or delete it. A code leaves the list when it expires, without
+ * a refresh. Codes are created and shared from Add member, so nothing shows
+ * while none works.
  */
 function InvitesSection({ apartmentId }: { apartmentId: string }) {
   const invites = useActiveInvites(apartmentId, true);
-  const danger = useThemeColor('danger');
+  const [accent, danger, success] = useThemeColor(['accent', 'danger', 'success']);
   const { revoke } = useInviteActions(apartmentId);
+  // Ticks so the time left counts down and an expired code drops out.
+  const now = useNow(30_000);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const confirmRevoke = (inviteId: string) => {
     Alert.alert('Delete this code?', 'Nobody will be able to join with it any more.', [
@@ -237,7 +244,10 @@ function InvitesSection({ apartmentId }: { apartmentId: string }) {
     ]);
   };
 
-  if (!invites.data || invites.data.length === 0) return null;
+  const working = (invites.data ?? []).filter(
+    (invite) => new Date(invite.expires_at).getTime() > now,
+  );
+  if (working.length === 0) return null;
 
   return (
     <View className="gap-3">
@@ -254,30 +264,58 @@ function InvitesSection({ apartmentId }: { apartmentId: string }) {
             : null
         }
       />
-      {invites.data.map((invite) => (
-        <Card key={invite.id}>
-          <Card.Body className="flex-row items-center gap-2">
-            <View className="flex-1 gap-1">
-              <Typography.Paragraph>
-                Expires {formatDateTime(new Date(invite.expires_at))}
-              </Typography.Paragraph>
-              <Typography.Paragraph type="body-xs" color="muted">
-                Created {formatDateTime(new Date(invite.created_at))}
-              </Typography.Paragraph>
-            </View>
-            <OnlineButton
-              isIconOnly
-              size="sm"
-              variant="ghost"
-              onPress={() => confirmRevoke(invite.id)}
-              isDisabled={revoke.isPending}
-              accessibilityLabel={`Delete the code that expires ${formatDateTime(new Date(invite.expires_at))}`}
-            >
-              <Ionicons name="trash-outline" size={22} color={danger} />
-            </OnlineButton>
-          </Card.Body>
-        </Card>
-      ))}
+      {working.map((invite) => {
+        const timeLeft = formatTimeLeft(new Date(invite.expires_at), now);
+        return (
+          <Card key={invite.id}>
+            <Card.Body className="flex-row items-center gap-1">
+              <View className="flex-1 gap-1">
+                {invite.code ? (
+                  <Typography.Heading type="h4" selectable>
+                    {invite.code}
+                  </Typography.Heading>
+                ) : (
+                  // Codes made before admins could see them were kept only as a hash.
+                  <Typography.Paragraph color="muted">Code not shown</Typography.Paragraph>
+                )}
+                <Typography.Paragraph type="body-xs" color="muted">
+                  {timeLeft}
+                </Typography.Paragraph>
+              </View>
+              {invite.code ? (
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="ghost"
+                  onPress={() => {
+                    const code = invite.code ?? '';
+                    void Clipboard.setStringAsync(code).then(() => setCopiedId(invite.id));
+                  }}
+                  accessibilityLabel={
+                    copiedId === invite.id ? `Copied ${invite.code}` : `Copy ${invite.code}`
+                  }
+                >
+                  <Ionicons
+                    name={copiedId === invite.id ? 'checkmark' : 'copy-outline'}
+                    size={22}
+                    color={copiedId === invite.id ? success : accent}
+                  />
+                </Button>
+              ) : null}
+              <OnlineButton
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                onPress={() => confirmRevoke(invite.id)}
+                isDisabled={revoke.isPending}
+                accessibilityLabel={`Delete the code${invite.code ? ` ${invite.code}` : ''}, ${timeLeft}`}
+              >
+                <Ionicons name="trash-outline" size={22} color={danger} />
+              </OnlineButton>
+            </Card.Body>
+          </Card>
+        );
+      })}
     </View>
   );
 }

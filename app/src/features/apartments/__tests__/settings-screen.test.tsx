@@ -1,5 +1,6 @@
 import { screen, userEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams } from 'expo-router';
 
 import SettingsScreen from '@/app/(app)/apartments/[apartmentId]/settings';
@@ -21,7 +22,7 @@ const FLAT = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const ME = '11111111-1111-1111-1111-111111111111';
 
 jest.mock('@/lib/supabase', () => ({ supabase: {} }));
-jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
+jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(async () => true) }));
 jest.mock('expo-router', () => ({ router: { push: jest.fn() }, useLocalSearchParams: jest.fn() }));
 jest.mock('@/features/auth/session-provider', () => ({
   useCurrentUserId: () => '11111111-1111-1111-1111-111111111111',
@@ -138,12 +139,31 @@ it('keeps Other as it is: it cannot be renamed or archived', async () => {
   expect(screen.queryByRole('button', { name: 'Other' })).not.toBeOnTheScreen();
 });
 
-it('lists the join codes that still work, each with a delete button', async () => {
+it('shows each working code with the time left, and copies or deletes it', async () => {
+  const hour = 60 * 60 * 1000;
+  const at = (offset: number) => new Date(Date.now() + offset).toISOString();
   jest.mocked(fetchActiveInvites).mockResolvedValue([
     {
       id: 'inv-1',
-      created_at: '2026-11-17T10:00:00Z',
-      expires_at: '2026-11-24T10:00:00Z',
+      code: 'ABCD-2345',
+      created_at: at(-hour),
+      expires_at: at(3 * 24 * hour + 30 * 60 * 1000),
+      created_by: ME,
+    },
+    // Made before codes were kept: listed without the code.
+    {
+      id: 'inv-2',
+      code: null,
+      created_at: at(-hour),
+      expires_at: at(2 * hour + 30 * 60 * 1000),
+      created_by: ME,
+    },
+    // Already expired by the time the screen shows it.
+    {
+      id: 'inv-3',
+      code: 'WXYZ-6789',
+      created_at: at(-8 * 24 * hour),
+      expires_at: at(-1000),
       created_by: ME,
     },
   ]);
@@ -152,9 +172,17 @@ it('lists the join codes that still work, each with a delete button', async () =
   const user = userEvent.setup();
 
   await user.press(await screen.findByText('Manage members'));
-  expect(await screen.findByText('Join codes')).toBeOnTheScreen();
-  await user.press(screen.getByRole('button', { name: /^Delete the code that expires/ }));
+  expect(await screen.findByText('ABCD-2345')).toBeOnTheScreen();
+  expect(screen.getByText('3 days left')).toBeOnTheScreen();
+  expect(screen.getByText('Code not shown')).toBeOnTheScreen();
+  expect(screen.getByText('2 hours, 30 minutes left')).toBeOnTheScreen();
+  expect(screen.queryByText('WXYZ-6789')).not.toBeOnTheScreen();
+  expect(screen.queryByText(/Created|Expires/)).not.toBeOnTheScreen();
 
+  await user.press(screen.getByRole('button', { name: 'Copy ABCD-2345' }));
+  expect(Clipboard.setStringAsync).toHaveBeenCalledWith('ABCD-2345');
+
+  await user.press(screen.getByRole('button', { name: /^Delete the code ABCD-2345/ }));
   const buttons = alert.mock.calls[0]?.[2] ?? [];
   buttons.find((button) => button.text === 'Delete')?.onPress?.();
   await waitFor(() => expect(jest.mocked(revokeInvite).mock.calls[0]?.[0]).toBe('inv-1'));

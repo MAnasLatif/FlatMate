@@ -37,7 +37,7 @@ export const INVITE_VALID_DAYS = 7;
 
 export type Invite = Pick<
   Tables<'apartment_invites'>,
-  'id' | 'created_at' | 'expires_at' | 'created_by'
+  'id' | 'created_at' | 'expires_at' | 'created_by' | 'code'
 >;
 
 export type Category = Pick<Tables<'expense_categories'>, 'id' | 'name'>;
@@ -329,11 +329,11 @@ export async function leaveApartment(apartmentId: string): Promise<void> {
 export async function fetchActiveInvites(apartmentId: string): Promise<Invite[]> {
   const { data, error } = await supabase
     .from('apartment_invites')
-    .select('id, created_at, expires_at, created_by')
+    .select('id, created_at, expires_at, created_by, code')
     .eq('apartment_id', apartmentId)
     .is('revoked_at', null)
     .gt('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: false });
+    .order('expires_at', { ascending: true });
   if (error) throw error;
   return data;
 }
