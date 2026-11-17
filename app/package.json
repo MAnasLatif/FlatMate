@@ -78,6 +78,7 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "maxWorkers": "50%",
     "moduleNameMapper": {
       "^@/assets/(.*)$": "<rootDir>/assets/$1",
       "^@/(.*)$": "<rootDir>/src/$1"
