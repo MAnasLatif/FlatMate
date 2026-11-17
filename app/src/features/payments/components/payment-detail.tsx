@@ -23,6 +23,7 @@ import type { PaymentDetail } from '../api';
 import { PAYMENT_ERROR_MESSAGES, proofUploadErrorMessage } from '../errors';
 import { usePaymentDetail, usePaymentMutations } from '../hooks';
 import { paymentPermissions, paymentStatus } from '../rules';
+import { PaymentAdjustment } from './payment-adjustment';
 import { formatMoney } from '@/features/apartments/currencies';
 
 /** One payment: who paid whom, its status, proof, objections and what the viewer can do (SRS FR-07.8). */
@@ -111,7 +112,10 @@ function PaymentContent({
   };
   const status = paymentStatus(payment.status);
   const openObjection = objections.find((objection) => objection.state === 'open');
-  const permissions = paymentPermissions(payment, userId, openObjection);
+  const viewerIsAdmin = members.some(
+    (member) => member.userId === userId && member.leftAt === null && member.role === 'admin',
+  );
+  const permissions = paymentPermissions(payment, userId, openObjection, viewerIsAdmin);
   const recipient = payment.recipientId === userId ? 'you' : nameOf(payment.recipientId);
   const actionError =
     mutations.decline.error ?? mutations.withdrawDecline.error ?? mutations.void.error;
@@ -176,7 +180,10 @@ function PaymentContent({
         </Card.Body>
       </Card>
 
-      {permissions.canDecline || permissions.canWithdrawDecline || permissions.canVoid ? (
+      {permissions.canDecline ||
+      permissions.canWithdrawDecline ||
+      permissions.canVoid ||
+      permissions.canAdjust ? (
         <Card>
           <Card.Body className="gap-3">
             <FormAlert
@@ -224,6 +231,16 @@ function PaymentContent({
               <OnlineButton variant="ghost" onPress={confirmVoid} isDisabled={isBusy}>
                 Void this payment
               </OnlineButton>
+            ) : null}
+            {permissions.canAdjust && openObjection ? (
+              <PaymentAdjustment
+                apartmentId={apartment.id}
+                payment={payment}
+                objection={openObjection}
+                payerName={nameOf(payment.payerId)}
+                recipientName={nameOf(payment.recipientId)}
+                viewerIsPayer={payment.payerId === userId}
+              />
             ) : null}
           </Card.Body>
         </Card>
@@ -300,9 +317,7 @@ function PaymentContent({
               <Typography.Paragraph type="body-xs" color="muted">
                 {formatDate(objection.createdAt)}
                 {objection.state === 'resolved'
-                  ? objection.resolution === 'withdrawn'
-                    ? ' · withdrawn'
-                    : ' · the payment was voided'
+                  ? RESOLUTION_LABELS[objection.resolution ?? 'withdrawn']
                   : ' · open'}
               </Typography.Paragraph>
             </View>
@@ -312,6 +327,12 @@ function PaymentContent({
     </Screen>
   );
 }
+
+const RESOLUTION_LABELS = {
+  withdrawn: ' · withdrawn',
+  voided: ' · the payment was voided',
+  adjusted: ' · settled with an adjustment',
+} as const;
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (

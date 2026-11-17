@@ -21,7 +21,9 @@ import {
   netOff,
   type Payment,
   type PaymentDetail,
+  type PaymentObjection,
   recordPayment,
+  recordPaymentAdjustment,
   voidPayment,
 } from '../api';
 import { AccountPayments } from '../components/account-payments';
@@ -32,6 +34,7 @@ import { PaymentDetailView } from '../components/payment-detail';
 
 const ANAS = '11111111-1111-1111-1111-111111111111';
 const ZUBAIR = '22222222-2222-2222-2222-222222222222';
+const AJMAL = '33333333-3333-3333-3333-333333333333';
 let mockCurrentUser = ZUBAIR;
 
 jest.mock('@/lib/supabase', () => ({ supabase: {} }));
@@ -67,6 +70,7 @@ jest.mock('../api', () => ({
   netOff: jest.fn(),
   declinePayment: jest.fn(),
   voidPayment: jest.fn(),
+  recordPaymentAdjustment: jest.fn(),
 }));
 
 const APARTMENT = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
@@ -278,6 +282,119 @@ describe('PaymentDetailView', () => {
     expect(await screen.findByText('Confirmed by app policy')).toBeOnTheScreen();
     expect(screen.getByText(/No bank has verified it/)).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Void this payment' })).not.toBeOnTheScreen();
+  });
+
+  describe('a late objection to a final payment', () => {
+    const lateObjection: PaymentObjection = {
+      id: 'objection-1',
+      raisedBy: ANAS,
+      reason: 'Only half arrived',
+      isLate: true,
+      state: 'open',
+      resolution: null,
+      createdAt: '2026-11-25T10:00:00Z',
+      resolvedAt: null,
+    };
+    const lateDetail = (objection: PaymentObjection = lateObjection): PaymentDetail => ({
+      ...detailOf({ status: 'final' }),
+      objections: [objection],
+    });
+    const confirmEveryAlert = () =>
+      jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+        buttons?.find((button) => button.text === 'Record')?.onPress?.();
+      });
+
+    it('lets the payer record that they owe part of it again (decision 0006)', async () => {
+      const alert = confirmEveryAlert();
+      jest.mocked(fetchPaymentDetail).mockResolvedValue(lateDetail());
+      jest.mocked(recordPaymentAdjustment).mockResolvedValue('adjustment-1');
+      await renderWithProviders(<PaymentDetailView apartmentId={APARTMENT} paymentId={PAYMENT} />);
+      const user = userEvent.setup();
+
+      const amount = await screen.findByLabelText('Amount that did not arrive, in PKR');
+      expect(amount.props.value).toBe('120.00');
+      await user.press(screen.getByRole('button', { name: 'Record adjustment' }));
+      expect(screen.getByText(/Say what the adjustment is for/)).toBeOnTheScreen();
+      expect(recordPaymentAdjustment).not.toHaveBeenCalled();
+
+      await user.clear(amount);
+      await user.type(amount, '60');
+      await user.type(screen.getByLabelText('What the adjustment is for'), 'Half arrived');
+      await user.press(screen.getByRole('button', { name: 'Record adjustment' }));
+
+      expect(alert.mock.calls[0]?.[1]).toMatch(/^You will owe Anas Rs 60\.00 again\./);
+      expect(recordPaymentAdjustment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          apartmentId: APARTMENT,
+          payerId: ZUBAIR,
+          recipientId: ANAS,
+          amountMinor: 6000,
+          reason: 'Half arrived',
+          objectionId: 'objection-1',
+        }),
+      );
+    });
+
+    it('refuses more than the payment', async () => {
+      jest.mocked(fetchPaymentDetail).mockResolvedValue(lateDetail());
+      await renderWithProviders(<PaymentDetailView apartmentId={APARTMENT} paymentId={PAYMENT} />);
+      const user = userEvent.setup();
+
+      const amount = await screen.findByLabelText('Amount that did not arrive, in PKR');
+      await user.clear(amount);
+      await user.type(amount, '500');
+      await user.type(screen.getByLabelText('What the adjustment is for'), 'Too much');
+      await user.press(screen.getByRole('button', { name: 'Record adjustment' }));
+
+      expect(screen.getByText('It cannot be more than the payment.')).toBeOnTheScreen();
+      expect(recordPaymentAdjustment).not.toHaveBeenCalled();
+    });
+
+    it('lets an admin who is neither side decide it', async () => {
+      mockCurrentUser = AJMAL;
+      jest
+        .mocked(fetchMembers)
+        .mockResolvedValue([
+          member(ANAS, 'Anas'),
+          member(ZUBAIR, 'Zubair'),
+          { ...member(AJMAL, 'Ajmal'), role: 'admin' },
+        ]);
+      jest.mocked(fetchPaymentDetail).mockResolvedValue(lateDetail());
+      await renderWithProviders(<PaymentDetailView apartmentId={APARTMENT} paymentId={PAYMENT} />);
+
+      expect(await screen.findByRole('button', { name: 'Record adjustment' })).toBeOnTheScreen();
+      expect(screen.getByText(/you can decide as an admin/)).toBeOnTheScreen();
+    });
+
+    it('gives the recipient no adjustment, only withdrawing, even as an admin', async () => {
+      mockCurrentUser = ANAS;
+      jest
+        .mocked(fetchMembers)
+        .mockResolvedValue([{ ...member(ANAS, 'Anas'), role: 'admin' }, member(ZUBAIR, 'Zubair')]);
+      jest.mocked(fetchPaymentDetail).mockResolvedValue(lateDetail());
+      await renderWithProviders(<PaymentDetailView apartmentId={APARTMENT} paymentId={PAYMENT} />);
+
+      expect(
+        await screen.findByRole('button', { name: 'The money arrived: withdraw my objection' }),
+      ).toBeOnTheScreen();
+      expect(screen.queryByRole('button', { name: 'Record adjustment' })).not.toBeOnTheScreen();
+    });
+
+    it('shows an objection settled with an adjustment as such, not as voided', async () => {
+      jest.mocked(fetchPaymentDetail).mockResolvedValue(
+        lateDetail({
+          ...lateObjection,
+          state: 'resolved',
+          resolution: 'adjusted',
+          resolvedAt: '2026-11-26T10:00:00Z',
+        }),
+      );
+      await renderWithProviders(<PaymentDetailView apartmentId={APARTMENT} paymentId={PAYMENT} />);
+
+      expect(await screen.findByText(/settled with an adjustment/)).toBeOnTheScreen();
+      expect(screen.queryByText(/the payment was voided/)).not.toBeOnTheScreen();
+      expect(screen.queryByRole('button', { name: 'Record adjustment' })).not.toBeOnTheScreen();
+    });
   });
 });
 

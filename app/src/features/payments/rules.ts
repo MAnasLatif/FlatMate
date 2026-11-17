@@ -55,13 +55,20 @@ export type PaymentPermissions = {
   canVoid: boolean;
   /** The payer attaches proof. */
   canAddProof: boolean;
+  /**
+   * Settle a late objection to a final payment with an adjustment: the payer
+   * owes that much again. The payer can take it on, or an admin who is not the
+   * recipient decides (decisions 0005 and 0006).
+   */
+  canAdjust: boolean;
 };
 
 /** What the viewer can do with a payment. The database enforces the same rules (decision 0005). */
 export function paymentPermissions(
   payment: Pick<Payment, 'payerId' | 'recipientId' | 'status'>,
   viewerId: string,
-  openObjection: Pick<PaymentObjection, 'raisedBy'> | undefined,
+  openObjection: Pick<PaymentObjection, 'raisedBy' | 'isLate'> | undefined,
+  viewerIsAdmin = false,
 ): PaymentPermissions {
   const isPayer = viewerId === payment.payerId;
   const isRecipient = viewerId === payment.recipientId;
@@ -71,6 +78,7 @@ export function paymentPermissions(
     canWithdrawDecline: isRecipient && openObjection?.raisedBy === viewerId,
     canVoid: isPayer && (payment.status === 'provisional' || payment.status === 'disputed'),
     canAddProof: isPayer && !isVoid,
+    canAdjust: openObjection?.isLate === true && (isPayer || (viewerIsAdmin && !isRecipient)),
   };
 }
 
