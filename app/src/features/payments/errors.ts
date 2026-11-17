@@ -30,6 +30,19 @@ export const PAYMENT_ERROR_MESSAGES: Record<string, string> = {
   proof_not_uploaded: 'The photo did not finish uploading. Please try again.',
 };
 
+/** The adjustment function's keys, over the payment ones it shares. */
+export const ADJUSTMENT_ERROR_MESSAGES: Record<string, string> = {
+  ...PAYMENT_ERROR_MESSAGES,
+  reason_required: 'Say what the adjustment is for.',
+  reason_too_long: 'Keep the reason under 500 characters.',
+  not_allowed_to_adjust:
+    'Only the person who paid, or an admin who did not receive it, can record this.',
+  cannot_adjust_with_yourself: 'You cannot record an adjustment with yourself.',
+  member_not_found: 'One of the two people is no longer in this apartment.',
+  adjustment_does_not_match_payment: 'This adjustment does not match the payment.',
+  dispute_not_open: 'This objection has already been settled.',
+};
+
 /** Explains why attaching a proof photo failed. */
 export function proofUploadErrorMessage(error: unknown): string {
   return (

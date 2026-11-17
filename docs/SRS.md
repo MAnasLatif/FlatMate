@@ -1,7 +1,7 @@
 # FlatMate — Software Requirements Specification (SRS)
 
-**Version:** 1.1  
-**Date:** 2026-11-13  
+**Version:** 1.2  
+**Date:** 2026-11-17  
 **Status:** Baseline for implementation. Product decisions are recorded in section 12; the few still open are marked there.  
 **Product:** Open-source shared-flat expense management application  
 **Platforms:** Android first, iOS supported from the same codebase  
@@ -50,12 +50,12 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 7. Subsequent launches open the apartment last opened on that device, or the first one when the user has left it.
 
 ### 3.2 Apartment dashboard
-- Top bar: FlatMate's logo and name, with the open apartment's name under it (tapping either opens My Apartments); the notification bell and members icon on the other side. Apartment settings are not in the top bar.
+- Top bar: FlatMate's logo and name, with the open apartment's name under it (tapping either opens My Apartments); the members icon on the other side, with a count of what is unread behind it. There is no notification bell. Apartment settings are not in the top bar.
 - No notification inbox: a red dot marks each place with an unread notification (an expense, the members icon, another apartment in the switcher) and opening that place clears it ([decision 0008](decisions/0008-unread-dots-instead-of-an-inbox.md)).
-- Summary: two widgets side by side, `You'll Receive` and `You'll Send`. Tapping one filters the expense feed below to the expenses on that side, those the user receives money for or sends money for (tapping again shows them all). What the user owes each person is on the members list. Then the user's share of expenses for the selected month. There is no net balance figure and no Settle up button on the dashboard.
+- Summary: two widgets side by side, `You'll Receive` and `You'll Send`. Tapping one filters the expense feed below to the expenses on that side, those the user receives money for or sends money for (tapping again shows them all). What the user owes each person is on the members list. Then the user's share of expenses for the selected month. A total that includes amounts still inside their objection window says so with a short note. There is no net balance figure and no Settle up button on the dashboard: the settlement opens from the members screen.
 - Expense feed with month selector (arrows, or month and year wheels covering this year and last year), search/filter, status indicators, and detail navigation.
 - Bottom navigation **left Expenses List | center Add (+) | right Profile**, icons only and all the same size; Profile shows the user's photo, and only the open tab is coloured. The apartment dashboard/list is the main content area. The Profile tab has a plain header with a back arrow and sign-out instead of the apartment's top bar.
-- Member icon opens member directory; tapping a member opens a pairwise ledger.
+- Member icon opens member directory, which starts with the entry to the settlement (this period, past periods and what carried forward); tapping a member opens a pairwise ledger.
 - Admin apartment settings accessible through a gear on an apartment in the selector and/or an appropriate admin entry.
 - Follow device light/dark appearance automatically.
 
@@ -116,7 +116,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-05.7 Every dispute includes initiator, reason, proposed value, evidence, state, responses, timestamps, and resolution history.
 
 ### FR-06 Balances and Member Ledgers
-- FR-06.1 Show user-specific apartment totals: payable, receivable, net, and monthly expense share.
+- FR-06.1 Show user-specific apartment totals: what the user will receive, what they will send, and their monthly expense share. The net with each person is on the members list and the settlement; the dashboard shows no net figure (section 3.2).
 - FR-06.2 Members directory shows, **relative to current viewer**, amounts viewer owes each member, amounts each owes viewer, and net.
 - FR-06.3 Tapping a member opens all relevant shared expenses, payments, outstanding dues, disputes, and explicitly shared receiving accounts.
 - FR-06.4 Show gross pairwise dues and **net-off** option; present exactly which obligations will be offset. Do not double-count an expense or a settlement.
@@ -129,7 +129,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-07.3 User marks paid with amount, time, optional transaction reference, optional proof, and optionally which of the recipient's shared accounts it went into; partial payments are supported. The payment keeps a snapshot of that account (provider, title, masked number), so later edits or deletion of the account do not change it. The account owner sees the payments made into each account.
 - FR-07.4 On marking paid, set `provisionally_confirmed` and immediately adjust **provisional** displayed balances. Notify recipient.
 - FR-07.5 Recipient may decline within default 7 days, with mandatory reason (e.g. not received). Mark payment `disputed`; reverse the provisional credit in outstanding balance while preserving the original evidence and transaction history.
-- FR-07.6 No objection by deadline: finalize as `confirmed_by_app_policy` (not bank-verified). Late objections become separate adjustment cases.
+- FR-07.6 No objection by deadline: finalize as `confirmed_by_app_policy` (not bank-verified). Late objections become separate adjustment cases: the payment stays final, and the payer, or an admin who is not the recipient, records an adjustment of up to the payment's amount that the payer owes again (section 12, item 4).
 - FR-07.7 Prevent duplicate payment submissions, including retries/offline sync; store idempotency keys.
 - FR-07.8 Distinguish `recorded`, `provisional`, `disputed`, and `final` clearly in UI. Admin review cannot certify a bank transfer.
 
@@ -189,9 +189,9 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 |---|---|
 | `profiles` | `id` (auth user FK), display_name, avatar_path, created_at |
 | `receiving_accounts` | id, user_id, provider, title, account_identifier (protected), preferred, visibility |
-| `apartments` | id, name, location_optional, show_location, timezone, settlement_day, approval_days, creator_id |
+| `apartments` | id, name, location_optional, show_location (set by the app whenever a location is given; there is no switch), timezone, settlement_day, approval_days, creator_id |
 | `apartment_members` | id, apartment_id, user_id, role, can_add_expense, joined_at, left_at, status |
-| `apartment_invites` | id, apartment_id, code_hash, expires_at, revoked_at, created_by |
+| `apartment_invites` | id, apartment_id, code_hash, code (readable by admins only), expires_at (`infinity` for the apartment's one code, decision 0011), revoked_at, created_by |
 | `join_requests` | id, apartment_id, user_id, invite_id, state (pending, approved, declined, cancelled), decided_at, decided_by; one pending request per person and apartment |
 | `expense_categories` | id, apartment_id, name, archived_at |
 | `expenses` | id, apartment_id, title, amount_minor, currency, expense_date, paid_status, due_date, description, category_id, category_detail (what Other was), collector_id (who will pay an unpaid bill), created_by, status, recurring_instance_id |
@@ -295,7 +295,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ## 12. Product Decisions
 
-Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, and item 19 on 2026-11-17. Items 10 and 11 are still open, and part of item 6.
+Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, and item 19 on 2026-11-17. Item 10 is still open, and part of item 11.
 
 1. **Explicit approval mode — decided.** Not part of the MVP. Every expense is accepted automatically, and affected members object within the window (FR-05). An optional approval mode (FR-03.8) may be reconsidered after release.
 2. **What a dispute holds — decided.** A dispute holds every share of the disputed expense until it is resolved, so settlement never sees inconsistent totals. Other expenses stay payable.

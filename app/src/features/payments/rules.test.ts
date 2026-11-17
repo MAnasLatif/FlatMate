@@ -43,18 +43,23 @@ describe('paymentPermissions', () => {
       canWithdrawDecline: false,
       canVoid: false,
       canAddProof: false,
+      canAdjust: false,
     });
     expect(paymentPermissions(payment, 'zubair', undefined)).toEqual({
       canDecline: false,
       canWithdrawDecline: false,
       canVoid: true,
       canAddProof: true,
+      canAdjust: false,
     });
   });
 
   it('lets the recipient withdraw an open objection, and keeps a final payment', () => {
     expect(
-      paymentPermissions({ ...payment, status: 'disputed' }, 'anas', { raisedBy: 'anas' }),
+      paymentPermissions({ ...payment, status: 'disputed' }, 'anas', {
+        raisedBy: 'anas',
+        isLate: false,
+      }),
     ).toMatchObject({ canDecline: false, canWithdrawDecline: true });
     expect(paymentPermissions({ ...payment, status: 'final' }, 'zubair', undefined).canVoid).toBe(
       false,
@@ -67,7 +72,33 @@ describe('paymentPermissions', () => {
       false,
       false,
       false,
+      false,
     ]);
+  });
+
+  describe('a late objection to a final payment', () => {
+    const final = { ...payment, status: 'final' as const };
+    const late = { raisedBy: 'anas', isLate: true };
+
+    it('lets the payer or a neutral admin settle it with an adjustment', () => {
+      expect(paymentPermissions(final, 'zubair', late).canAdjust).toBe(true);
+      expect(paymentPermissions(final, 'ajmal', late, true).canAdjust).toBe(true);
+    });
+
+    it('never lets the recipient decide it, even as an admin', () => {
+      expect(paymentPermissions(final, 'anas', late, true).canAdjust).toBe(false);
+      expect(paymentPermissions(final, 'anas', late, true).canWithdrawDecline).toBe(true);
+    });
+
+    it('offers no adjustment to other members, or for an objection inside the window', () => {
+      expect(paymentPermissions(final, 'ajmal', late).canAdjust).toBe(false);
+      expect(
+        paymentPermissions({ ...payment, status: 'disputed' }, 'zubair', {
+          raisedBy: 'anas',
+          isLate: false,
+        }).canAdjust,
+      ).toBe(false);
+    });
   });
 });
 

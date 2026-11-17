@@ -2,7 +2,7 @@
 
 Everything that remains to take FlatMate from its current state to a released app, in the order it should be done. It is derived from the [SRS](SRS.md): every functional requirement (FR) and acceptance criterion (AC) is covered by a task below.
 
-Last reviewed: 2026-11-16.
+Last reviewed: 2026-11-17.
 
 ## How to use this list
 
@@ -25,7 +25,7 @@ Done:
 
 - [x] Backend initialized: Supabase CLI 3.1.0 local stack, a pgTAP test that every public table has row-level security, and generated database types in the app.
 
-Phase 1 is built up to member exit (1.34). Next: offline reading and the event-driven sync (1.35 to 1.42), then notifications and the MVP acceptance pass. The website (`web/`) is not started.
+Phase 1 is built, apart from the owner's steps on the hosted project and devices (1.4, 1.11.2, 1.42, 1.43.1) and the MVP acceptance pass (1.44). Phase 2 has its repeatable expenses (2.1 to 2.4); its hosted deployment (2.4.1) and the rest of the phase are still to do. The website (`web/`) is not started.
 
 ## Decisions
 
@@ -45,6 +45,13 @@ These come from section 12 of the SRS, where each decision is written out in ful
 | D10 | Open-source licence | **Open:** MIT or Apache-2.0; the repository currently uses MIT | 4.8 |
 | D11 | Product name | Decided in part: identifiers are `com.manaslatif.flatmate`. **Open:** trademark, store-name and domain checks | 4.6, 4.7 |
 | D12 | HeroUI Native and the Expo SDK | Decided: HeroUI Native 1.x runs on Expo SDK 58 (decision 0002) | 0.2 |
+| D13 | Joining needs approval | Decided: a code sends a request that any admin approves or declines | 1.43.7 |
+| D14 | Repeatable expenses live in settings | Decided: admins manage them in the apartment's settings; Add (+) is for one-time expenses | 2.4 |
+| D15 | Expense preview | Decided: the add and edit forms show no preview of who owes whom | 1.43.9 |
+| D16 | Who will pay an unpaid bill | Decided: naming a collector notifies them and creates no debt | 1.43.9 |
+| D17 | Payments name the account they went into | Decided: optional, kept as a snapshot | 1.43.6 |
+| D18 | Repeatable bills are not categories | Decided: Rent, Utilities and Internet are repeatable expenses, not default categories | 2.1 |
+| D19 | One join code per apartment | Decided: one code that does not expire until an admin changes it (decision 0011) | 2.4.1 |
 
 ## Phase 0: Foundation
 
@@ -69,13 +76,13 @@ These come from section 12 of the SRS, where each decision is written out in ful
 ### Apartments and members
 
 - [x] **1.6 Apartments and membership.** `apartments` and `apartment_members` tables, membership and role helper functions for RLS, and a function that creates an apartment and makes the creator its admin. Tests prove one apartment's data is invisible from another. *(FR-02.1, FR-02.3, AC-01)*
-- [x] **1.7 Join codes.** Hashed codes with expiry, rotation and revocation, and a rate-limited join function that fails safely on a bad code. *(FR-02.2)*
+- [x] **1.7 Join codes.** Hashed codes with expiry, rotation and revocation, and a rate-limited join function that fails safely on a bad code. *(FR-02.2)* Since replaced by one code per apartment that does not expire ([decision 0011](decisions/0011-one-join-code-per-apartment.md)).
 - [x] **1.8 My Apartments and New Apartment screens.** List of joined apartments, join by code, and the create form (name, optional location, settlement day, approval window, currency, timezone). *(SRS 3.1)*
-- [x] **1.9 Apartment shell.** Top bar with the apartment switcher, members and notification entries, the bottom navigation in the order Profile, Add, Expenses, and an empty dashboard. *(SRS 3.2, AC-13)* The Add tab arrives with task 1.17, and the notification entry with task 1.35.
+- [x] **1.9 Apartment shell.** Top bar with the apartment switcher, members and notification entries, the bottom navigation in the order Expenses, Add, Profile, and an empty dashboard. *(SRS 3.2, AC-13)* The Add tab arrives with task 1.17. The notification entry became a bell in 1.43 and was replaced by unread dots in 1.43.2.
 - [x] **1.10 Members and roles.** Member directory, promote and demote admins, the expense-creation permission, remove a member, leave an apartment, the rule that one admin must remain, and join and leave dates. *(FR-02.4, FR-02.5, FR-02.6, AC-11)*
-- [x] **1.11 Apartment settings.** Admin screen for name, location visibility, settlement day, approval window, expense categories and invite codes. *(FR-08.1)*
+- [x] **1.11 Apartment settings.** Admin screen for name, location (shown whenever given; the visibility switch was dropped in 1.43.8), settlement day, approval window, expense categories and invite codes. *(FR-08.1)*
 - [x] **1.11.1 Invites by email.** The members screen's Add member sheet emails a join code through the `send-invite-email` Edge Function, with daily limits and no stored address, and still copies or shares a code. *(FR-02.2, [decision 0010](decisions/0010-invite-emails.md))*
-- [ ] **1.11.2 Invite emails on the hosted project.** Create a Resend account, verify a sending domain, set `RESEND_API_KEY` and `INVITE_EMAIL_FROM` with `supabase secrets set`, push migration `20261116103827` with `db push --remote` after a `--dry-run`, deploy `send-invite-email`, and send one invite from a device. *(Owner: Resend account and a domain.)*
+- [ ] **1.11.2 Invite emails on the hosted project.** The Resend account and verified domain already send the Auth emails (1.43.4). Create a second API key with sending access only, set `RESEND_API_KEY` and `INVITE_EMAIL_FROM` with `supabase secrets set`, push migration `20261116103827` with `db push --remote` after a `--dry-run`, deploy `send-invite-email`, and send one invite from a device. *(Owner: Resend account and a domain.)*
 
 ### Ledger core
 
@@ -87,8 +94,8 @@ These come from section 12 of the SRS, where each decision is written out in ful
 
 ### Expenses in the app
 
-- [x] **1.17 Add expense.** Details, payer editor, split editor and a preview of shares and resulting balances before saving. *(FR-03.1–03.5)* Dates are typed as YYYY-MM-DD with Today and Yesterday shortcuts; a native date picker needs a new development build and can follow.
-- [x] **1.18 Receipts.** Upload to a private bucket, storage policies, signed URLs and a viewer. *(FR-03.1, AC-12)* Photos come from the library; taking one with the camera needs a new development build and can follow.
+- [x] **1.17 Add expense.** Details, payer editor, split editor and a preview of shares and resulting balances before saving. *(FR-03.1–03.5)* Since changed in 1.43.9: dates come from a calendar and the preview was removed (D15).
+- [x] **1.18 Receipts.** Upload to a private bucket, storage policies, signed URLs and a viewer. *(FR-03.1, AC-12)* Photos first came from the library only; 1.43.9 added the camera and any number of receipts.
 - [x] **1.19 Dashboard.** Summary cards and the monthly expense feed with a month selector, pagination and status indicators. *(FR-06.1, SRS 3.2)*
 - [x] **1.20 Expense detail.** Receipt, split, payers, payment state, due date, status, audit trail and the actions the viewer's role allows. *(FR-03.6)*
 - [x] **1.21 Editing a posted expense.** Edits create a new version. Corrections to settled records are linked adjustments or reversals. *(FR-03.7)*
@@ -130,7 +137,7 @@ These follow [decision 0007](decisions/0007-offline-reading-and-live-sync.md). T
 
 ### Notifications and sign-off
 
-- [x] **1.43 Notification foundation.** `notifications` table, in-app inbox, push token registration, and push delivery for expenses, payments, disputes and membership changes. Opening a notification goes to the record and rechecks permission. *(FR-09.1, FR-09.3)* Built: notifications from audit events (who is told is in `private.notification_recipients`), generic lock-screen text, the inbox and bell, device registration, and push through the `deliver-push` Edge Function, tested end to end locally up to Expo's answer. Setup in `docs/NOTIFICATIONS.md`.
+- [x] **1.43 Notification foundation.** `notifications` table, in-app inbox, push token registration, and push delivery for expenses, payments, disputes and membership changes. Opening a notification goes to the record and rechecks permission. *(FR-09.1, FR-09.3)* Built: notifications from audit events (who is told is in `private.notification_recipients`), generic lock-screen text, the inbox and bell (removed again in 1.43.2), device registration, and push through the `deliver-push` Edge Function, tested end to end locally up to Expo's answer. Setup in `docs/NOTIFICATIONS.md`.
 - [ ] **1.43.1 Push on a device.** Set up Firebase, the FCM key in EAS, the `GOOGLE_SERVICES_JSON` file variable, the Edge Function secret and the Vault secrets as in `docs/NOTIFICATIONS.md`, rebuild, and check that a flatmate's new expense arrives as a push that opens the expense. *(Owner: Firebase and Expo accounts, a device.)*
 - [x] **1.43.2 Unread dots instead of the inbox.** Remove the bell and the inbox. A red dot marks each place with an unread notification, and opening it marks it read. *(FR-09.3)* See [decision 0008](decisions/0008-unread-dots-instead-of-an-inbox.md).
 - [x] **1.43.3 Former members and invites.** Admins manage a person from their page, send invites from the members screen, remove a former member from the list (records stay), and invite a former member back. *(FR-02.2, FR-02.4)* See [decision 0009](decisions/0009-former-members-hiding-and-inviting-back.md).
@@ -141,7 +148,8 @@ These follow [decision 0007](decisions/0007-offline-reading-and-live-sync.md). T
 - [x] **1.43.8 Apartment setup and navigation.** Creating picks the currency from every currency with its symbol and a search, takes the time zone from the phone, and shows a location when one is given; editing has the same fields with the currency locked. The app opens in the apartment last opened on the device; My Apartments opens from the top bar's title, with a settings gear for admins. Icon-only bottom bars, also before joining an apartment. *(FR-02.1, SRS 3.1 and 3.2, AC-13)*
 - [x] **1.43.9 Expense form.** Dates from a calendar; any number of receipts, from the camera or the gallery, as the fourth field; who will pay an unpaid bill, told and suggested as the payer; what an Other expense was; no due date once paid; no preview; notes last. *(FR-03.1, FR-03.2, FR-03.5)*
 - [x] **1.43.10 Keyboard and failed loads.** Every screen makes room for the keyboard on Android and scrolls the field being typed in above it; a failed load is retried by tapping it.
-- [ ] **1.44 MVP acceptance pass.** Walk through AC-01 to AC-13 on an Android device, review every RLS policy and the Realtime topic policy, and check loading, empty, error and offline states on every screen. Fix what fails.
+- [x] **1.43.11 Settlement entry, provisional totals and late adjustments.** The members screen opens the settlement, with its unread dot, now that the dashboard has no Settle up button; the members icon counts those unread items too. A dashboard total that includes provisional amounts says so. A late objection to a final payment can be settled with an adjustment by the payer, or by an admin who is not the recipient. *(SRS 3.2, FR-07.6, FR-08.3, decisions 0005, 0006 and 0008)*
+- [ ] **1.44 MVP acceptance pass.** Walk through AC-01 to AC-13 on an Android device, review every RLS policy and the Realtime topic policy, and check loading, empty, error and offline states on every screen. Also check that the dashboard's receive and send filters still find expenses beyond the first page, since they filter only what has loaded. Fix what fails.
 
 ## Phase 2: Automation and reporting
 

@@ -24,7 +24,6 @@ export default function AppLayout() {
     >
       <Stack.Screen name="(home)" options={{ headerShown: false }} />
       <Stack.Screen name="apartments/index" options={{ title: 'Your apartments' }} />
-      <Stack.Screen name="profile" options={{ title: 'Profile' }} />
       <Stack.Screen name="change-email" options={{ title: 'Change email', ...modalTransition }} />
       <Stack.Screen
         name="change-password"

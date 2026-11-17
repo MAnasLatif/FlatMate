@@ -13,7 +13,9 @@ import {
   fetchPaymentDetail,
   netOff,
   PAIR_PAYMENTS_PAGE_SIZE,
+  type PaymentAdjustmentInput,
   recordPayment,
+  recordPaymentAdjustment,
   type RecordPaymentInput,
   voidPayment,
   withdrawPaymentDecline,
@@ -90,6 +92,10 @@ export function usePaymentMutations(apartmentId: string) {
     }),
     void: useMutation({
       mutationFn: (paymentId: string) => voidPayment(paymentId),
+      onSuccess: refresh,
+    }),
+    adjust: useMutation({
+      mutationFn: (input: PaymentAdjustmentInput) => recordPaymentAdjustment(input),
       onSuccess: refresh,
     }),
   };

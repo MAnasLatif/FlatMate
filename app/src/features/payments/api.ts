@@ -43,7 +43,7 @@ export type PaymentObjection = {
   reason: string;
   isLate: boolean;
   state: 'open' | 'resolved';
-  resolution: 'withdrawn' | 'voided' | null;
+  resolution: 'withdrawn' | 'voided' | 'adjusted' | null;
   createdAt: string;
   resolvedAt: string | null;
 };
@@ -258,4 +258,34 @@ export async function withdrawPaymentDecline(objectionId: string): Promise<void>
 export async function voidPayment(paymentId: string): Promise<void> {
   const { error } = await supabase.rpc('void_payment', { p_payment_id: paymentId });
   if (error) throw error;
+}
+
+export type PaymentAdjustmentInput = {
+  apartmentId: string;
+  payerId: string;
+  recipientId: string;
+  amountMinor: number;
+  reason: string;
+  objectionId: string;
+  /** Repeating the same request returns the adjustment it already made. */
+  requestId: string;
+};
+
+/**
+ * Settles a late objection to a final payment: the payer owes the recipient
+ * this much again, and the objection is resolved as adjusted. The payment
+ * itself stays final and counted (decisions 0005 and 0006).
+ */
+export async function recordPaymentAdjustment(input: PaymentAdjustmentInput): Promise<string> {
+  const { data, error } = await supabase.rpc('record_adjustment', {
+    p_apartment_id: input.apartmentId,
+    p_debtor_id: input.payerId,
+    p_creditor_id: input.recipientId,
+    p_amount_minor: input.amountMinor,
+    p_reason: input.reason,
+    p_payment_dispute_id: input.objectionId,
+    p_client_request_id: input.requestId,
+  });
+  if (error) throw error;
+  return data;
 }

@@ -115,8 +115,11 @@ function TabIcon({
 
 function HeaderActions({ apartmentId }: { apartmentId: string }) {
   const iconColor = useThemeColor('foreground');
-  // Joins, exits and requests to join are on the members screen, so their dot is here.
-  const unread = useUnreadCount(unreadMatches.members(apartmentId));
+  // Joins, exits, requests to join and the settlement (payments, offsets,
+  // closed periods) are reached from the members screen, so their count is here.
+  const unread =
+    useUnreadCount(unreadMatches.members(apartmentId)) +
+    useUnreadCount(unreadMatches.settlement(apartmentId));
 
   return (
     <View className="flex-row items-center gap-4 pr-4">
