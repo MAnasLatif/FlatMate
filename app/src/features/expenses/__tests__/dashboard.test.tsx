@@ -94,12 +94,27 @@ it('shows what the user will receive and send (SRS 5.1)', async () => {
   await renderWithProviders(<Dashboard apartment={apartment} />);
 
   expect(
-    await screen.findByRole('button', { name: "You'll receive, Rs 133.33" }),
+    await screen.findByRole('button', {
+      name: "You'll receive, Rs 133.33, Includes amounts not final yet",
+    }),
   ).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: "You'll send, Rs 0.00" })).toBeOnTheScreen();
+  // Only the figure with a provisional amount in it says so.
+  expect(screen.getAllByText('Includes amounts not final yet')).toHaveLength(1);
   expect(screen.queryByText('Net balance')).not.toBeOnTheScreen();
-  expect(screen.queryByText('Provisional')).not.toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: /Settle up/ })).not.toBeOnTheScreen();
+});
+
+it('says nothing about provisional amounts once every figure is final', async () => {
+  balances.mockResolvedValue([
+    { counterpartyId: 'z', finalMinor: 2000, provisionalMinor: 0, disputedMinor: 0 },
+    { counterpartyId: 'j', finalMinor: -5000, provisionalMinor: 0, disputedMinor: 0 },
+  ]);
+  await renderWithProviders(<Dashboard apartment={apartment} />);
+
+  expect(await screen.findByRole('button', { name: "You'll send, Rs 20.00" })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: "You'll receive, Rs 50.00" })).toBeOnTheScreen();
+  expect(screen.queryByText('Includes amounts not final yet')).not.toBeOnTheScreen();
 });
 
 it('shows only the expenses on the tapped side, and all of them on a second tap', async () => {

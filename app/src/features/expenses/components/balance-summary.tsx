@@ -56,6 +56,7 @@ export function BalanceSummary({
           label="You'll receive"
           amount={money(summary.receiveMinor)}
           tone={summary.receiveMinor > 0 ? 'positive' : 'neutral'}
+          isProvisional={summary.receiveMinor > 0 && summary.receiveIsProvisional}
           isSelected={filter === 'receive'}
           hint="Shows only the expenses you receive money for"
           onPress={() => toggle('receive')}
@@ -64,6 +65,7 @@ export function BalanceSummary({
           label="You'll send"
           amount={money(summary.oweMinor)}
           tone={summary.oweMinor > 0 ? 'negative' : 'neutral'}
+          isProvisional={summary.oweMinor > 0 && summary.oweIsProvisional}
           isSelected={filter === 'send'}
           hint="Shows only the expenses you send money for"
           onPress={() => toggle('send')}
@@ -86,6 +88,11 @@ export function BalanceSummary({
   );
 }
 
+// A short note instead of a chip: the figure counts provisional amounts as
+// payable, since expenses are accepted by default, but it is not final yet
+// (decision 0003).
+const PROVISIONAL_NOTE = 'Includes amounts not final yet';
+
 const TONE_CLASSES = {
   positive: 'text-success',
   negative: 'text-danger',
@@ -96,6 +103,7 @@ function TotalWidget({
   label,
   amount,
   tone,
+  isProvisional,
   isSelected,
   hint,
   onPress,
@@ -103,6 +111,8 @@ function TotalWidget({
   label: string;
   amount: string;
   tone: keyof typeof TONE_CLASSES;
+  /** The figure includes amounts still inside their objection window. */
+  isProvisional: boolean;
   isSelected: boolean;
   hint: string;
   onPress: () => void;
@@ -111,7 +121,7 @@ function TotalWidget({
     <PressableFeedback
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${label}, ${amount}`}
+      accessibilityLabel={`${label}, ${amount}${isProvisional ? `, ${PROVISIONAL_NOTE}` : ''}`}
       accessibilityHint={hint}
       accessibilityState={{ selected: isSelected }}
       className="flex-1 rounded-3xl"
@@ -125,6 +135,11 @@ function TotalWidget({
           <Typography.Heading type="h5" className={TONE_CLASSES[tone]}>
             {amount}
           </Typography.Heading>
+          {isProvisional ? (
+            <Typography.Paragraph type="body-xs" color="muted">
+              {PROVISIONAL_NOTE}
+            </Typography.Paragraph>
+          ) : null}
         </Card.Body>
       </Card>
     </PressableFeedback>
