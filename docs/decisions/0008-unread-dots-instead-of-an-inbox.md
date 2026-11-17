@@ -11,6 +11,8 @@ On 2026-11-15 the owner asked to remove the inbox completely. Unread notificatio
 
 **Update 2026-11-16.** The owner removed the dashboard's Settle up button. The dots listed below on "Settle up" no longer have a place on the dashboard; the settlement screen and the ledger with each person still show theirs. A closed period's notification is still opened from its push.
 
+**Update 2026-11-17.** Without Settle up, a current member could reach the settlement only from a push. The members screen now starts with a Settlement entry, which carries the dot "Settle up" had, and the members icon in the top bar counts those unread items along with its own. The table below reads "the Settlement entry" where it said Settle up.
+
 ## Decision
 
 **No inbox, no bell.** The `/notifications` screen and the bell are removed. The `notifications` table, push delivery and opening a tapped push are unchanged.
@@ -21,9 +23,9 @@ On 2026-11-15 the owner asked to remove the inbox completely. Unread notificatio
 |---|---|---|
 | An expense | Its row in the dashboard feed | The expense |
 | A dispute | The expense's row, and the dispute's row on the expense | The dispute |
-| A payment | Settle up, the person's line in the settlement, "Payments and everything else", the payment's row | The payment |
-| An offset or adjustment | Settle up, the person's line, "Payments and everything else" | The ledger with that person |
-| A closed period | Settle up | The settlement screen |
+| A payment | The members icon and the Settlement entry on the members screen, the person's line in the settlement, "Payments and everything else", the payment's row | The payment |
+| An offset or adjustment | The members icon and the Settlement entry, the person's line, "Payments and everything else" | The ledger with that person |
+| A closed period | The members icon and the Settlement entry | The settlement screen |
 | Members and requests to join | The members icon, with a count | The members screen |
 | The apartment, such as being let in | (opens there) | The dashboard |
 | Anything in another apartment | The apartment switcher's logo, with a count, and the apartment in My Apartments | (cleared as above, inside it) |

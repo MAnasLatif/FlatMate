@@ -5,7 +5,7 @@
 
 ## Context
 
-FlatMate records who paid for what, who owes whom, payments between flatmates, disputes and monthly settlement (SRS sections 4 and 5). Every balance shown must be explainable from the records behind it, financial history is never rewritten, amounts must add up exactly, and a dispute holds only the amounts it affects. The product decisions this depends on are in SRS section 12, especially items 2 (a dispute holds every share of the disputed expense) and 5 (only members can be owed).
+FlatMate records who paid for what, who owes whom, payments between flatmates, disputes and monthly settlement (SRS sections 4 and 5). Every balance shown must be explainable from the records behind it, financial history is never rewritten, amounts must add up exactly, and a dispute holds what it affects, which section 12 item 2 sets as every share of the disputed expense. The product decisions this depends on are in SRS section 12, especially items 2 (a dispute holds every share of the disputed expense) and 5 (only members can be owed).
 
 ## Decision
 

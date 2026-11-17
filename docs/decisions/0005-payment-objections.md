@@ -28,5 +28,5 @@ A recorded payment is a claim, not proof of a transfer. It counts as paid at onc
 
 ## Consequences
 
-- Correcting a final payment through an adjustment entry is still to be built. It belongs with settlement and adjustments (tasks 1.31 and 1.32). Until then a late case can only be withdrawn.
+- Correcting a final payment through an adjustment entry is still to be built. It belongs with settlement and adjustments (tasks 1.31 and 1.32). Until then a late case can only be withdrawn. *Built: `record_adjustment` (decision 0006) and, in the app, the payment screen (task 1.43.11). The payer, or an admin who is not the recipient, records up to the payment's amount as owed again, and the case ends as adjusted.*
 - The pay flow screens (task 1.30) show recorded, provisional, disputed and final payments distinctly, and say that a final payment was confirmed by app policy, not by a bank.
