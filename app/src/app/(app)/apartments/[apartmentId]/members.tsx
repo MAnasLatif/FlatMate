@@ -28,6 +28,7 @@ import { usePairBalances } from '@/features/expenses/hooks';
 import { useMarkSeen } from '@/features/notifications/hooks';
 import { unreadMatches } from '@/features/notifications/unread';
 import { ProfileAvatar } from '@/features/profile/components/profile-avatar';
+import { SettlementLink } from '@/features/settlement/components/settlement-link';
 import { userErrorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/time';
 
@@ -150,6 +151,8 @@ function MembersList({
             : null
         }
       />
+
+      <SettlementLink apartmentId={apartmentId} />
 
       <View className="gap-3">
         {current.map((member) => (
