@@ -1,5 +1,5 @@
-import type { UseQueryResult } from '@tanstack/react-query';
-import { PressableFeedback, Skeleton, Typography } from 'heroui-native';
+import type { UseInfiniteQueryResult, UseQueryResult } from '@tanstack/react-query';
+import { Button, PressableFeedback, Skeleton, Spinner, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
 import { useIsOnline } from '@/lib/network';
@@ -82,4 +82,40 @@ export function loadingError(
   ...queries: Pick<UseQueryResult, 'isLoadingError' | 'error'>[]
 ): unknown {
   return queries.find((query) => query.isLoadingError)?.error ?? null;
+}
+
+/**
+ * The end of a paged list: more loading, a retry when that failed, or,
+ * offline, that the rest loads later, so the list does not look complete.
+ */
+export function MorePagesFooter({
+  pages,
+  noun,
+}: {
+  pages: Pick<
+    UseInfiniteQueryResult,
+    'hasNextPage' | 'isFetchingNextPage' | 'isFetchNextPageError' | 'fetchNextPage'
+  >;
+  /** What the list holds, such as "expenses". */
+  noun: string;
+}) {
+  const isOnline = useIsOnline();
+  if (!isOnline && pages.hasNextPage) {
+    return (
+      <Typography.Paragraph type="body-sm" color="muted" className="text-center">
+        {`More ${noun} load when you're back online.`}
+      </Typography.Paragraph>
+    );
+  }
+  if (pages.isFetchingNextPage) {
+    return <Spinner accessibilityLabel={`Loading more ${noun}`} className="self-center" />;
+  }
+  if (pages.isFetchNextPageError) {
+    return (
+      <Button variant="secondary" onPress={() => void pages.fetchNextPage()}>
+        Could not load more. Try again
+      </Button>
+    );
+  }
+  return null;
 }
