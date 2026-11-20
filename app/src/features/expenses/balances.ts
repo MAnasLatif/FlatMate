@@ -72,20 +72,27 @@ const NO_AMOUNTS = { finalMinor: 0, provisionalMinor: 0, disputedMinor: 0 };
  * The user's position with one person, by the same rule as the dashboard:
  * final and provisional amounts are payable, disputed amounts are held. No
  * balance means nothing between them.
+ *
+ * One direction can come out below zero: a payment still counts while the
+ * charge it paid is held by a dispute, so the payer has paid more than is
+ * payable. That surplus is owed back, so it moves to the other direction.
+ * The net is unchanged.
  */
 export function pairPosition(balance: PairBalance | undefined): PairPosition {
   const owe = balance?.owe ?? NO_AMOUNTS;
   const owed = balance?.owed ?? NO_AMOUNTS;
-  const oweMinor = owe.finalMinor + owe.provisionalMinor;
-  const owedMinor = owed.finalMinor + owed.provisionalMinor;
+  const rawOwe = owe.finalMinor + owe.provisionalMinor;
+  const rawOwed = owed.finalMinor + owed.provisionalMinor;
+  const oweMinor = Math.max(rawOwe, 0) + Math.max(-rawOwed, 0);
+  const owedMinor = Math.max(rawOwed, 0) + Math.max(-rawOwe, 0);
   return {
     oweMinor,
     owedMinor,
     netMinor: owedMinor - oweMinor,
     // Offsets are final, so a square pair can still have provisional amounts that cancel out.
     isProvisional:
-      (oweMinor !== 0 && owe.provisionalMinor !== 0) ||
-      (owedMinor !== 0 && owed.provisionalMinor !== 0),
+      (rawOwe !== 0 && owe.provisionalMinor !== 0) ||
+      (rawOwed !== 0 && owed.provisionalMinor !== 0),
     heldOweMinor: owe.disputedMinor,
     heldOwedMinor: owed.disputedMinor,
   };
