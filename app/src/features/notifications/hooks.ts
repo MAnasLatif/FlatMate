@@ -5,14 +5,9 @@ import { useCallback, useEffect, useRef } from 'react';
 
 import { useCurrentUserId } from '@/features/auth/session-provider';
 
-import {
-  fetchNotificationTarget,
-  fetchUnreadNotifications,
-  markNotificationsRead,
-  registerPushToken,
-} from './api';
+import { fetchNotificationTarget, fetchUnreadNotifications, markNotificationsRead } from './api';
 import { notificationHref } from './href';
-import { getPushToken, notificationIdOf, pushPlatform, rememberRegisteredToken } from './push';
+import { notificationIdOf, registerThisDevice } from './push';
 import type { UnreadMatch, UnreadNotification } from './unread';
 
 export const notificationKeys = {
@@ -93,24 +88,15 @@ export function useMarkSeen(match: UnreadMatch | null): void {
  */
 export function usePushRegistration(userId: string): void {
   useEffect(() => {
-    let active = true;
-    const register = async (token: string | null) => {
-      if (!active || !token) return;
-      await registerPushToken(token, pushPlatform());
-      rememberRegisteredToken(token);
-    };
-    getPushToken()
-      .then(register)
-      .catch(() => console.warn('Push notifications are not available on this device.'));
-    const subscription = Notifications.addPushTokenListener(() => {
-      getPushToken()
-        .then(register)
-        .catch(() => console.warn('Could not register the new push token.'));
+    registerThisDevice().catch(() =>
+      console.warn('Push notifications are not available on this device.'),
+    );
+    const subscription = Notifications.addPushTokenListener((devicePushToken) => {
+      registerThisDevice(devicePushToken).catch(() =>
+        console.warn('Could not register the new push token.'),
+      );
     });
-    return () => {
-      active = false;
-      subscription.remove();
-    };
+    return () => subscription.remove();
   }, [userId]);
 }
 
