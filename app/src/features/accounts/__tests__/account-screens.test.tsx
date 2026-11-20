@@ -271,8 +271,9 @@ describe('EditAccount', () => {
     await renderWithProviders(<EditAccount accountId="acc-1" />);
     const user = userEvent.setup();
 
-    await screen.findByText('Flat 4B');
-    await user.press(screen.getAllByRole('switch')[0]);
+    const flat = await screen.findByRole('switch', { name: 'Flat 4B' });
+    expect(flat).toBeChecked();
+    await user.press(flat);
     await user.press(screen.getByRole('button', { name: 'Save account' }));
 
     expect(updateAccount).toHaveBeenCalledWith(

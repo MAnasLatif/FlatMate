@@ -1,16 +1,8 @@
-import {
-  Card,
-  ControlField,
-  Description,
-  FieldError,
-  Input,
-  Label,
-  TextArea,
-  TextField,
-} from 'heroui-native';
+import { Card, Description, FieldError, Input, Label, TextArea, TextField } from 'heroui-native';
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { View } from 'react-native';
 
+import { SwitchRow } from '@/components/form/switch-row';
 import { ChoiceChips } from '@/components/choice-chips';
 import { DateField } from '@/components/form/date-field';
 import type { Category, Member } from '@/features/apartments/api';
@@ -190,19 +182,12 @@ function PaidSection({
             </Description>
           )
         ) : (
-          <ControlField
+          <SwitchRow
+            label="Already paid"
+            description="Turn off for a bill that someone still has to pay, such as electricity. It creates no debts until a flatmate pays it."
             isSelected={draft.paidNow}
             onSelectedChange={(paidNow) => update({ paidNow })}
-          >
-            <View className="flex-1">
-              <Label>Already paid</Label>
-              <Description>
-                Turn off for a bill that someone still has to pay, such as electricity. It creates
-                no debts until a flatmate pays it.
-              </Description>
-            </View>
-            <ControlField.Indicator />
-          </ControlField>
+          />
         )}
 
         {draft.paidNow ? (

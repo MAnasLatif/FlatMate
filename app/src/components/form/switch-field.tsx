@@ -1,6 +1,6 @@
-import { ControlField, Description, Label } from 'heroui-native';
-import { View } from 'react-native';
 import { type Control, type FieldPath, type FieldValues, useController } from 'react-hook-form';
+
+import { SwitchRow } from './switch-row';
 
 type SwitchFieldProps<TFieldValues extends FieldValues, TTransformed> = {
   control: Control<TFieldValues, unknown, TTransformed>;
@@ -19,12 +19,11 @@ export function SwitchField<TFieldValues extends FieldValues, TTransformed>({
   const { field } = useController({ control, name });
 
   return (
-    <ControlField isSelected={field.value === true} onSelectedChange={field.onChange}>
-      <View className="flex-1">
-        <Label>{label}</Label>
-        {description ? <Description>{description}</Description> : null}
-      </View>
-      <ControlField.Indicator />
-    </ControlField>
+    <SwitchRow
+      label={label}
+      description={description}
+      isSelected={field.value === true}
+      onSelectedChange={field.onChange}
+    />
   );
 }

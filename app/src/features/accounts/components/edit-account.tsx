@@ -1,17 +1,8 @@
 import { router } from 'expo-router';
-import {
-  Button,
-  Card,
-  ControlField,
-  FieldError,
-  Input,
-  Label,
-  TextField,
-  Typography,
-} from 'heroui-native';
+import { Button, Card, FieldError, Input, Label, TextField, Typography } from 'heroui-native';
 import { useMemo, useState } from 'react';
-import { View } from 'react-native';
 
+import { SwitchRow } from '@/components/form/switch-row';
 import { ChoiceChips } from '@/components/choice-chips';
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
@@ -177,8 +168,9 @@ function AccountForm({
             </Typography.Paragraph>
           ) : (
             apartments.map(({ apartment }) => (
-              <ControlField
+              <SwitchRow
                 key={apartment.id}
+                label={apartment.name}
                 isSelected={sharedWith.includes(apartment.id)}
                 onSelectedChange={(selected) =>
                   setSharedWith((current) =>
@@ -187,12 +179,7 @@ function AccountForm({
                       : current.filter((id) => id !== apartment.id),
                   )
                 }
-              >
-                <View className="flex-1">
-                  <Label>{apartment.name}</Label>
-                </View>
-                <ControlField.Indicator />
-              </ControlField>
+              />
             ))
           )}
         </Card.Body>
