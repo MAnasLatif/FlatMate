@@ -3,6 +3,7 @@ import { Button, Card, PressableFeedback, Separator, Spinner, Typography } from 
 import { type ReactNode, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 
+import { FreshnessBanner } from '@/components/freshness-banner';
 import { LoadError, LoadingRows, PendingSkeleton } from '@/components/query-states';
 import { StatusChip } from '@/components/status-chip';
 import { userErrorMessage } from '@/lib/errors';
@@ -68,6 +69,7 @@ export function PairLedger({
       )}
       ListHeaderComponent={
         <View className="gap-4 pb-1">
+          <FreshnessBanner freshness={expenses} />
           <PairSummary
             apartmentId={apartmentId}
             counterpartyId={counterpartyId}

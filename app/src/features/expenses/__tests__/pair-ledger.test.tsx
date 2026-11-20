@@ -1,4 +1,5 @@
-import { screen, userEvent } from '@testing-library/react-native';
+import { onlineManager } from '@tanstack/react-query';
+import { act, screen, userEvent } from '@testing-library/react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import {
@@ -120,6 +121,21 @@ describe('PairLedger', () => {
       screen.getByText('Held by open disputes and not counted above: Rs 66.66 to you.'),
     ).toBeOnTheScreen();
     expect(await screen.findByText('No expenses between you and Ajmal yet.')).toBeOnTheScreen();
+  });
+
+  it('says when it is offline and showing what was saved', async () => {
+    await renderWithProviders(
+      <PairLedger apartmentId={APARTMENT} counterpartyId={ZUBAIR} name="Zubair" currency="PKR" />,
+    );
+    expect(await screen.findByText('You owe Zubair Rs 83.33')).toBeOnTheScreen();
+
+    await act(async () => onlineManager.setOnline(false));
+
+    expect(
+      screen.getByText(/^You're offline\. Last updated .+\. Saving needs a connection\.$/),
+    ).toBeOnTheScreen();
+    expect(screen.getByText('You owe Zubair Rs 83.33')).toBeOnTheScreen();
+    await act(async () => onlineManager.setOnline(true));
   });
 });
 
