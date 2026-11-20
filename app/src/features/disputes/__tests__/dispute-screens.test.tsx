@@ -1,5 +1,5 @@
-import { screen, userEvent } from '@testing-library/react-native';
-import { router } from 'expo-router';
+import { screen, userEvent, waitFor } from '@testing-library/react-native';
+import { Redirect, router } from 'expo-router';
 import { Alert } from 'react-native';
 
 import { fetchMembers, type Member } from '@/features/apartments/api';
@@ -29,6 +29,7 @@ let mockCurrentUser = ANAS;
 jest.mock('@/lib/supabase', () => ({ supabase: {} }));
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
+  Redirect: jest.fn(() => null),
   useLocalSearchParams: jest.fn(),
 }));
 jest.mock('@/features/auth/session-provider', () => ({ useCurrentUserId: () => mockCurrentUser }));
@@ -173,6 +174,41 @@ describe('RaiseDispute', () => {
       pathname: '/apartments/[apartmentId]/disputes/[disputeId]',
       params: { apartmentId: APARTMENT, disputeId: DISPUTE },
     });
+  });
+
+  it('opens the new dispute even when the refreshed list already shows it', async () => {
+    // Saving refreshes the expense's disputes before the form hears back, so
+    // the list holds the user's own dispute by the time the save finishes.
+    jest.mocked(raiseDispute).mockImplementation(async () => {
+      jest.mocked(fetchExpenseDisputes).mockResolvedValue([{ ...dispute, kind: 'decline' }]);
+      return DISPUTE;
+    });
+    await renderWithProviders(<RaiseDispute apartmentId={APARTMENT} expenseId={EXPENSE} />);
+    const user = userEvent.setup();
+
+    await user.type(await screen.findByLabelText('Why you object'), 'I was travelling');
+    await user.press(screen.getByRole('button', { name: 'Raise dispute' }));
+
+    await waitFor(() =>
+      expect(Redirect).toHaveBeenCalledWith(
+        {
+          href: {
+            pathname: '/apartments/[apartmentId]/disputes/[disputeId]',
+            params: { apartmentId: APARTMENT, disputeId: DISPUTE },
+          },
+        },
+        undefined,
+      ),
+    );
+    expect(screen.queryByText(/already disputing/)).not.toBeOnTheScreen();
+  });
+
+  it('warns when someone else is already disputing the expense', async () => {
+    jest.mocked(fetchExpenseDisputes).mockResolvedValue([{ ...dispute, raisedBy: AJMAL }]);
+    await renderWithProviders(<RaiseDispute apartmentId={APARTMENT} expenseId={EXPENSE} />);
+
+    expect(await screen.findByText(/already disputing/)).toBeOnTheScreen();
+    expect(Redirect).not.toHaveBeenCalled();
   });
 
   it('previews the split a proposed share would produce', async () => {
