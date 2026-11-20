@@ -1,6 +1,7 @@
 import { Card, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
+import { LoadError } from '@/components/query-states';
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
 import { userErrorMessage } from '@/lib/errors';
@@ -16,6 +17,15 @@ export function MyJoinRequests() {
   const requests = useMyJoinRequests();
   const cancel = useCancelJoinRequest();
 
+  // A failed load says so instead of looking like there is nothing to show.
+  if (requests.isLoadingError) {
+    return (
+      <LoadError
+        message="Could not load your requests to join."
+        onRetry={() => void requests.refetch()}
+      />
+    );
+  }
   if (!requests.data || requests.data.length === 0) return null;
 
   return (

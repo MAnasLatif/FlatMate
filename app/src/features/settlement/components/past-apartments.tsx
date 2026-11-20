@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { Button, Card, Separator, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
+import { LoadError } from '@/components/query-states';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { useDisplayNames } from '@/features/profile/hooks';
 import { formatDate } from '@/lib/time';
@@ -22,6 +23,15 @@ export function PastApartments() {
   ];
   const names = useDisplayNames(ids);
 
+  // A failed load says so instead of looking like there is nothing to show.
+  if (exits.isLoadingError) {
+    return (
+      <LoadError
+        message="Could not load your past apartments."
+        onRetry={() => void exits.refetch()}
+      />
+    );
+  }
   if (!exits.data || exits.data.length === 0) return null;
   const nameOf = (id: string) => names.data?.[id] ?? 'A former flatmate';
 

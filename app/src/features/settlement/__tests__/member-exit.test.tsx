@@ -128,6 +128,13 @@ describe('PastApartments', () => {
       params: { apartmentId: APARTMENT },
     });
   });
+
+  it('says when past apartments could not be loaded instead of showing nothing', async () => {
+    jest.mocked(fetchMyExits).mockRejectedValue(new Error('server down'));
+    await renderWithProviders(<PastApartments />);
+
+    expect(await screen.findByText('Could not load your past apartments.')).toBeOnTheScreen();
+  });
 });
 
 describe('names for a former member', () => {

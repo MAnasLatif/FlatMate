@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { Card, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
+import { LoadError } from '@/components/query-states';
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
 import { userErrorMessage } from '@/lib/errors';
@@ -19,6 +20,15 @@ export function MyRejoinInvites() {
   const invites = useMyRejoinInvites();
   const answer = useAnswerRejoinInvite();
 
+  // A failed load says so instead of looking like there is nothing to show.
+  if (invites.isLoadingError) {
+    return (
+      <LoadError
+        message="Could not load your invitations to come back."
+        onRetry={() => void invites.refetch()}
+      />
+    );
+  }
   if (!invites.data || invites.data.length === 0) return null;
 
   return (
