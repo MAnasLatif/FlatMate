@@ -86,6 +86,17 @@ export function useMyMembership(apartmentId: string): Member | undefined {
   return members.data?.find((member) => member.userId === userId && member.leftAt === null);
 }
 
+/**
+ * Whether the user has left the apartment or been removed from it. False
+ * until the members have been fetched since the screen opened, so nothing is
+ * taken away on a guess or on a saved copy from before they rejoined.
+ */
+export function useIsFormerMember(apartmentId: string): boolean {
+  const members = useMembers(apartmentId);
+  const membership = useMyMembership(apartmentId);
+  return members.isFetchedAfterMount && membership === undefined;
+}
+
 export function useCreateApartment() {
   const queryClient = useQueryClient();
   const userId = useCurrentUserId();

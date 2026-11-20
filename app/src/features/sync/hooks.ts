@@ -1,7 +1,7 @@
 import { type QueryClient, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
-import { useMembers, useMyMembership } from '@/features/apartments/hooks';
+import { useIsFormerMember } from '@/features/apartments/hooks';
 import { expenseKeys } from '@/features/expenses/hooks';
 import { subscribeToTopic } from '@/lib/realtime-topic';
 
@@ -47,10 +47,8 @@ export function useUserChanges(userId: string): void {
  */
 export function useApartmentChanges(apartmentId: string): void {
   const queryClient = useQueryClient();
-  const members = useMembers(apartmentId);
-  const membership = useMyMembership(apartmentId);
   // Until the members load, assume membership: the server refuses the topic otherwise.
-  const isActiveMember = members.data === undefined || membership !== undefined;
+  const isActiveMember = !useIsFormerMember(apartmentId);
 
   useEffect(() => {
     if (!isActiveMember) return;

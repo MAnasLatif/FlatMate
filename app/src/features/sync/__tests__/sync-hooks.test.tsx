@@ -3,6 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import { fetchMembers, type Member } from '@/features/apartments/api';
+import { useIsFormerMember } from '@/features/apartments/hooks';
 import { subscribeToTopic, type TopicHandlers } from '@/lib/realtime-topic';
 
 import { useApartmentChanges, useUserChanges } from '../hooks';
@@ -115,5 +116,34 @@ describe('useApartmentChanges', () => {
       expect(queryClient.getQueryData(['money', APARTMENT, 'expense', 'e-1'])).toBeUndefined(),
     );
     expect(subscriptions.has(`apartment:${APARTMENT}`)).toBe(false);
+  });
+});
+
+describe('useIsFormerMember', () => {
+  it('does not act on a saved copy from before the user rejoined', async () => {
+    const { queryClient, wrapper } = setup();
+    queryClient.setQueryData(
+      ['apartments', APARTMENT, 'members'],
+      [member('2026-11-14T00:00:00Z')],
+    );
+    const { result } = await renderHook(() => useIsFormerMember(APARTMENT), { wrapper });
+
+    expect(result.current).toBe(false);
+  });
+
+  it('says so once a fetch shows the user was removed', async () => {
+    const { wrapper } = setup();
+    jest.mocked(fetchMembers).mockResolvedValue([member('2026-11-14T00:00:00Z')]);
+    const { result } = await renderHook(() => useIsFormerMember(APARTMENT), { wrapper });
+
+    await waitFor(() => expect(result.current).toBe(true));
+  });
+
+  it('is false for a current member', async () => {
+    const { wrapper } = setup();
+    const { result } = await renderHook(() => useIsFormerMember(APARTMENT), { wrapper });
+
+    await waitFor(() => expect(fetchMembers).toHaveBeenCalled());
+    expect(result.current).toBe(false);
   });
 });
