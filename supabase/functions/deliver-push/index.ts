@@ -1,14 +1,23 @@
-// Delivers queued notifications as Expo push messages (task 1.43).
+// Delivers queued notifications as Expo push messages (task 1.43), and reads
+// their receipts about 15 minutes later (task 2.5.1).
 //
 // pg_cron calls this every few seconds while anything is due (see
-// private.request_push_delivery in the notifications migration). Every
-// decision lives in the database: who is told, the lock-screen text, retries
-// and dead tokens. This function only claims a batch, hands it to Expo, and
-// reports what Expo said. It logs counts, never content or tokens.
+// private.request_push_delivery). Every decision lives in the database: who
+// is told, the lock-screen text, retries, dead tokens and when a receipt is
+// due. This function only claims a batch, hands it to Expo, and reports what
+// Expo said. It logs counts and error codes, never content or tokens.
 
-import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.119.0';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+const EXPO_RECEIPTS_URL = 'https://exp.host/--/api/v2/push/getReceipts';
+/** Expo returns at most 1000 receipts per request. */
+const EXPO_RECEIPT_BATCH_SIZE = 1000;
+/**
+ * Receipt errors that mean every push fails until a maintainer fixes the
+ * credentials in EAS or Firebase (docs/NOTIFICATIONS.md, Troubleshooting).
+ */
+const CREDENTIAL_ERRORS = new Set(['InvalidCredentials', 'MismatchSenderId', 'InvalidProviderToken']);
 /** Expo accepts at most 100 messages per request. */
 const EXPO_BATCH_SIZE = 100;
 /** Batches per run; a busier queue continues on the next run. */
@@ -18,8 +27,16 @@ const EXPO_TIMEOUT_MS = 10_000;
 const ANDROID_CHANNEL_ID = 'default';
 
 type Claimed = { notification_id: string; token: string; body: string };
-type PushResult = { notification_id: string; token: string; ok: boolean; error?: string };
-type ExpoTicket = { status: 'ok' | 'error'; details?: { error?: string } };
+type PushResult = {
+  notification_id: string;
+  token: string;
+  ok: boolean;
+  error?: string;
+  ticket_id?: string;
+};
+type ExpoTicket = { status: 'ok' | 'error'; id?: string; details?: { error?: string } };
+type ExpoReceipt = { status: 'ok' | 'error'; details?: { error?: string } };
+type ReceiptResult = { ticket_id: string; status: 'ok' | 'error' | 'missing'; error?: string };
 
 /** Compares the delivery secret without leaking how much of it matched. */
 function secretMatches(given: string | null, expected: string): boolean {
@@ -48,8 +65,7 @@ function failAll(messages: Claimed[], error: string): PushResult[] {
   return messages.map((m) => ({ notification_id: m.notification_id, token: m.token, ok: false, error }));
 }
 
-/** Sends up to 100 messages and turns Expo's tickets into results, in order. */
-async function sendToExpo(messages: Claimed[]): Promise<PushResult[]> {
+function expoHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     accept: 'application/json',
     'content-type': 'application/json',
@@ -57,12 +73,51 @@ async function sendToExpo(messages: Claimed[]): Promise<PushResult[]> {
   // Set only when enhanced push security is turned on for the Expo project.
   const accessToken = Deno.env.get('EXPO_ACCESS_TOKEN');
   if (accessToken) headers.authorization = `Bearer ${accessToken}`;
+  return headers;
+}
 
+/**
+ * Asks Expo for up to 1000 receipts. An id Expo has no receipt for yet is
+ * missing, and so is every id when Expo cannot be reached: the database asks
+ * again later, and gives up after a day.
+ */
+async function fetchReceipts(ticketIds: string[]): Promise<ReceiptResult[]> {
+  const missing = (): ReceiptResult[] =>
+    ticketIds.map((ticket_id) => ({ ticket_id, status: 'missing' }));
+  let response: Response;
+  try {
+    response = await fetch(EXPO_RECEIPTS_URL, {
+      method: 'POST',
+      headers: expoHeaders(),
+      body: JSON.stringify({ ids: ticketIds }),
+      signal: AbortSignal.timeout(EXPO_TIMEOUT_MS),
+    });
+  } catch {
+    console.error(JSON.stringify({ event: 'receipts_unreachable' }));
+    return missing();
+  }
+  if (!response.ok) {
+    console.error(JSON.stringify({ event: 'receipts_failed', status: response.status }));
+    return missing();
+  }
+
+  const { data } = (await response.json()) as { data?: Record<string, ExpoReceipt> };
+  return ticketIds.map((ticket_id) => {
+    const receipt = data?.[ticket_id];
+    if (!receipt) return { ticket_id, status: 'missing' };
+    return receipt.status === 'ok'
+      ? { ticket_id, status: 'ok' }
+      : { ticket_id, status: 'error', error: receipt.details?.error ?? 'UnknownError' };
+  });
+}
+
+/** Sends up to 100 messages and turns Expo's tickets into results, in order. */
+async function sendToExpo(messages: Claimed[]): Promise<PushResult[]> {
   let response: Response;
   try {
     response = await fetch(EXPO_PUSH_URL, {
       method: 'POST',
-      headers,
+      headers: expoHeaders(),
       body: JSON.stringify(
         messages.map((m) => ({
           to: m.token,
@@ -88,7 +143,7 @@ async function sendToExpo(messages: Claimed[]): Promise<PushResult[]> {
   return messages.map((m, index) => {
     const ticket = data?.[index];
     return ticket?.status === 'ok'
-      ? { notification_id: m.notification_id, token: m.token, ok: true }
+      ? { notification_id: m.notification_id, token: m.token, ok: true, ticket_id: ticket.id }
       : {
           notification_id: m.notification_id,
           token: m.token,
@@ -96,6 +151,54 @@ async function sendToExpo(messages: Claimed[]): Promise<PushResult[]> {
           error: ticket?.details?.error ?? 'UnknownError',
         };
   });
+}
+
+/**
+ * Reads the receipts that are due, one batch per run. Returns how many were
+ * checked, or null when the database could not be reached. Errors are logged
+ * by code; credential errors as errors, since every push fails until a
+ * maintainer fixes them.
+ */
+async function checkReceipts(supabase: SupabaseClient): Promise<number | null> {
+  const { data, error } = await supabase.rpc('claim_push_receipts', {
+    p_limit: EXPO_RECEIPT_BATCH_SIZE,
+  });
+  if (error) {
+    console.error(JSON.stringify({ event: 'receipt_claim_failed', code: error.code }));
+    return null;
+  }
+  const ticketIds = ((data ?? []) as { ticket_id: string }[]).map((row) => row.ticket_id);
+  if (ticketIds.length === 0) return 0;
+
+  const results = await fetchReceipts(ticketIds);
+  const report = await supabase.rpc('report_push_receipts', { p_results: results });
+  if (report.error) {
+    // Unreported claims are taken again after five minutes.
+    console.error(JSON.stringify({ event: 'receipt_report_failed', code: report.error.code }));
+    return null;
+  }
+
+  const errors: Record<string, number> = {};
+  for (const result of results) {
+    if (result.status === 'error' && result.error) {
+      errors[result.error] = (errors[result.error] ?? 0) + 1;
+    }
+  }
+  const credentialErrors = Object.keys(errors).filter((code) => CREDENTIAL_ERRORS.has(code));
+  if (credentialErrors.length > 0) {
+    console.error(
+      JSON.stringify({ event: 'push_credentials_invalid', errors: credentialErrors }),
+    );
+  }
+  console.log(
+    JSON.stringify({
+      event: 'receipts_checked',
+      ok: results.filter((r) => r.status === 'ok').length,
+      missing: results.filter((r) => r.status === 'missing').length,
+      errors,
+    }),
+  );
+  return ticketIds.length;
 }
 
 Deno.serve(async (request) => {
@@ -144,5 +247,8 @@ Deno.serve(async (request) => {
   }
 
   console.log(JSON.stringify({ event: 'delivered', sent, failed }));
-  return Response.json({ sent, failed });
+
+  const receipts = await checkReceipts(supabase);
+  if (receipts === null) return new Response(null, { status: 500 });
+  return Response.json({ sent, failed, receipts });
 });
