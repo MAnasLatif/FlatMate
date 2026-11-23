@@ -43,6 +43,8 @@ const apartment: Apartment = {
   timezone: 'Asia/Karachi',
   settlement_day: 1,
   approval_days: 7,
+  due_reminder_days: 1,
+  settlement_reminder_days: 2,
   location: null,
   show_location: false,
   created_by: ME,

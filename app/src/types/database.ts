@@ -216,10 +216,12 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           currency: string;
+          due_reminder_days: number | null;
           id: string;
           location: string | null;
           name: string;
           settlement_day: number;
+          settlement_reminder_days: number | null;
           show_location: boolean;
           timezone: string;
           updated_at: string;
@@ -230,10 +232,12 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           currency?: string;
+          due_reminder_days?: number | null;
           id?: string;
           location?: string | null;
           name: string;
           settlement_day: number;
+          settlement_reminder_days?: number | null;
           show_location?: boolean;
           timezone?: string;
           updated_at?: string;
@@ -243,10 +247,12 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           currency?: string;
+          due_reminder_days?: number | null;
           id?: string;
           location?: string | null;
           name?: string;
           settlement_day?: number;
+          settlement_reminder_days?: number | null;
           show_location?: boolean;
           timezone?: string;
           updated_at?: string;
@@ -1046,6 +1052,33 @@ export type Database = {
           },
         ];
       };
+      notification_mutes: {
+        Row: {
+          category: string;
+          created_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          category: string;
+          created_at?: string;
+          user_id: string;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_mutes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       notifications: {
         Row: {
           actor_id: string | null;
@@ -1062,6 +1095,7 @@ export type Database = {
           read_at: string | null;
           record_id: string | null;
           record_type: string;
+          reminder_key: string | null;
           type: string;
           user_id: string;
         };
@@ -1081,6 +1115,7 @@ export type Database = {
           read_at?: string | null;
           record_id?: string | null;
           record_type: string;
+          reminder_key?: string | null;
           type: string;
           user_id: string;
         };
@@ -1099,6 +1134,7 @@ export type Database = {
           read_at?: string | null;
           record_id?: string | null;
           record_type?: string;
+          reminder_key?: string | null;
           type?: string;
           user_id?: string;
         };
@@ -2235,12 +2271,24 @@ export type Database = {
         Args: { p_apartment_id: string; p_role: string; p_user_id: string };
         Returns: undefined;
       };
+      set_notification_push: {
+        Args: { p_category: string; p_enabled: boolean };
+        Returns: undefined;
+      };
       set_recurring_template_paused: {
         Args: { p_paused: boolean; p_template_id: string };
         Returns: undefined;
       };
       skip_recurring_bill: { Args: { p_instance_id: string }; Returns: undefined };
       unregister_push_token: { Args: { p_token: string }; Returns: undefined };
+      update_apartment_reminders: {
+        Args: {
+          p_apartment_id: string;
+          p_due_reminder_days: number;
+          p_settlement_reminder_days: number;
+        };
+        Returns: undefined;
+      };
       update_apartment_settings: {
         Args: {
           p_apartment_id: string;
