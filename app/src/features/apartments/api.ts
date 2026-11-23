@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
 import type { Tables } from '@/types/database';
 
+import type { ReminderSchedule } from './reminders';
+
 export type Apartment = Tables<'apartments'>;
 export type MemberRole = 'admin' | 'member';
 
@@ -208,6 +210,20 @@ export async function updateApartmentSettings(
     p_timezone: input.timezone,
     p_settlement_day: input.settlementDay,
     p_approval_days: input.approvalDays,
+  });
+  if (error) throw error;
+}
+
+/** Sets how far ahead the apartment's reminders go out. Admins only; the server checks. */
+export async function updateApartmentReminders(
+  apartmentId: string,
+  schedule: ReminderSchedule,
+): Promise<void> {
+  const { error } = await supabase.rpc('update_apartment_reminders', {
+    p_apartment_id: apartmentId,
+    // Left out, a reminder is turned off.
+    p_due_reminder_days: schedule.dueReminderDays ?? undefined,
+    p_settlement_reminder_days: schedule.settlementReminderDays ?? undefined,
   });
   if (error) throw error;
 }
