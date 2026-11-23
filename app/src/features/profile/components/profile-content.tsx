@@ -13,6 +13,7 @@ import { Screen } from '@/components/screen';
 import { MyAccountsSection } from '@/features/accounts/components/my-accounts';
 import { displayNameSchema } from '@/features/auth/schemas';
 import { useCurrentUserId, useSession } from '@/features/auth/session-provider';
+import { PushSettingsSection } from '@/features/notifications/components/push-settings';
 import { ProfilePhoto } from '@/features/profile/components/profile-photo';
 import { useProfile, useUpdateDisplayName } from '@/features/profile/hooks';
 import { userErrorMessage } from '@/lib/errors';
@@ -79,6 +80,8 @@ export function ProfileContent() {
       <Button variant="secondary" onPress={() => router.push('/change-password')}>
         Change password
       </Button>
+      <Separator />
+      <PushSettingsSection />
       <Separator />
       <MyAccountsSection />
     </Screen>

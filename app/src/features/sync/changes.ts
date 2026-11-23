@@ -36,7 +36,13 @@ export const APARTMENT_CHANGE_KINDS = [
 ] as const;
 export type ApartmentChangeKind = (typeof APARTMENT_CHANGE_KINDS)[number];
 
-export const USER_CHANGE_KINDS = ['membership', 'profile', 'account', 'notification'] as const;
+export const USER_CHANGE_KINDS = [
+  'membership',
+  'profile',
+  'account',
+  'notification',
+  'notification_preference',
+] as const;
 export type UserChangeKind = (typeof USER_CHANGE_KINDS)[number];
 
 /** Everything shown about the people in an apartment: names, photos, roles. */
@@ -106,6 +112,8 @@ const userChanges: Record<UserChangeKind, (userId: string) => QueryKey[]> = {
   account: (userId) => [accountKeys.mine(userId)],
   // A new notification, or one read on another device.
   notification: (userId) => [notificationKeys.all(userId)],
+  // Push groups turned on or off on another device.
+  notification_preference: (userId) => [notificationKeys.pushPreferences(userId)],
 };
 
 function isApartmentKind(kind: string | null): kind is ApartmentChangeKind {

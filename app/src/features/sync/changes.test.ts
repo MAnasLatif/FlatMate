@@ -76,6 +76,7 @@ describe('user change events', () => {
       'account',
       'membership',
       'notification',
+      'notification_preference',
       'profile',
     ]);
   });
@@ -90,6 +91,12 @@ describe('user change events', () => {
   it('refreshes the user own profile and accounts', () => {
     expect(keysForUserChange('profile', userId)).toEqual([['profile', userId]]);
     expect(keysForUserChange('account', userId)).toEqual([['accounts', 'mine', userId]]);
+  });
+
+  it('refreshes the push preferences changed on another device', () => {
+    expect(keysForUserChange('notification_preference', userId)).toEqual([
+      ['notification-preferences', userId],
+    ]);
   });
 
   it('refreshes everything about the user for a kind it does not know', () => {
