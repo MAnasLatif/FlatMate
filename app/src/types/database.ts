@@ -1508,6 +1508,51 @@ export type Database = {
         };
         Relationships: [];
       };
+      push_tickets: {
+        Row: {
+          check_after: string;
+          checked_at: string | null;
+          claimed_at: string | null;
+          created_at: string;
+          error: string | null;
+          notification_id: string;
+          status: string;
+          ticket_id: string;
+          token: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          check_after?: string;
+          checked_at?: string | null;
+          claimed_at?: string | null;
+          created_at?: string;
+          error?: string | null;
+          notification_id: string;
+          status?: string;
+          ticket_id: string;
+          token: string;
+        };
+        Update: {
+          check_after?: string;
+          checked_at?: string | null;
+          claimed_at?: string | null;
+          created_at?: string;
+          error?: string | null;
+          notification_id?: string;
+          status?: string;
+          ticket_id?: string;
+          token?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'push_tickets_notification_id_fkey';
+            columns: ['notification_id'];
+            isOneToOne: false;
+            referencedRelation: 'notifications';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       push_tokens: {
         Row: {
           created_at: string;
@@ -1985,6 +2030,12 @@ export type Database = {
       cancel_join_request: { Args: { p_request_id: string }; Returns: undefined };
       cancel_rejoin_invite: { Args: { p_invite_id: string }; Returns: undefined };
       change_join_code: { Args: { p_apartment_id: string }; Returns: string };
+      claim_push_receipts: {
+        Args: { p_limit?: number };
+        Returns: {
+          ticket_id: string;
+        }[];
+      };
       claim_pushes: {
         Args: { p_limit?: number };
         Returns: {
@@ -2249,6 +2300,7 @@ export type Database = {
       register_push_token: { Args: { p_platform: string; p_token: string }; Returns: undefined };
       remove_member: { Args: { p_apartment_id: string; p_user_id: string }; Returns: undefined };
       rename_category: { Args: { p_category_id: string; p_name: string }; Returns: undefined };
+      report_push_receipts: { Args: { p_results: Json }; Returns: undefined };
       report_pushes: { Args: { p_results: Json }; Returns: undefined };
       respond_to_dispute: {
         Args: { p_accept: boolean; p_dispute_id: string; p_message?: string };
