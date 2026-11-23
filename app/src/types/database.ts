@@ -2110,6 +2110,14 @@ export type Database = {
           user_id: string;
         }[];
       };
+      get_monthly_spending: {
+        Args: { p_apartment_id: string; p_months?: number };
+        Returns: {
+          month: string;
+          my_share_minor: number;
+          total_minor: number;
+        }[];
+      };
       get_my_balances: {
         Args: { p_apartment_id: string };
         Returns: {
@@ -2307,6 +2315,47 @@ export type Database = {
         Returns: undefined;
       };
       revoke_invite: { Args: { p_invite_id: string }; Returns: undefined };
+      search_expenses: {
+        Args: {
+          p_apartment_id: string;
+          p_category_id?: string;
+          p_from: string;
+          p_max_minor?: number;
+          p_member_id?: string;
+          p_min_minor?: number;
+          p_query?: string;
+          p_status?: string;
+          p_to: string;
+        };
+        Returns: {
+          amount_minor: number;
+          apartment_id: string;
+          category_detail: string | null;
+          category_id: string | null;
+          client_request_id: string | null;
+          collector_id: string | null;
+          created_at: string;
+          created_by: string;
+          currency: string;
+          description: string | null;
+          due_date: string | null;
+          expense_date: string;
+          finalize_after: string;
+          finalized_at: string | null;
+          id: string;
+          paid_status: string;
+          revision: number;
+          status: string;
+          title: string;
+          updated_at: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'expenses';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       set_bill_collector: {
         Args: { p_collector_id: string; p_expense_id: string };
         Returns: undefined;
