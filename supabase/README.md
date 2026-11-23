@@ -25,7 +25,7 @@ The database is where FlatMate's rules are enforced. The mobile app is an untrus
 - **Authorization** is done with row-level security on every table that holds apartment data, checking membership and role.
 - **Financial operations** (posting an expense, recording or reversing a payment, resolving a dispute, closing a settlement) are transactional Postgres functions, so they either complete fully or not at all.
 - **Money arithmetic** (split validation, rounding, allocation sums) is checked on the server, using integer minor units.
-- **Scheduled work** (objection-window deadlines, settlement periods and repeatable charges today; reminders later) runs as pg_cron jobs calling `private` functions. It is idempotent and uses each apartment's timezone.
+- **Scheduled work** (objection-window deadlines, settlement periods, repeatable charges and reminders) runs as pg_cron jobs calling `private` functions. It is idempotent and uses each apartment's timezone.
 - **Change events.** The app is event-driven ([decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md)): every write that changes data another member, or the same user on another device, can see must send a change event. Apartment changes do it by writing an `audit_events` row in the same transaction, which a trigger turns into an event; a table clients write directly needs its own trigger calling `private.emit_change`. `tests/database/change_event_coverage_test.sql` fails when a function writes data without recording it or sending an event, or a table clients write has no event trigger; its allow-list names the few exceptions and why.
 
 The proposed data model is in [section 6 of the SRS](../docs/SRS.md#6-supabase-data-architecture-proposed).
@@ -55,6 +55,8 @@ In every hosted project, turn off **Allow public access** under Realtime setting
 ## Notifications
 
 A trigger on `audit_events` creates one `notifications` row per person to tell (`private.notification_recipients`), and pg_cron calls the `deliver-push` Edge Function in `functions/` while pushes are due. The function needs the `PUSH_DELIVERY_SECRET` secret, and the database needs the Vault secrets `project_url` and `push_delivery_secret`; until both are set nothing is pushed, and the app's unread dots still work. Setup, local and hosted, and troubleshooting: [docs/NOTIFICATIONS.md](../docs/NOTIFICATIONS.md). Tests: `tests/database/notifications_test.sql`.
+
+Reminders are written straight to `notifications`, without an audit event: every 15 minutes the `send-reminders` cron job calls `private.send_due_reminders`, which reminds an unpaid bill's collector (or the admins) before its due date and on the day, and members who owe before the settlement day, from 09:00 in the apartment's timezone. Each reminder has a `reminder_key`, unique per person, so it is sent once however often the job runs. Admins set the lead times with `update_apartment_reminders` (`apartments.due_reminder_days`, `settlement_reminder_days`). People turn push off by group with `set_notification_push` (`notification_mutes`); `claim_pushes` then skips those pushes as `muted` ([decision 0012](../docs/decisions/0012-reminders-and-push-preferences.md)). Tests: `tests/database/reminders_test.sql`, `tests/database/notification_preferences_test.sql`.
 
 ## Join codes
 

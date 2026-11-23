@@ -76,7 +76,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 
 ### FR-01 Authentication and Profiles
 - FR-01.1 Email/password signup/login and Google OAuth; session persistence and sign-out (confirmed first). Sign-up, password reset and email change are confirmed with 6-digit codes sent by email. Changing email needs a code from both the current and the new address. The password is changed in its own screen.
-- FR-01.2 Profile name, optional photo, account identity, notification preferences. The name saves itself shortly after typing stops, when the field is left, and when the screen closes; tapping the photo adds, changes or removes it.
+- FR-01.2 Profile name, optional photo, account identity, notification preferences (push turned on or off by group, for every apartment). The name saves itself shortly after typing stops, when the field is left, and when the screen closes; tapping the photo adds, changes or removes it.
 - FR-01.3 Each user may register multiple **receiving** accounts (bank name/provider, account title, account number/IBAN or wallet identifier, preferred flag, visibility). Copy details when authorized. Never request banking passwords, PINs or OTPs.
 - FR-01.4 Account visibility defaults to private; only explicitly shared receiving accounts are visible to other eligible apartment members. The owner sees their accounts with the full number, in a list that opens each account's details (with Edit and Delete, Make preferred, and the payments made into it); swiping a row right edits it and left asks to delete it.
 
@@ -143,7 +143,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 
 ### FR-09 Notifications
 - FR-09.1 Notify for expense creation/edits, variable bill prompts, due dates, payment marked, payment decline, disputes, invitations, membership changes and settlement summaries.
-- FR-09.2 Configurable reminder schedule and user notification preferences; avoid excessive duplicate reminders.
+- FR-09.2 Configurable reminder schedule and user notification preferences; avoid excessive duplicate reminders. An unpaid bill with a due date reminds its collector, or the admins when nobody is named, before the due date and on the day; members who owe are reminded before the settlement day. Admins set both lead times per apartment ([decision 0012](decisions/0012-reminders-and-push-preferences.md)).
 - FR-09.3 Notifications open the corresponding in-app record; permissions are checked again on open.
 - FR-09.4 Scheduled jobs must be timezone-aware per apartment and retry-safe.
 
@@ -295,7 +295,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ## 12. Product Decisions
 
-Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, and item 19 on 2026-11-17. Item 10 is still open, and part of item 11.
+Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, item 19 on 2026-11-17, and item 20 on 2026-11-24. Item 10 is still open, and part of item 11.
 
 1. **Explicit approval mode — decided.** Not part of the MVP. Every expense is accepted automatically, and affected members object within the window (FR-05). An optional approval mode (FR-03.8) may be reconsidered after release.
 2. **What a dispute holds — decided.** A dispute holds every share of the disputed expense until it is resolved, so settlement never sees inconsistent totals. Other expenses stay payable.
@@ -316,6 +316,7 @@ Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 1
 17. **Payments name the account they went into — decided.** Optional when recording a payment; the payment keeps a snapshot of the account so history survives edits and deletion (FR-07.3).
 18. **Repeatable bills are not categories — decided.** Rent, utilities and internet are set up as repeatable expenses, so new apartments no longer start with those categories and existing apartments archive them; expenses filed under them keep their category. A repeatable expense repeats daily, weekly, every 2 weeks, monthly, every 3 months or yearly (FR-04.2).
 19. **One join code per apartment — decided.** Each apartment has one join code at a time. It does not expire, and admins can see it, copy, share or email it, and change it, which stops the old one. Only admins can read it; joining matches on its hash. See decision record 0011.
+20. **Reminders and push preferences — decided.** A bill's due-date reminder goes to its collector, or to the admins when nobody is named; the settlement reminder goes to members who owe someone, not counting disputed amounts. Admins set both schedules per apartment. Each person turns push off by group for every apartment, and the red dots stay (FR-09.2, decision record 0012).
 
 
 ## 13. Suggested First Implementation Tasks

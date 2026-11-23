@@ -2,7 +2,7 @@
 
 Everything that remains to take FlatMate from its current state to a released app, in the order it should be done. It is derived from the [SRS](SRS.md): every functional requirement (FR) and acceptance criterion (AC) is covered by a task below.
 
-Last reviewed: 2026-11-20.
+Last reviewed: 2026-11-24.
 
 ## How to use this list
 
@@ -25,7 +25,7 @@ Done:
 
 - [x] Backend initialized: Supabase CLI 3.1.0 local stack, a pgTAP test that every public table has row-level security, and generated database types in the app.
 
-Phase 1 is built, apart from Google sign-in (1.4), the invite email key (1.11.2) and the rest of the sync check (1.42). Phase 2 has its repeatable expenses (2.1 to 2.4.1), also on the hosted project; the rest of the phase is still to do. The website (`web/`) is not started.
+Phase 1 is built, apart from Google sign-in (1.4), the invite email key (1.11.2) and the rest of the sync check (1.42). Phase 2 has its repeatable expenses (2.1 to 2.4.1), also on the hosted project, and reminders with notification preferences (2.5), still to reach the hosted project (2.5.2); the rest of the phase is still to do. The website (`web/`) is not started.
 
 ## Decisions
 
@@ -52,6 +52,7 @@ These come from section 12 of the SRS, where each decision is written out in ful
 | D17 | Payments name the account they went into | Decided: optional, kept as a snapshot | 1.43.6 |
 | D18 | Repeatable bills are not categories | Decided: Rent, Utilities and Internet are repeatable expenses, not default categories | 2.1 |
 | D19 | One join code per apartment | Decided: one code that does not expire until an admin changes it (decision 0011) | 2.4.1 |
+| D20 | Reminders and push preferences | Decided: collector (else admins) for due dates, members who owe for settlement, admin-set schedule per apartment, push turned off by group per person (decision 0012) | 2.5 |
 
 ## Phase 0: Foundation
 
@@ -161,7 +162,8 @@ These follow [decision 0007](decisions/0007-offline-reading-and-live-sync.md). T
 - [x] **2.3 Variable recurring bills.** On the expected day, prompt admins for the real amount, optional proof and due date. No charge exists until an admin enters it. *(FR-04.3, AC-05)*
 - [x] **2.4 Recurring screens.** In a fourth tab of the apartment's settings, "Repeatable expenses", after General settings, Manage members and Expense control, for admins only: add and manage templates, override the split for one month, and apply template changes to future months only. The Add (+) flow stays for one-time expenses. *(FR-04.1, FR-04.4, FR-04.5)* One month's split is overridden when entering a waiting bill, or by editing that month's charge.
 - [x] **2.4.1 This branch on the hosted project.** Push migrations `20261116120000`, `20261116120100`, `20261117090000`, `20261117100000` and `20261117110000` with `db push --remote` after a `--dry-run`, and deploy the updated `send-invite-email` function at the same time (it no longer expects `invite_id` or `valid_days`). Then, on a device: add a fixed and a variable repeatable expense and check the charge and the admin prompt; share, change and email the join code. The first migration archives Rent, Utilities and Internet in every existing apartment. *(Owner.)* The migrations and the function reached the hosted project on 2026-11-20. Checked the same day on an emulator against it: a fixed and a variable repeatable expense were added; the scheduled job charged the fixed one once and left the variable one waiting, with the admin prompt; entering its amount charged it. The join code copied, shared, and changed: the old code then returned `invalid_code`, and a request with the new one reached the admin live. Emailing it shows "Email invites are not set up yet" until the Resend secrets are set, which 1.11.2 covers.
-- [ ] **2.5 Reminders and notification preferences.** Due-date and settlement reminders on a configurable schedule, per-user preferences, and no duplicate reminders. *(FR-09.2, FR-09.4, FR-01.2)*
+- [x] **2.5 Reminders and notification preferences.** Due-date and settlement reminders on a configurable schedule, per-user preferences, and no duplicate reminders. *(FR-09.2, FR-09.4, FR-01.2)* Done on 2026-11-24 ([decision 0012](decisions/0012-reminders-and-push-preferences.md)): the `send-reminders` job reminds a bill's collector (or the admins) before its due date and on the day, and members who owe before the settlement day, from 09:00 in the apartment's timezone, once per person and reminder. Admins set both lead times in General settings; each person turns push off by group in their profile.
+- [ ] **2.5.2 Reminders on the hosted project.** Push migrations `20261124090000` and `20261124091000` with `db push --remote` after a `--dry-run`, then on a device: an unpaid bill due tomorrow with a collector pushes them a reminder after 09:00, and turning Reminders off in the profile stops the next one. *(Owner.)*
 - [ ] **2.5.1 Push receipts.** Store Expo's ticket ids and check their receipts about 15 minutes later, deleting tokens Expo reports as `DeviceNotRegistered` there and making credential errors (`InvalidCredentials`, `MismatchSenderId`) visible to maintainers. Expo says tickets alone do not confirm delivery. *(FR-09)*
 - [ ] **2.6 Search, filters and comparison.** Filter expenses by month, member, category, amount and status, and compare spending between months. *(FR-10.1)*
 - [ ] **2.7 PDF statements.** Monthly per-user statements and apartment reports with gross, net, outstanding, disputed and carried-forward amounts. *(FR-10.2, AC-14)*

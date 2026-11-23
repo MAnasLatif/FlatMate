@@ -9,6 +9,7 @@ flowchart LR
   RPC["A change, such as post_expense"] --> AUDIT[("audit_events")]
   AUDIT -->|trigger, same transaction| NOTIF[("notifications<br/>one row per person")]
   NOTIF -->|unread, RLS| APP["Red dots in the app"]
+  REMIND["pg_cron, every 15 min<br/>send-reminders"] -->|due dates, settlement| NOTIF
   CRON["pg_cron, every 10 s<br/>while anything is due"] -->|pg_net + delivery secret| FN["Edge Function<br/>deliver-push"]
   FN -->|claim_pushes / report_pushes| NOTIF
   FN -->|HTTPS| EXPO["Expo push service"]
@@ -18,6 +19,8 @@ flowchart LR
 - Every notifiable change already writes an `audit_events` row. A trigger turns it into one `notifications` row per person to tell, in the same transaction, never including whoever made the change. The rules are in `private.notification_recipients` in `supabase/migrations/20261114104853_add_notifications.sql`.
 - There is **no inbox**. The app reads the unread rows and puts a red dot on the place each one is about: an expense, the members icon, the Settlement entry on the members screen, or another apartment in the switcher. Opening that place marks them read ([decision 0008](decisions/0008-unread-dots-instead-of-an-inbox.md)). Each person can read only their own rows, and the dots update live through the user's change-event topic ([decision 0007](decisions/0007-offline-reading-and-live-sync.md)).
 - **Push** is a queue. While anything is due, pg_cron calls the `deliver-push` Edge Function, which claims a batch, sends it to Expo, and reports Expo's answer. Failed pushes are retried up to five times with growing delays, tokens of uninstalled apps are deleted, and pushes older than a day are skipped.
+- **Reminders** are not changes, so they have no audit event. The `send-reminders` job writes them straight to `notifications`: an unpaid bill's collector, or the admins when nobody is named, before its due date and on the day; and members who owe someone before the settlement day. Admins set how many days ahead in the apartment's General settings, and they go out from 09:00 in the apartment's timezone. A key per reminder and person means none is sent twice ([decision 0012](decisions/0012-reminders-and-push-preferences.md)).
+- **Preferences.** In their profile, each person turns push off by group (expenses, payments, disputes, members, reminders, settlement) for every apartment. The notification is still created, so the red dot stays; only the push is skipped.
 - **Push text is generic** ("An expense that includes you was added."), because it shows on lock screens. It never contains names, amounts or account details. The app, behind sign-in, shows the record itself.
 - **Opening a notification** loads it under the user's own access and then opens its record. That screen checks access again, so a record the user may no longer see shows as not available (FR-09.3).
 
@@ -172,7 +175,7 @@ from public.notifications order by created_at desc limit 20;
 | `pending` | Waiting for the next delivery run. Still pending after a minute: check the Vault secrets, `PUSH_DELIVERY_SECRET`, and that the function is deployed. |
 | `sent` | Expo accepted it for at least one of the person's devices. |
 | `failed` | Expo refused it. `push_error` holds the code, and it is retried up to five times. |
-| `skipped` | `no_device`: the person has no registered device or did not allow notifications. `expired`: it waited over a day. `DeviceNotRegistered`: the app was uninstalled, so the token was deleted. |
+| `skipped` | `no_device`: the person has no registered device or did not allow notifications. `muted`: the person turned this group off in their profile. `expired`: it waited over a day. `DeviceNotRegistered`: the app was uninstalled, so the token was deleted. |
 
 Common causes:
 
@@ -180,6 +183,7 @@ Common causes:
 - **`InvalidCredentials`.** The FCM key in EAS is missing or wrong. Upload it again (Part 1, step 4).
 - **`403 PERMISSION_DENIED`.** The API key in `google-services.json` is restricted in Google Cloud. Allow the Firebase Cloud Messaging and Firebase Installations APIs for it, or remove the restriction.
 - **`no_device` for someone with the app.** They refused the notification permission, or are using Expo Go. They can allow it again in Android's app settings and reopen the app.
+- **No reminder arrives.** Reminders go out from 09:00 in the apartment's timezone, only if the apartment has them on (`select due_reminder_days, settlement_reminder_days from public.apartments`) and only for bills still unpaid with a due date in the window. See what the job created with `select type, user_id, reminder_key, created_at from public.notifications where reminder_key is not null order by created_at desc limit 20;`.
 - **Notifications arrive but show nothing.** The app creates its Android channel when it registers. Reopen the app once after installing.
 
 ## iOS
