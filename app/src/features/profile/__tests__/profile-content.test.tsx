@@ -31,6 +31,10 @@ jest.mock('@/features/accounts/api', () => ({
   ...jest.requireActual('@/features/accounts/api'),
   fetchMyAccounts: jest.fn(),
 }));
+jest.mock('@/features/notifications/api', () => ({
+  ...jest.requireActual('@/features/notifications/api'),
+  fetchMutedPushCategories: jest.fn(async () => []),
+}));
 jest.mock('../api', () => ({
   ...jest.requireActual('../api'),
   fetchProfile: jest.fn(),

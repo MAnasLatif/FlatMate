@@ -1,6 +1,7 @@
 import { Card, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
+import { LoadError } from '@/components/query-states';
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
 import { ProfileAvatar } from '@/features/profile/components/profile-avatar';
@@ -22,6 +23,15 @@ export function JoinRequests({ apartmentId }: { apartmentId: string }) {
   const requests = useJoinRequests(apartmentId, true);
   const decide = useDecideJoinRequest(apartmentId);
 
+  // A failed load says so instead of looking like there is nothing to show.
+  if (requests.isLoadingError) {
+    return (
+      <LoadError
+        message="Could not load who is asking to join."
+        onRetry={() => void requests.refetch()}
+      />
+    );
+  }
   if (!requests.data || requests.data.length === 0) return null;
 
   return (

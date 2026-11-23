@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { Tabs } from 'expo-router/tabs';
 import { PressableFeedback, useThemeColor } from 'heroui-native';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 
 import {
@@ -11,7 +12,7 @@ import {
   tabTransition,
 } from '@/components/screen-transitions';
 import { ApartmentSwitcher } from '@/features/apartments/components/apartment-switcher';
-import { useApartmentId } from '@/features/apartments/hooks';
+import { useApartmentId, useIsFormerMember } from '@/features/apartments/hooks';
 import { UnreadBadge, withUnread } from '@/features/notifications/components/unread-dot';
 import { useUnreadCount } from '@/features/notifications/hooks';
 import { unreadMatches } from '@/features/notifications/unread';
@@ -26,6 +27,15 @@ export const unstable_settings = {
 export default function ApartmentTabsLayout() {
   const apartmentId = useApartmentId();
   const [accent, muted] = useThemeColor(['accent', 'muted']);
+  const isFormerMember = useIsFormerMember(apartmentId);
+
+  // Removed or gone while it was open: the expenses, Add and Members are no
+  // longer theirs, so show what is left to settle, as Past apartments does.
+  // Navigating from an effect leaves the tabs in place until they are replaced.
+  useEffect(() => {
+    if (!isFormerMember) return;
+    router.replace({ pathname: '/apartments/[apartmentId]/settlement', params: { apartmentId } });
+  }, [isFormerMember, apartmentId]);
 
   return (
     <Tabs

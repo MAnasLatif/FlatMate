@@ -82,6 +82,16 @@ describe('asking to join', () => {
 
     expect(screen.queryByText(/Waiting for an admin/)).not.toBeOnTheScreen();
   });
+
+  it('says when the requests could not be loaded, and tries again', async () => {
+    jest.mocked(fetchMyJoinRequests).mockRejectedValueOnce(new Error('server down'));
+    jest.mocked(fetchMyJoinRequests).mockResolvedValue([]);
+    await renderWithProviders(<MyJoinRequests />);
+    const user = userEvent.setup();
+
+    await user.press(await screen.findByText('Could not load your requests to join.'));
+    expect(fetchMyJoinRequests).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('answering requests', () => {
@@ -127,6 +137,15 @@ describe('answering requests', () => {
     expect(
       await screen.findByText('Another admin already answered this request.'),
     ).toBeOnTheScreen();
+  });
+});
+
+describe('who is asking to join', () => {
+  it('tells admins when the requests could not be loaded', async () => {
+    jest.mocked(fetchJoinRequests).mockRejectedValue(new Error('server down'));
+    await renderWithProviders(<JoinRequests apartmentId={FLAT} />);
+
+    expect(await screen.findByText('Could not load who is asking to join.')).toBeOnTheScreen();
   });
 });
 

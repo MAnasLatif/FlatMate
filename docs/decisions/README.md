@@ -31,3 +31,4 @@ Records are not edited after they are accepted, apart from their status. To chan
 | [0009](0009-former-members-hiding-and-inviting-back.md) | Former members: hiding and inviting back | Accepted |
 | [0010](0010-invite-emails.md) | Invites sent by email | Accepted |
 | [0011](0011-one-join-code-per-apartment.md) | One join code per apartment | Accepted |
+| [0012](0012-reminders-and-push-preferences.md) | Reminders and push preferences | Accepted |

@@ -1,15 +1,7 @@
-import {
-  Card,
-  ControlField,
-  Description,
-  FieldError,
-  Input,
-  Label,
-  Tabs,
-  TextField,
-} from 'heroui-native';
+import { Card, FieldError, Input, Tabs, TextField } from 'heroui-native';
 import { View } from 'react-native';
 
+import { SwitchRow } from '@/components/form/switch-row';
 import type { Member } from '@/features/apartments/api';
 
 import type { SplitInput } from '../draft';
@@ -69,7 +61,7 @@ export function SplitFields({
           <Tabs.List>
             <Tabs.Indicator />
             {methods.map((method) => (
-              <Tabs.Trigger key={method} value={method}>
+              <Tabs.Trigger key={method} value={method} className="min-h-12">
                 <Tabs.Label>{METHOD_LABELS[method]}</Tabs.Label>
               </Tabs.Trigger>
             ))}
@@ -84,22 +76,18 @@ export function SplitFields({
           const share = shareOf.get(member.userId);
           return (
             <View key={member.userId} className="gap-2">
-              <ControlField
+              <SwitchRow
+                label={label}
+                description={
+                  included
+                    ? share !== undefined
+                      ? `Share: ${formatMoney(share, currency)}`
+                      : 'Included'
+                    : 'Not included'
+                }
                 isSelected={included}
                 onSelectedChange={(selected) => toggle(member.userId, selected)}
-              >
-                <View className="flex-1">
-                  <Label>{label}</Label>
-                  <Description>
-                    {included
-                      ? share !== undefined
-                        ? `Share: ${formatMoney(share, currency)}`
-                        : 'Included'
-                      : 'Not included'}
-                  </Description>
-                </View>
-                <ControlField.Indicator />
-              </ControlField>
+              />
               {included && value.splitMethod === 'percentage' ? (
                 <TextField>
                   <Input

@@ -30,6 +30,10 @@ export function RecordPayment({
 }) {
   const detail = useExpenseDetail(apartmentId, expenseId);
   const members = useMembers(apartmentId);
+  // Held here, not in the form: saving refreshes the bill, which then reads as
+  // paid, and the check below must not swap the form out before it can go back.
+  const record = useRecordBillPayment(apartmentId, expenseId);
+  const isSaving = record.isPending || record.isSuccess;
 
   if (detail.isPending || members.isPending) {
     return (
@@ -52,7 +56,10 @@ export function RecordPayment({
       </Screen>
     );
   }
-  if (!detail.data || detail.data.paidStatus !== 'unpaid' || detail.data.status !== 'provisional') {
+  if (
+    !detail.data ||
+    (!isSaving && (detail.data.paidStatus !== 'unpaid' || detail.data.status !== 'provisional'))
+  ) {
     return (
       <Screen padTop={false}>
         <FormAlert
@@ -72,26 +79,26 @@ export function RecordPayment({
 
   return (
     <RecordPaymentForm
-      apartmentId={apartmentId}
       expense={detail.data}
       members={members.data.filter((member) => member.leftAt === null)}
       allMembers={members.data}
+      record={record}
     />
   );
 }
 
 function RecordPaymentForm({
-  apartmentId,
   expense,
   members,
   allMembers,
+  record,
 }: {
-  apartmentId: string;
   expense: ExpenseDetail;
   /** Current members, who can be recorded as payers. */
   members: Member[];
   /** Everyone, including former members who are in the split. */
   allMembers: Member[];
+  record: ReturnType<typeof useRecordBillPayment>;
 }) {
   const userId = useCurrentUserId();
   // The person named to pay the bill is suggested first, while they are a member.
@@ -104,7 +111,6 @@ function RecordPaymentForm({
     payerAmounts: {},
   }));
   const [showErrors, setShowErrors] = useState(false);
-  const record = useRecordBillPayment(apartmentId, expense.id);
 
   const memberIds = useMemo(() => members.map((member) => member.userId), [members]);
   const checked = useMemo(

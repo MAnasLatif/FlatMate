@@ -1,9 +1,15 @@
 import { router } from 'expo-router';
-import { Button, Card, PressableFeedback, Separator, Spinner, Typography } from 'heroui-native';
+import { Card, PressableFeedback, Separator, Typography } from 'heroui-native';
 import { type ReactNode, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 
-import { LoadError, LoadingRows, PendingSkeleton } from '@/components/query-states';
+import { FreshnessBanner } from '@/components/freshness-banner';
+import {
+  LoadError,
+  LoadingRows,
+  MorePagesFooter,
+  PendingSkeleton,
+} from '@/components/query-states';
 import { StatusChip } from '@/components/status-chip';
 import { userErrorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/time';
@@ -68,6 +74,7 @@ export function PairLedger({
       )}
       ListHeaderComponent={
         <View className="gap-4 pb-1">
+          <FreshnessBanner freshness={expenses} />
           <PairSummary
             apartmentId={apartmentId}
             counterpartyId={counterpartyId}
@@ -94,15 +101,7 @@ export function PairLedger({
           </Typography.Paragraph>
         )
       }
-      ListFooterComponent={
-        expenses.isFetchingNextPage ? (
-          <Spinner accessibilityLabel="Loading more expenses" className="self-center" />
-        ) : expenses.isFetchNextPageError ? (
-          <Button variant="secondary" onPress={() => void expenses.fetchNextPage()}>
-            Could not load more. Try again
-          </Button>
-        ) : undefined
-      }
+      ListFooterComponent={<MorePagesFooter pages={expenses} noun="expenses" />}
       onEndReached={() => {
         if (
           expenses.hasNextPage &&

@@ -1,5 +1,5 @@
 import { focusManager, onlineManager } from '@tanstack/react-query';
-import { act, screen, userEvent } from '@testing-library/react-native';
+import { act, screen, userEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
 import {
@@ -126,6 +126,8 @@ const apartment: Apartment = {
   timezone: 'Asia/Karachi',
   settlement_day: 1,
   approval_days: 7,
+  due_reminder_days: 1,
+  settlement_reminder_days: 2,
   location: null,
   show_location: false,
   created_by: ANAS,
@@ -248,6 +250,20 @@ describe('RecordPayment', () => {
 
     expect(recordPayment).toHaveBeenCalledWith(EXPENSE, [{ userId: ANAS, amountMinor: 9000 }]);
     expect(router.back).toHaveBeenCalled();
+  });
+
+  it('goes back once saved, although the refreshed bill now reads as paid', async () => {
+    detail.mockResolvedValue(electricity);
+    recordPayment.mockImplementation(async () => {
+      detail.mockResolvedValue({ ...electricity, paidStatus: 'paid' });
+    });
+    await renderWithProviders(<RecordPayment apartmentId={APARTMENT} expenseId={EXPENSE} />);
+    const user = userEvent.setup();
+
+    await user.press(await screen.findByRole('button', { name: 'Record payment' }));
+
+    await waitFor(() => expect(router.back).toHaveBeenCalled());
+    expect(screen.queryByText(/already been paid/)).not.toBeOnTheScreen();
   });
 
   it('refuses several payers who do not cover the bill', async () => {

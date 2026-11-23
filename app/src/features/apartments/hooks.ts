@@ -33,8 +33,11 @@ import {
   sendInviteEmail,
   setMemberCanAddExpense,
   setMemberRole,
+  type Apartment,
+  updateApartmentReminders,
   updateApartmentSettings,
 } from './api';
+import type { ReminderSchedule } from './reminders';
 
 export const apartmentKeys = {
   mine: (userId: string) => ['apartments', 'mine', userId] as const,
@@ -84,6 +87,17 @@ export function useMyMembership(apartmentId: string): Member | undefined {
   const userId = useCurrentUserId();
   const members = useMembers(apartmentId);
   return members.data?.find((member) => member.userId === userId && member.leftAt === null);
+}
+
+/**
+ * Whether the user has left the apartment or been removed from it. False
+ * until the members have been fetched since the screen opened, so nothing is
+ * taken away on a guess or on a saved copy from before they rejoined.
+ */
+export function useIsFormerMember(apartmentId: string): boolean {
+  const members = useMembers(apartmentId);
+  const membership = useMyMembership(apartmentId);
+  return members.isFetchedAfterMount && membership === undefined;
 }
 
 export function useCreateApartment() {
@@ -158,6 +172,34 @@ export function useUpdateApartmentSettings(apartmentId: string) {
         queryClient.invalidateQueries({ queryKey: apartmentKeys.detail(apartmentId) }),
         queryClient.invalidateQueries({ queryKey: ['apartments', 'mine'] }),
       ]),
+  });
+}
+
+/**
+ * Sets the apartment's reminder schedule. The new choice shows at once and
+ * goes back if saving fails.
+ */
+export function useUpdateApartmentReminders(apartmentId: string) {
+  const queryClient = useQueryClient();
+  const key = apartmentKeys.detail(apartmentId);
+  return useMutation({
+    mutationFn: (schedule: ReminderSchedule) => updateApartmentReminders(apartmentId, schedule),
+    onMutate: async (schedule) => {
+      await queryClient.cancelQueries({ queryKey: key, exact: true });
+      const previous = queryClient.getQueryData<Apartment>(key);
+      if (previous) {
+        queryClient.setQueryData<Apartment>(key, {
+          ...previous,
+          due_reminder_days: schedule.dueReminderDays,
+          settlement_reminder_days: schedule.settlementReminderDays,
+        });
+      }
+      return { previous };
+    },
+    onError: (_error, _schedule, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: key, exact: true }),
   });
 }
 

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import {
   Button,
   Card,
@@ -71,7 +71,20 @@ export function RaiseDispute({
   }
 
   const viewer = members.data.find((member) => member.userId === userId);
-  const hasOpenDispute = disputes.data.some((dispute) => dispute.state !== 'resolved');
+  const openDispute = disputes.data.find((dispute) => dispute.state !== 'resolved');
+  // Saving refreshes this list before the form hears back, which swaps the form
+  // for this check, so the user's own dispute is opened here rather than there.
+  if (openDispute?.raisedBy === userId) {
+    return (
+      <Redirect
+        href={{
+          pathname: '/apartments/[apartmentId]/disputes/[disputeId]',
+          params: { apartmentId, disputeId: openDispute.id },
+        }}
+      />
+    );
+  }
+  const hasOpenDispute = openDispute !== undefined;
   if (!expense.data || !canRaiseDispute(expense.data, viewer, hasOpenDispute)) {
     return (
       <Screen padTop={false}>

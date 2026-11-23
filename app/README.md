@@ -21,6 +21,8 @@ There are two ways to open the app:
 
 The home screen runs without a `.env` file. The Supabase client reads the configuration the first time it is imported and stops with a clear error if a value is missing.
 
+A `.env.local` file, if you keep one (for example pointing at the local stack), wins over `.env`. The dev server bundles the values from these files directly, so variables set in the shell do not override them. To run against the hosted project, move `.env.local` aside and restart the dev server with `--clear`.
+
 ### Development build
 
 Builds are made with [EAS](https://docs.expo.dev/build/introduction/), configured in `eas.json`. The EAS project is `@m.anaslatif/flatmate`, set as `owner` and `extra.eas.projectId` in `app.config.ts`. Cloud builds count against that account's build allowance, so building needs access to it. If you fork the project, remove those two fields and run `npx eas-cli@latest init` to create your own.

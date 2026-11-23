@@ -107,6 +107,20 @@ describe('pairPosition', () => {
     expect(position.isProvisional).toBe(false);
   });
 
+  it('moves a payment for a charge now held by a dispute to what the user owes back', () => {
+    // Bilal paid 500.00 for a share he then disputed, and owes 50.00 for
+    // another expense; the user owes him 250.00.
+    const position = pairPosition(pair(amounts(0, 25_000), amounts(0, -45_000, 50_000)));
+    expect(position).toEqual({
+      oweMinor: 70_000,
+      owedMinor: 0,
+      netMinor: -70_000,
+      isProvisional: true,
+      heldOweMinor: 0,
+      heldOwedMinor: 50_000,
+    });
+  });
+
   it('treats a person with no balance as square', () => {
     expect(pairPosition(undefined).netMinor).toBe(0);
   });

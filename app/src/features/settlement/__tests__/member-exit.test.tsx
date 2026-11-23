@@ -51,6 +51,8 @@ const apartment: Apartment = {
   timezone: 'Asia/Karachi',
   settlement_day: 1,
   approval_days: 7,
+  due_reminder_days: 1,
+  settlement_reminder_days: 2,
   location: null,
   show_location: false,
   created_by: ANAS,
@@ -127,6 +129,13 @@ describe('PastApartments', () => {
       pathname: '/apartments/[apartmentId]/settlement',
       params: { apartmentId: APARTMENT },
     });
+  });
+
+  it('says when past apartments could not be loaded instead of showing nothing', async () => {
+    jest.mocked(fetchMyExits).mockRejectedValue(new Error('server down'));
+    await renderWithProviders(<PastApartments />);
+
+    expect(await screen.findByText('Could not load your past apartments.')).toBeOnTheScreen();
   });
 });
 

@@ -16,6 +16,7 @@ import {
   type Member,
   renameCategory,
   changeJoinCode,
+  updateApartmentReminders,
 } from '../api';
 
 const FLAT = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -38,6 +39,7 @@ jest.mock('../api', () => ({
   addCategory: jest.fn(async () => undefined),
   renameCategory: jest.fn(async () => undefined),
   archiveCategory: jest.fn(async () => undefined),
+  updateApartmentReminders: jest.fn(async () => undefined),
 }));
 
 const apartment: Apartment = {
@@ -47,6 +49,8 @@ const apartment: Apartment = {
   timezone: 'Asia/Karachi',
   settlement_day: 1,
   approval_days: 7,
+  due_reminder_days: 1,
+  settlement_reminder_days: 2,
   location: null,
   show_location: false,
   created_by: ME,
@@ -178,4 +182,62 @@ it("asks in the app's dialog before archiving a category", async () => {
 
   await user.press(screen.getByRole('button', { name: 'Archive' }));
   await waitFor(() => expect(jest.mocked(archiveCategory).mock.calls[0]?.[0]).toBe('c-1'));
+});
+
+describe('reminders', () => {
+  it('shows the schedule on the general settings', async () => {
+    await renderWithProviders(<SettingsScreen />);
+
+    expect(await screen.findByRole('switch', { name: 'Bills due' })).toBeChecked();
+    expect(screen.getByRole('button', { name: '1 day before', selected: true })).toBeOnTheScreen();
+    expect(screen.getByRole('switch', { name: 'Settlement day' })).toBeChecked();
+    expect(screen.getByRole('button', { name: '2 days before', selected: true })).toBeOnTheScreen();
+  });
+
+  it('saves a new lead time at once, keeping the other reminder', async () => {
+    await renderWithProviders(<SettingsScreen />);
+
+    await userEvent.setup().press(await screen.findByRole('button', { name: 'On the day only' }));
+
+    expect(updateApartmentReminders).toHaveBeenCalledWith(FLAT, {
+      dueReminderDays: 0,
+      settlementReminderDays: 2,
+    });
+  });
+
+  it('turns a reminder off and hides its choices', async () => {
+    jest
+      .mocked(fetchApartment)
+      .mockResolvedValueOnce(apartment)
+      .mockResolvedValue({ ...apartment, settlement_reminder_days: null });
+    await renderWithProviders(<SettingsScreen />);
+
+    await userEvent.setup().press(await screen.findByRole('switch', { name: 'Settlement day' }));
+
+    expect(updateApartmentReminders).toHaveBeenCalledWith(FLAT, {
+      dueReminderDays: 1,
+      settlementReminderDays: null,
+    });
+    await waitFor(() =>
+      expect(screen.getByRole('switch', { name: 'Settlement day' })).not.toBeChecked(),
+    );
+    // Only the bill reminder still offers its choices.
+    expect(screen.getAllByRole('button', { name: '7 days before' })).toHaveLength(1);
+  });
+
+  it('says so and goes back when saving fails', async () => {
+    jest.mocked(updateApartmentReminders).mockRejectedValue(new Error('boom'));
+    await renderWithProviders(<SettingsScreen />);
+
+    // The first '3 days before' is the bill reminder's.
+    const [billChoice] = await screen.findAllByRole('button', { name: '3 days before' });
+    await userEvent.setup().press(billChoice);
+
+    expect(await screen.findByText('Could not save the reminders.')).toBeOnTheScreen();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: '1 day before', selected: true }),
+      ).toBeOnTheScreen(),
+    );
+  });
 });

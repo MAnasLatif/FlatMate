@@ -10,7 +10,13 @@ type ChoiceChipsProps<T extends string> = {
   accessibilityLabel: string;
 };
 
-/** A row of chips where one can be selected, such as a category or a payer. */
+/**
+ * A row of chips where one can be selected, such as a category or a payer.
+ * Chips are drawn 28 dp high but answer touches over 48 dp: rows are 20 dp
+ * apart, so each chip reaches 10 dp up and down without overlapping the next.
+ */
+const CHIP_HIT_SLOP = { top: 10, bottom: 10 };
+
 export function ChoiceChips<T extends string>({
   choices,
   selected,
@@ -18,7 +24,7 @@ export function ChoiceChips<T extends string>({
   accessibilityLabel,
 }: ChoiceChipsProps<T>) {
   return (
-    <View className="flex-row flex-wrap gap-2" accessibilityLabel={accessibilityLabel}>
+    <View className="flex-row flex-wrap gap-x-2 gap-y-5" accessibilityLabel={accessibilityLabel}>
       {choices.map((choice) => {
         const isSelected = choice.value === selected;
         return (
@@ -27,6 +33,7 @@ export function ChoiceChips<T extends string>({
             variant={isSelected ? 'primary' : 'soft'}
             color={isSelected ? 'accent' : 'default'}
             onPress={() => onSelect(choice.value)}
+            hitSlop={CHIP_HIT_SLOP}
             accessibilityRole="button"
             accessibilityState={{ selected: isSelected }}
           >

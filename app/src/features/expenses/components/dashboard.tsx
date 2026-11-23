@@ -1,10 +1,15 @@
 import { router } from 'expo-router';
-import { Button, Spinner, Typography } from 'heroui-native';
+import { Typography } from 'heroui-native';
 import { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 
 import { FreshnessBanner } from '@/components/freshness-banner';
-import { LoadError, LoadingRows, PendingSkeleton } from '@/components/query-states';
+import {
+  LoadError,
+  LoadingRows,
+  MorePagesFooter,
+  PendingSkeleton,
+} from '@/components/query-states';
 import { useHeaderShadowOnScroll } from '@/components/use-header-shadow-on-scroll';
 import type { Apartment } from '@/features/apartments/api';
 import { useApartment } from '@/features/apartments/hooks';
@@ -112,15 +117,7 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
           </View>
         )
       }
-      ListFooterComponent={
-        expenses.isFetchingNextPage ? (
-          <Spinner accessibilityLabel="Loading more expenses" className="self-center" />
-        ) : expenses.isFetchNextPageError ? (
-          <Button variant="secondary" onPress={() => void expenses.fetchNextPage()}>
-            Could not load more. Try again
-          </Button>
-        ) : undefined
-      }
+      ListFooterComponent={<MorePagesFooter pages={expenses} noun="expenses" />}
       onEndReached={loadMore}
       onEndReachedThreshold={0.5}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />}

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
+import { isPushCategory, type PushCategory } from './preferences';
 import { placeUnread, type UnreadNotification } from './unread';
 
 /** Where opening a notification goes; the screen there checks access again (FR-09.3). */
@@ -123,5 +124,24 @@ export async function registerPushToken(token: string, platform: 'android' | 'io
 
 export async function unregisterPushToken(token: string) {
   const { error } = await supabase.rpc('unregister_push_token', { p_token: token });
+  if (error) throw error;
+}
+
+/** The push groups the user turned off; every other group is on. */
+export async function fetchMutedPushCategories(): Promise<PushCategory[]> {
+  // Row-level security returns only the user's own rows.
+  const { data, error } = await supabase.from('notification_mutes').select('category');
+  if (error) throw error;
+  return data.map((row) => row.category).filter(isPushCategory);
+}
+
+export async function setPushCategoryEnabled(
+  category: PushCategory,
+  isEnabled: boolean,
+): Promise<void> {
+  const { error } = await supabase.rpc('set_notification_push', {
+    p_category: category,
+    p_enabled: isEnabled,
+  });
   if (error) throw error;
 }

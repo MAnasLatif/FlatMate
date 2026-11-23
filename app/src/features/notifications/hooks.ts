@@ -6,20 +6,54 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 
 import {
+  fetchMutedPushCategories,
   fetchNotificationTarget,
   fetchUnreadNotifications,
   markNotificationsRead,
-  registerPushToken,
+  setPushCategoryEnabled,
 } from './api';
 import { notificationHref } from './href';
-import { getPushToken, notificationIdOf, pushPlatform, rememberRegisteredToken } from './push';
+import { type PushCategory, withPushSetting } from './preferences';
+import { notificationIdOf, registerThisDevice } from './push';
 import type { UnreadMatch, UnreadNotification } from './unread';
 
 export const notificationKeys = {
   /** Everything about the user's notifications: refreshed by the 'notification' change event. */
   all: (userId: string) => ['notifications', userId] as const,
   unread: (userId: string) => ['notifications', userId, 'unread-items'] as const,
+  /** Which push groups are off: refreshed by the 'notification_preference' change event. */
+  pushPreferences: (userId: string) => ['notification-preferences', userId] as const,
 };
+
+/** The push groups the user turned off. */
+export function useMutedPushCategories(userId: string) {
+  return useQuery({
+    queryKey: notificationKeys.pushPreferences(userId),
+    queryFn: fetchMutedPushCategories,
+  });
+}
+
+/** Turns one push group on or off. The switch moves at once and moves back if saving fails. */
+export function useSetPushCategory(userId: string) {
+  const queryClient = useQueryClient();
+  const key = notificationKeys.pushPreferences(userId);
+  return useMutation({
+    mutationFn: (input: { category: PushCategory; isEnabled: boolean }) =>
+      setPushCategoryEnabled(input.category, input.isEnabled),
+    onMutate: async ({ category, isEnabled }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<PushCategory[]>(key);
+      queryClient.setQueryData<PushCategory[]>(key, (muted) =>
+        withPushSetting(muted ?? [], category, isEnabled),
+      );
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      queryClient.setQueryData(key, context?.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
+  });
+}
 
 export function useUnreadNotifications() {
   const userId = useCurrentUserId();
@@ -93,24 +127,15 @@ export function useMarkSeen(match: UnreadMatch | null): void {
  */
 export function usePushRegistration(userId: string): void {
   useEffect(() => {
-    let active = true;
-    const register = async (token: string | null) => {
-      if (!active || !token) return;
-      await registerPushToken(token, pushPlatform());
-      rememberRegisteredToken(token);
-    };
-    getPushToken()
-      .then(register)
-      .catch(() => console.warn('Push notifications are not available on this device.'));
-    const subscription = Notifications.addPushTokenListener(() => {
-      getPushToken()
-        .then(register)
-        .catch(() => console.warn('Could not register the new push token.'));
+    registerThisDevice().catch(() =>
+      console.warn('Push notifications are not available on this device.'),
+    );
+    const subscription = Notifications.addPushTokenListener((devicePushToken) => {
+      registerThisDevice(devicePushToken).catch(() =>
+        console.warn('Could not register the new push token.'),
+      );
     });
-    return () => {
-      active = false;
-      subscription.remove();
-    };
+    return () => subscription.remove();
   }, [userId]);
 }
 
