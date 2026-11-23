@@ -44,6 +44,8 @@ insert into allowed values
   ('unregister_push_token', 'standalone', 'removes a device''s push token, which no one is ever shown'),
   ('claim_pushes', 'standalone', 'updates push delivery columns, which clients cannot read'),
   ('report_pushes', 'standalone', 'updates push delivery columns and drops dead tokens, neither visible to clients'),
+  ('claim_push_receipts', 'standalone', 'claims and tidies push tickets, which clients cannot read'),
+  ('report_push_receipts', 'standalone', 'records push receipts and drops dead tokens, neither visible to clients'),
   ('ensure_open_period', 'standalone',
    'opens the current settlement period on demand; it follows from the settlement day, so nobody learns anything new');
 
