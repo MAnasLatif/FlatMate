@@ -2284,8 +2284,8 @@ export type Database = {
       update_apartment_reminders: {
         Args: {
           p_apartment_id: string;
-          p_due_reminder_days: number;
-          p_settlement_reminder_days: number;
+          p_due_reminder_days?: number;
+          p_settlement_reminder_days?: number;
         };
         Returns: undefined;
       };

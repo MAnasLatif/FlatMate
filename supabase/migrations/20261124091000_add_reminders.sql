@@ -76,10 +76,11 @@ $$;
 revoke execute on function private.update_apartment_reminders(uuid, integer, integer) from public;
 grant execute on function private.update_apartment_reminders(uuid, integer, integer) to authenticated;
 
+-- A reminder left out, or null, is turned off.
 create function public.update_apartment_reminders(
   p_apartment_id uuid,
-  p_due_reminder_days integer,
-  p_settlement_reminder_days integer
+  p_due_reminder_days integer default null,
+  p_settlement_reminder_days integer default null
 )
 returns void
 language sql
