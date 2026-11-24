@@ -11,6 +11,7 @@ export type Database = {
           created_at: string;
           created_by: string;
           creditor_id: string;
+          debt_transfer_id: string | null;
           debtor_id: string;
           deposit_action_id: string | null;
           dispute_id: string | null;
@@ -28,6 +29,7 @@ export type Database = {
           created_at?: string;
           created_by: string;
           creditor_id: string;
+          debt_transfer_id?: string | null;
           debtor_id: string;
           deposit_action_id?: string | null;
           dispute_id?: string | null;
@@ -44,6 +46,7 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           creditor_id?: string;
+          debt_transfer_id?: string | null;
           debtor_id?: string;
           deposit_action_id?: string | null;
           dispute_id?: string | null;
@@ -73,6 +76,13 @@ export type Database = {
             columns: ['creditor_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'adjustments_debt_transfer_id_fkey';
+            columns: ['debt_transfer_id'];
+            isOneToOne: false;
+            referencedRelation: 'debt_transfers';
             referencedColumns: ['id'];
           },
           {
@@ -400,6 +410,125 @@ export type Database = {
           {
             foreignKeyName: 'budgets_created_by_fkey';
             columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      debt_transfer_answers: {
+        Row: {
+          accepted: boolean;
+          answered_at: string;
+          transfer_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          accepted: boolean;
+          answered_at?: string;
+          transfer_id: string;
+          user_id: string;
+        };
+        Update: {
+          accepted?: boolean;
+          answered_at?: string;
+          transfer_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'debt_transfer_answers_transfer_id_fkey';
+            columns: ['transfer_id'];
+            isOneToOne: false;
+            referencedRelation: 'debt_transfers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'debt_transfer_answers_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      debt_transfers: {
+        Row: {
+          amount_minor: number;
+          apartment_id: string;
+          client_request_id: string | null;
+          closed_at: string | null;
+          created_at: string;
+          creditor_id: string;
+          debtor_id: string;
+          expires_at: string;
+          id: string;
+          middle_id: string;
+          proposed_by: string;
+          state: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_minor: number;
+          apartment_id: string;
+          client_request_id?: string | null;
+          closed_at?: string | null;
+          created_at?: string;
+          creditor_id: string;
+          debtor_id: string;
+          expires_at: string;
+          id?: string;
+          middle_id: string;
+          proposed_by: string;
+          state?: string;
+        };
+        Update: {
+          amount_minor?: number;
+          apartment_id?: string;
+          client_request_id?: string | null;
+          closed_at?: string | null;
+          created_at?: string;
+          creditor_id?: string;
+          debtor_id?: string;
+          expires_at?: string;
+          id?: string;
+          middle_id?: string;
+          proposed_by?: string;
+          state?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'debt_transfers_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'debt_transfers_creditor_id_fkey';
+            columns: ['creditor_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'debt_transfers_debtor_id_fkey';
+            columns: ['debtor_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'debt_transfers_middle_id_fkey';
+            columns: ['middle_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'debt_transfers_proposed_by_fkey';
+            columns: ['proposed_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
@@ -1337,6 +1466,7 @@ export type Database = {
           apartment_id: string;
           created_at: string;
           creditor_id: string;
+          debt_transfer_id: string | null;
           debtor_id: string;
           expense_id: string | null;
           expense_revision: number | null;
@@ -1353,6 +1483,7 @@ export type Database = {
           apartment_id: string;
           created_at?: string;
           creditor_id: string;
+          debt_transfer_id?: string | null;
           debtor_id: string;
           expense_id?: string | null;
           expense_revision?: number | null;
@@ -1368,6 +1499,7 @@ export type Database = {
           apartment_id?: string;
           created_at?: string;
           creditor_id?: string;
+          debt_transfer_id?: string | null;
           debtor_id?: string;
           expense_id?: string | null;
           expense_revision?: number | null;
@@ -1397,6 +1529,13 @@ export type Database = {
             columns: ['creditor_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ledger_entries_debt_transfer_id_fkey';
+            columns: ['debt_transfer_id'];
+            isOneToOne: false;
+            referencedRelation: 'debt_transfers';
             referencedColumns: ['id'];
           },
           {
@@ -2620,6 +2759,7 @@ export type Database = {
         Args: { p_ends_on?: string; p_room_id: string; p_starts_on: string; p_user_id: string };
         Returns: string;
       };
+      answer_debt_transfer: { Args: { p_accept: boolean; p_transfer_id: string }; Returns: string };
       approve_join_request: { Args: { p_request_id: string }; Returns: undefined };
       archive_category: { Args: { p_category_id: string }; Returns: undefined };
       archive_recurring_template: { Args: { p_template_id: string }; Returns: undefined };
@@ -2735,6 +2875,15 @@ export type Database = {
           category_id: string;
           limit_minor: number;
           spent_minor: number;
+        }[];
+      };
+      get_debt_transfer_suggestions: {
+        Args: { p_apartment_id: string };
+        Returns: {
+          amount_minor: number;
+          creditor_id: string;
+          debtor_id: string;
+          middle_id: string;
         }[];
       };
       get_inventory: {
@@ -2939,6 +3088,17 @@ export type Database = {
         Returns: string;
       };
       prepare_invite_email: { Args: { p_apartment_id: string; p_email: string }; Returns: Json };
+      propose_debt_transfer: {
+        Args: {
+          p_amount_minor: number;
+          p_apartment_id: string;
+          p_client_request_id?: string;
+          p_creditor_id: string;
+          p_debtor_id: string;
+          p_middle_id: string;
+        };
+        Returns: string;
+      };
       raise_dispute: {
         Args: {
           p_client_request_id?: string;
