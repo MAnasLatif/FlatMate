@@ -133,8 +133,12 @@ function PayForm({
   const [isSaving, setIsSaving] = useState(false);
   const mutations = usePaymentMutations(apartment.id);
 
-  const checked = planPayment(owe, owed, mode, amount);
-  const plan = submittedPlan ?? checked.plan;
+  // While saving, balances refresh after each step and may reach zero; the
+  // submitted plan stands, so the form neither errors nor swaps for "nothing owed".
+  const checked: ReturnType<typeof planPayment> = submittedPlan
+    ? { plan: submittedPlan }
+    : planPayment(owe, owed, mode, amount);
+  const plan = checked.plan;
   const dateError = !isValidDate(paidOn)
     ? 'Choose the day you paid.'
     : paidOn > today
@@ -191,7 +195,7 @@ function PayForm({
     }
   };
 
-  if (owe <= 0) {
+  if (owe <= 0 && !submittedPlan) {
     return (
       <Screen padTop={false}>
         <FormAlert

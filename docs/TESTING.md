@@ -6,7 +6,7 @@ How FlatMate is tested, and the record of the last full test pass. Requirements 
 
 | Suite | Where | Command | Last result (2026-11-24) |
 |---|---|---|---|
-| App unit and component tests (Jest, React Native Testing Library) | `app/src/**/*.test.ts(x)` | `cd app && npm test` | 777 passed |
+| App unit and component tests (Jest, React Native Testing Library) | `app/src/**/*.test.ts(x)` | `cd app && npm test` | 778 passed (2026-11-25) |
 | App lint and types | `app/` | `npm run lint`, `npx tsc --noEmit` | Clean |
 | Database tests (pgTAP): RLS, money arithmetic, every function and job | `supabase/tests/database/` | `npx supabase@3.1.0 db reset` then `npx supabase@3.1.0 test db` | 940 passed in 47 files |
 | Database lint | local stack | `npx supabase@3.1.0 db lint --level warning` | Two known warnings (unused loop variables in `generate_invite_code` and `charge_due_recurring`) |
@@ -84,16 +84,63 @@ Also checked along the way: the profile name saves itself; a former member's vie
 2. **Rooms:** the screen-reader label "Remove You's stay" now reads "Remove your stay".
 3. **Offline:** Add expense no longer shows the general "Saving needs a connection" banner, since its own notice explains Save offline (`Screen`'s new `offlineBanner` prop).
 
-### Not covered by this pass
+## 3. Device test pass, 2026-11-25: what the first pass left out
 
-- **Depend on time passing, so they can't run on the hosted project in a session:** expenses and payments becoming final after the window, a settlement period closing, due-date and settlement reminders. The database tests cover them.
-- **Need three people:** proposing and accepting a debt simplification.
-- **Need setup not yet done:** Google sign-in (OAuth client) and invite emails (secrets).
-- **Not exercised here:** variable repeatable bills, deposit takeover, refund and return, editing an expense's money, receipts and proofs (photo picking), receiving accounts, join-code change, roles, iOS.
+### Setup
 
-## 3. Running the device pass again
+- **Backend:** the local Supabase stack, so deadlines could be moved and scheduled jobs called directly: `finalize_after` set in the past, the period's end moved to yesterday, and the flat briefly put in a timezone already past 09:00 for reminders, then put back.
+- **Build and devices:** the same development build and emulators as section 2.
+- **Accounts:** **Tara Local** (A, admin), **Umar Local** (B) and **Vera Local**, in "Local Flat". Vera had no phone; her one action went through the same database function the app calls, signed in as herself. A fourth account, **Wes Local**, tried the join codes.
+
+### Results
+
+**21 checks: 19 passed, 1 passed after fixing a bug found here, 1 failed (an open bug, below).**
+
+| # | Area | Action | Result | Notes |
+|---|---|---|---|---|
+| 1 | Simplification | Three-person suggestion "Umar pays Vera Rs 1,000 directly" | Pass | |
+| 2 | Simplification | A proposes; B sees a red dot and accepts; Vera accepts | Pass | Applied live on both phones; Umar owes Vera Rs 1,000, Tara square with Umar |
+| 3 | Simplification | The settle and ledger screens explain the moved debt | **Fail** | Open bug 1 below |
+| 4 | Payments | B pays Vera with a reference and a proof from the photo picker | Pass after fix | Bug fixed: the form flashed "You do not owe Vera Local anything right now" while the proof uploaded |
+| 5 | Payments | The proof opens | Pass | |
+| 6 | Finalizing | An expense becomes final after its window | Pass | "Final since Nov 25, 2026" |
+| 7 | Finalizing | A payment becomes final after its window | Pass | "Confirmed by app policy … No bank has verified it", live on B |
+| 8 | Settlement | The period closes; Rs 1,500 unpaid | Pass | Carried into the new period; listed under Past periods as "You owed Umar Local Rs 1,500.00" |
+| 9 | Notifications | Rows for proposals, recording, proofs, confirmation and period closing | Pass | Not pushed: the local stack has no push delivery, which section 2 covered on hosted |
+| 10 | Reminders | "Bill due today" and "settlement soon" | Pass | Only the collector and the one person who owed were told; a second run added nothing |
+| 11 | Repeatable | A changing-amount bill waits for an admin | Pass | "The bill has arrived. Enter its amount"; nothing charged |
+| 12 | Repeatable | The admin enters Rs 2,400 | Pass | Unpaid bill, Rs 800 each, collector kept; dated today because its day fell in a closed period (FR-04.8); a second job run charged nothing |
+| 13 | Deposits | Rs 9,000 paid by Tara, then Tara takes over Umar's share | Pass | |
+| 14 | Deposits | Vera's share refunded with a Rs 500 deduction and a reason | Pass | |
+| 15 | Deposits | The rest returned to Umar with a Rs 1,000 deduction | Pass | Preview before saving; Umar's balance changed live |
+| 16 | Deposits | Undo the latest change, after confirming | Pass | Shares and balances restored; the undo stays in the history |
+| 17 | Expenses | An admin raises a member's expense from Rs 3,000 to Rs 3,600 | Pass | New version with a fresh window; the old one kept; the member notified |
+| 18 | Accounts | B adds a bank account and shares it with the flat | Pass | A missing bank name is explained; A sees it masked (•••• 7890), with Show and Copy, preselected under "Paid into" |
+| 19 | Joining | Change code | Pass | Confirmed first; the old code is refused and the new one works; the request appears live |
+| 20 | Roles | A makes B an admin; B answers a request, then steps down | Pass | B's settings open and close with the role |
+| 21 | Roles | The last admin tries to step down | Pass | "An apartment needs at least one admin. Make someone else an admin first." |
+
+### Bugs found
+
+1. **Open: debts that do not come from an expense cannot be traced on screen.** Simplifications, deposit takeovers and returns, and their undos write ledger entries with no expense. Balances include them correctly, but "Settle with" lists only expenses (it told Umar he owed Vera nothing, with no Pay button, while his balance said Rs 1,000), and a person's ledger lists only expenses and payments. A simplified expense still reads "You owe Tara Local Rs 1,000.00" after the debt moved. This breaks "every balance can be explained from the records behind it" for these records.
+2. **Fixed:** Record a payment no longer turns into the "nothing owed" warning while the proof uploads (`pay-member.tsx`, with a test).
+3. **Fixed:** button icons are hidden from screen readers, which read labels such as ", Copy" and ", Add a receipt".
+
+### Observations
+
+- Dashboard rows show each person's share of an expense, so they still show it after a payment, netting or simplification has covered it.
+- "Step down as admin" applies at once, without a confirmation, though only another admin can undo it.
+- Amounts filled in for you (takeover, refund, return) show as "3000.00", while the same amounts elsewhere show as "3,000.00".
+
+## 4. Not covered yet
+
+- **Need setup not yet done:** Google sign-in (OAuth client) and invite emails (Resend secrets).
+- **iOS:** there is no iOS simulator or build yet.
+- **Push delivery of reminders and of the new events** on a phone, which needs the hosted project.
+
+## 5. Running the device pass again
 
 1. Build or reuse an EAS development build (`npx eas-cli build -p android --profile development`) and install it on two emulators or phones.
 2. Point Metro at the backend you want: `app/.env.local` (local stack) wins over `app/.env` (hosted). Use the local stack to fast-forward deadlines by moving `finalize_after` or period dates and calling the job functions.
-3. Walk through the table above with two accounts, and add rows for anything new.
-4. Record the date, build, backend and results here, replacing this pass.
+3. Walk through the tables above with two or three accounts, and add rows for anything new.
+4. Record the date, build, backend and results here, replacing the older pass.

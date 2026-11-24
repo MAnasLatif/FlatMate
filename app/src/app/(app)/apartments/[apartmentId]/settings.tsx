@@ -318,6 +318,8 @@ function JoinCodeSection({
                 onPress={() => void Clipboard.setStringAsync(code).then(() => setCopied(true))}
               >
                 <Ionicons
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
                   name={copied ? 'checkmark' : 'copy-outline'}
                   size={18}
                   color={copied ? success : accent}
@@ -329,7 +331,13 @@ function JoinCodeSection({
                 className="flex-1"
                 onPress={() => void Share.share({ message: joinCodeMessage(apartmentName, code) })}
               >
-                <Ionicons name="share-outline" size={18} color={accent} />
+                <Ionicons
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                  name="share-outline"
+                  size={18}
+                  color={accent}
+                />
                 <Button.Label>Share</Button.Label>
               </Button>
             </View>

@@ -1,4 +1,4 @@
-import { screen, userEvent } from '@testing-library/react-native';
+import { screen, userEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
 
@@ -174,6 +174,27 @@ describe('PayMember', () => {
       pathname: '/apartments/[apartmentId]/payments/[paymentId]',
       params: { apartmentId: APARTMENT, paymentId: PAYMENT },
     });
+  });
+
+  it('keeps the form while saving, even once the refreshed balance reaches zero', async () => {
+    jest.mocked(recordPayment).mockResolvedValue(PAYMENT);
+    await renderWithProviders(
+      <PayMember apartmentId={APARTMENT} memberId={ANAS} expenseId={null} />,
+    );
+    const user = userEvent.setup();
+
+    expect(await screen.findByText(/FlatMate does not move money/)).toBeOnTheScreen();
+    // After recording, balances refresh and nothing is owed any more.
+    jest
+      .mocked(fetchPairBalances)
+      .mockResolvedValue([{ counterpartyId: ANAS, owe: amounts(0), owed: amounts(12_000) }]);
+    await user.press(screen.getByRole('button', { name: 'Record payment' }));
+
+    await waitFor(() =>
+      expect(jest.mocked(fetchPairBalances).mock.calls.length).toBeGreaterThan(1),
+    );
+    expect(screen.queryByText(/do not owe Anas anything/)).not.toBeOnTheScreen();
+    expect(screen.getByText(/FlatMate does not move money/)).toBeOnTheScreen();
   });
 
   it("records which of the recipient's shared accounts it went into, when chosen", async () => {

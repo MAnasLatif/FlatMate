@@ -75,7 +75,13 @@ export function ActiveFilters({
         accessibilityLabel={count > 0 ? `Filters, ${count} on` : 'Filter expenses'}
         hitSlop={8}
       >
-        <Ionicons name="options-outline" size={18} color={count > 0 ? accent : muted} />
+        <Ionicons
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+          name="options-outline"
+          size={18}
+          color={count > 0 ? accent : muted}
+        />
         <Button.Label>{count > 0 ? `Filters (${count})` : 'Filter'}</Button.Label>
       </Button>
       {chips.map((chip) => (

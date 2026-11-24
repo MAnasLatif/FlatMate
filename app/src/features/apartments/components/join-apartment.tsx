@@ -102,7 +102,13 @@ export function JoinApartment() {
               onPress={() => void paste()}
               accessibilityLabel="Paste join code"
             >
-              <Ionicons name="clipboard-outline" size={16} color={accent} />
+              <Ionicons
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+                name="clipboard-outline"
+                size={16}
+                color={accent}
+              />
               <Button.Label>Paste</Button.Label>
             </Button>
           ) : null
