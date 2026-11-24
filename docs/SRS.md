@@ -154,7 +154,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-10.4 Track security deposits and refund/exit adjustments. Admins record who paid the landlord and each member's share, linked to balances; a share is refunded by the landlord or taken over by another member when someone moves out, and the rest is returned to one member with deductions shared by share (section 12, item 25).
 - FR-10.5 Optional shared inventory, ownership and maintenance costs. An item belongs to the flat or to one member, as a record that moves no money, with a condition and a status (in use, needs repair, gone). Its purchase and maintenance costs are ordinary expenses linked to it, and the item shows what they add up to. Anyone who may add expenses manages items and links; admins remove items added by mistake (section 12, item 26).
 - FR-10.6 Optional room-based allocations and occupancy-driven splits. Admins record rooms with a weight and who lived in each when. A bill for a period can be split by room: by room weight and days lived, equally within a room. The server works out the amounts and the expense is saved as a split by amount, so later room changes never alter it. A repeatable expense can split by room in advance or in arrears each time it is charged (section 12, items 27 and 28).
-- FR-10.7 Offline expense **drafts** with explicit review and idempotent submission on reconnect; do not imply a payment is final while offline.
+- FR-10.7 Offline expense **drafts** with idempotent submission on reconnect; do not imply a payment is final while offline. An expense added offline waits in an encrypted queue on the phone, shown on the dashboard as not sent yet, and is sent by itself when the connection returns, with its id as the request id; one the server turns down stays with its reason to fix or delete. Only adding expenses can wait offline (section 12, item 29).
 - FR-10.8 Activity history shows who created/edited/approved/disputed/settled each record. Each expense, payment and dispute shows its own history, and the apartment's Activity screen shows the whole timeline, newest first, filtered by type and by who did it. Each entry is visible only to those who can read its record (section 12, item 24).
 
 ## 5. Core Business Rules and Examples
@@ -243,7 +243,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 | Reliability | Transactional financial updates, idempotent jobs, retries without duplicates, backup/restore plan |
 | Accuracy | Exact minor-unit arithmetic, deterministic split rounding, conservation of allocations and ledger entries |
 | Performance | Paginated expense feeds; indexed apartment/member/date lookups; responsive mobile navigation |
-| Offline reading | Data the user has already loaded stays readable without a connection, marked with when it was last updated; the saved copy is encrypted and removed at sign-out; recording or changing anything needs a connection (offline drafts: FR-10.7) |
+| Offline reading | Data the user has already loaded stays readable without a connection, marked with when it was last updated; the saved copy is encrypted and removed at sign-out; recording or changing anything else needs a connection; a new expense added offline is queued and sent on reconnect (FR-10.7) |
 | Freshness | Event-driven: while online, every change made by another member, by the same user on another device, or by a scheduled job appears on open screens within seconds, without a manual refresh or polling |
 | Accessibility | Screen-reader labels, dynamic font sizes where feasible, sufficient contrast |
 | Cross-platform | Android initial launch; iOS-ready implementation and device testing |
@@ -296,7 +296,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ## 12. Product Decisions
 
-Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, item 19 on 2026-11-17, and items 20 to 28 on 2026-11-24. Item 10 is still open, and part of item 11.
+Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, item 19 on 2026-11-17, and items 20 to 29 on 2026-11-24. Item 10 is still open, and part of item 11.
 
 1. **Explicit approval mode — decided.** Not part of the MVP. Every expense is accepted automatically, and affected members object within the window (FR-05). An optional approval mode (FR-03.8) may be reconsidered after release.
 2. **What a dispute holds — decided.** A dispute holds every share of the disputed expense until it is resolved, so settlement never sees inconsistent totals. Other expenses stay payable.
@@ -326,6 +326,7 @@ Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 1
 26. **Shared inventory — decided.** An item is the flat's or one member's, which moves no money. What it cost to buy and maintain are ordinary expenses linked to it, each to one item at most, and the item adds them up. Anyone who may add expenses adds items, changes their condition and status, and links expenses; admins remove items added by mistake. A sale, disposal or owner moving out is a change of status, with any money recorded as an expense or payment (FR-10.5, decision record 0016).
 27. **Rooms and occupancy — decided.** Admins record rooms with a weight and who lived in each from which day to which day. Splitting a bill by room shares each day of its period among the rooms lived in by weight, and within a room equally; empty rooms and days take no part. The server works out the amounts and the expense is posted as a split by amount with the period in its notes, so later room changes never alter it. Former members' days are left out and shown as such. Available for one-time expenses (FR-10.6, decision record 0017).
 28. **Repeatable expenses split by room — decided.** A repeatable expense can split by room in advance (from its bill date, like rent) or in arrears (up to the day before it, like electricity). The job charges a fixed amount split by room at once unless someone's days would be left out or nobody lived in a room, when an admin checks it; an admin entering a variable bill can have the server split it by room. Charges are saved as splits by amount with their period noted (FR-10.6, FR-04, decision record 0017).
+29. **Expenses added offline — decided.** Instead of drafts to review, an expense added offline waits in an encrypted queue on the phone and is sent by itself on reconnect, checked against the current members and posted with its id as the request id so it is added once. The dashboard shows it as waiting or, when turned down, why; it can be changed, fixed or deleted. Only adding expenses can wait; at most 20 per apartment, for up to 30 days, deleted at sign-out (FR-10.7, decision record 0018, amending 0007).
 
 
 ## 13. Suggested First Implementation Tasks

@@ -61,6 +61,7 @@ These come from section 12 of the SRS, where each decision is written out in ful
 | D26 | Shared inventory | Decided: the flat's or one member's, costs are linked expenses, managed by those who may add expenses, status only on moving out (decision 0016) | 3.2 |
 | D27 | Rooms and occupancy | Decided: rooms with a weight and dated stays, split by weight × days and equally within a room, worked out by the server and saved as a split by amount, admins only (decision 0017) | 3.3 |
 | D28 | Repeatable expenses split by room | Decided: in advance or in arrears per expense, the job waits for an admin when days would be left out, the server splits a variable bill when entered (decision 0017) | 3.3.2 |
+| D29 | Expenses added offline | Decided: queued encrypted on the phone and sent by themselves on reconnect, adding expenses only, shown as not sent yet, no drafts screen (decision 0018) | 3.4 |
 
 ## Phase 0: Foundation
 
@@ -191,7 +192,8 @@ These follow [decision 0007](decisions/0007-offline-reading-and-live-sync.md). T
 - [ ] **3.3.1 Rooms on a device.** With the development build from 2.7.1 and migration `20261124170000` pushed in 2.5.2: as an admin add two rooms with different weights, put members in them, record a move-out partway through a month, then add an expense with Split by room for that month and check the amounts and the note; check a member sees the rooms but cannot change them. *(Owner: needs the new development build.)*
 - [x] **3.3.2 Repeatable expenses split by room.** Let a repeatable expense, such as rent, split by room for each billing period it charges, worked out by the scheduled job with `get_room_split`'s rule. *(FR-10.6, FR-04)*
 - [ ] **3.3.3 Repeatable room splits on a device.** With the development build from 2.7.1 and migration `20261124180000` pushed in 2.5.2: as an admin set up rent split by room in advance and electricity in arrears, let a charge come due (or move its date back on a test project) and check the amounts and note, enter the electricity amount and check its split, and check that a member who left without a move-out date makes the rent wait for review. *(Owner: needs the new development build.)*
-- [ ] **3.4 Offline drafts.** Save expense drafts offline, review them on reconnect, and submit without duplicates. *(FR-10.7)* Builds on the saved cache and network detection from 1.35 and 1.36; drafts are kept apart from the cache and are never treated as saved records.
+- [x] **3.4 Offline drafts.** Save expense drafts offline, review them on reconnect, and submit without duplicates. *(FR-10.7)* Builds on the saved cache and network detection from 1.35 and 1.36; drafts are kept apart from the cache and are never treated as saved records. Built as a queue that sends by itself on reconnect ([decision 0018](decisions/0018-offline-expense-queue.md)).
+- [ ] **3.4.1 Offline queue on a device.** With the development build from 2.7.1, in airplane mode: add two expenses with Save offline, check the dashboard shows them as waiting to send and that no other member sees them, turn the connection back on and check each is added once; then have an admin stop you adding expenses, add one offline, reconnect, and check it shows Not sent with the reason and can be deleted. Sign out and in again and check the queue is gone. *(Owner: needs the new development build.)*
 - [ ] **3.5 Debt simplification.** Suggest fewer transfers across the group. The user applies a suggestion explicitly, and the underlying ledger is preserved. *(FR-06.5)*
 
 ## Phase 4: Release

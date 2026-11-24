@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 import { type Choice, ChoiceChips } from '@/components/choice-chips';
+import { useConfirm } from '@/components/confirm-dialog';
 import { FormAlert } from '@/components/form/form-alert';
 import { SwitchRow } from '@/components/form/switch-row';
 import { OnlineButton } from '@/components/online-button';
@@ -22,6 +23,17 @@ import { newDraft, validateDraft } from '@/features/expenses/draft';
 import { EXPENSE_ERROR_MESSAGES, receiptUploadErrorMessage } from '@/features/expenses/errors';
 import { ReceiptsField } from '@/features/expenses/components/receipts-field';
 import { usePostExpense, useUploadReceipt } from '@/features/expenses/hooks';
+import {
+  useQueuedExpenses,
+  useQueueExpense,
+  useRemoveQueuedExpense,
+} from '@/features/expenses/offline-queue-hooks';
+import {
+  draftForMembers,
+  MAX_QUEUED_PER_APARTMENT,
+  type QueuedExpense,
+  QueueLimitError,
+} from '@/features/expenses/offline-queue';
 import type { CostKind } from '@/features/inventory/api';
 import { INVENTORY_ERROR_MESSAGES } from '@/features/inventory/errors';
 import { useInventory, useLinkInventoryCost } from '@/features/inventory/hooks';
@@ -33,7 +45,8 @@ import { QUICK_ADD_ERROR_MESSAGES } from '@/features/quick-add/errors';
 import { useSaveQuickAdd } from '@/features/quick-add/hooks';
 import { applyQuickAdd, quickAddFromExpense } from '@/features/quick-add/templates';
 import { userErrorMessage } from '@/lib/errors';
-import { todayInTimeZone } from '@/lib/time';
+import { useIsOnline } from '@/lib/network';
+import { formatDateTime, todayInTimeZone } from '@/lib/time';
 import type { PickedImage } from '@/lib/private-images';
 import { randomUuid } from '@/lib/uuid';
 
@@ -47,15 +60,25 @@ type ItemCost = { itemId: string; kind: CostKind };
 
 export default function AddExpenseScreen() {
   const apartmentId = useApartmentId();
-  const params = useLocalSearchParams<{ itemId?: string; costKind?: string }>();
+  const params = useLocalSearchParams<{ itemId?: string; costKind?: string; queuedId?: string }>();
   const itemCost: ItemCost | null = params.itemId
     ? { itemId: params.itemId, kind: params.costKind === 'purchase' ? 'purchase' : 'maintenance' }
     : null;
   const apartment = useApartment(apartmentId);
   const members = useMembers(apartmentId);
   const categories = useCategories(apartmentId);
+  // The queue is read from the phone, so this works offline too.
+  const queue = useQueuedExpenses(apartmentId);
+  const queued = params.queuedId
+    ? queue.data?.find((expense) => expense.id === params.queuedId)
+    : undefined;
 
-  if (apartment.isPending || members.isPending || categories.isPending) {
+  if (
+    apartment.isPending ||
+    members.isPending ||
+    categories.isPending ||
+    (params.queuedId && queue.isPending)
+  ) {
     return (
       <Screen padTop={false}>
         <LoadingRows count={4} />
@@ -78,8 +101,25 @@ export default function AddExpenseScreen() {
     );
   }
 
+  if (params.queuedId && !queued) {
+    return (
+      <Screen padTop={false}>
+        <FormAlert
+          status="warning"
+          message="This expense is no longer waiting on this phone. It may have been sent or deleted already."
+        />
+        <Button variant="secondary" onPress={() => router.back()}>
+          Go back
+        </Button>
+      </Screen>
+    );
+  }
+
   return (
     <AddExpenseForm
+      // A different queued expense is a different form.
+      key={queued?.id ?? 'new'}
+      queued={queued}
       apartment={apartment.data}
       members={members.data.filter((member) => member.leftAt === null)}
       categories={categories.data}
@@ -93,17 +133,33 @@ function AddExpenseForm({
   members,
   categories,
   itemCost,
+  queued,
 }: {
   apartment: Apartment;
   members: Member[];
   categories: Category[];
   itemCost: ItemCost | null;
+  /** An expense saved offline and not sent yet, opened to change, fix or delete. */
+  queued: QueuedExpense | undefined;
 }) {
   const userId = useCurrentUserId();
   const today = todayInTimeZone(apartment.timezone);
-  const [draft, setDraft] = useState(() => newDraft(userId, today));
-  // One id per expense being added, so a retried save cannot create a duplicate.
-  const [requestId] = useState(randomUuid);
+  const isOnline = useIsOnline();
+  const [draft, setDraft] = useState(() =>
+    queued
+      ? draftForMembers(
+          queued,
+          members.map((member) => member.userId),
+        )
+      : newDraft(userId, today),
+  );
+  // One id per expense being added, so a retried save cannot create a
+  // duplicate. A queued expense keeps its id, so it is added once however it
+  // is sent: by itself on reconnect, or from here.
+  const [requestId] = useState(() => queued?.id ?? randomUuid());
+  const queueExpense = useQueueExpense();
+  const removeQueued = useRemoveQueuedExpense();
+  const { confirm, dialog } = useConfirm();
   const [showErrors, setShowErrors] = useState(false);
   const [receipts, setReceipts] = useState<PickedImage[]>([]);
   // Set once the expense is posted, so failed receipt uploads are retried on their own.
@@ -251,6 +307,24 @@ function AddExpenseForm({
     );
   }
 
+  // Offline, the expense waits on the phone and is sent by itself once the
+  // connection is back (decision 0018).
+  const saveOffline = () => {
+    setShowErrors(true);
+    if (!result.value) return;
+    queueExpense.mutate(
+      {
+        id: requestId,
+        apartmentId: apartment.id,
+        savedAt: new Date().toISOString(),
+        draft,
+        memberIds,
+        failure: null,
+      },
+      { onSuccess: () => router.back() },
+    );
+  };
+
   const save = () => {
     setShowErrors(true);
     if (!result.value) return;
@@ -259,6 +333,13 @@ function AddExpenseForm({
       { expense: result.value, requestId },
       {
         onSuccess: async (expenseId) => {
+          // The expense is added, so it leaves the queue. Should that fail,
+          // sending it again returns this same expense.
+          if (queued) {
+            removeQueued.mutate(queued.id, {
+              onError: () => console.warn('A sent expense could not be taken off the queue.'),
+            });
+          }
           const linked = await linkToItem(expenseId);
           const quickAddSaved = !quickAdd || (await saveTemplate(quickAdd));
           if (!quickAddSaved) setPendingQuickAdd(quickAdd);
@@ -277,11 +358,55 @@ function AddExpenseForm({
     );
   };
   const isSaving =
-    post.isPending || upload.isPending || saveQuickAdd.isPending || linkCost.isPending;
+    post.isPending ||
+    upload.isPending ||
+    saveQuickAdd.isPending ||
+    linkCost.isPending ||
+    queueExpense.isPending;
+  const queueError =
+    queueExpense.error instanceof QueueLimitError
+      ? `${MAX_QUEUED_PER_APARTMENT} expenses in this apartment are already waiting to be sent. Wait until you are back online.`
+      : queueExpense.error
+        ? 'Could not save it on this phone. Please try again.'
+        : null;
 
   return (
     <Screen padTop={false}>
-      {itemCost ? (
+      {queued ? (
+        <View className="gap-2">
+          <FormAlert
+            status={queued.failure ? 'danger' : 'warning'}
+            message={
+              queued.failure
+                ? `Not sent: ${queued.failure} Fix it, then save it.`
+                : `Saved on this phone on ${formatDateTime(Date.parse(queued.savedAt))} and not sent yet. It is sent by itself when you are back online.`
+            }
+          />
+          <Button
+            size="sm"
+            variant="ghost"
+            onPress={() =>
+              confirm({
+                title: 'Delete this expense?',
+                description:
+                  'It was never sent, so nothing was added. It is deleted from this phone.',
+                confirmLabel: 'Delete',
+                isDestructive: true,
+                onConfirm: () => removeQueued.mutate(queued.id, { onSuccess: () => router.back() }),
+              })
+            }
+          >
+            Delete it
+          </Button>
+        </View>
+      ) : null}
+      {isOnline ? null : (
+        <FormAlert
+          status="warning"
+          message={`You are offline. Saving keeps it on this phone, and it is sent by itself when you are back online. Attach receipts once it has been sent${itemCost ? ', and choose the item on the expense' : ''}.`}
+        />
+      )}
+      {itemCost && isOnline ? (
         <View className="gap-2">
           <Typography.Paragraph type="body-sm">
             This expense will count towards {itemName} as:
@@ -310,8 +435,11 @@ function AddExpenseForm({
         currency={apartment.currency}
         today={today}
         currentUserId={userId}
+        // The queue keeps no photos, so receipts are attached once it is sent.
         afterDate={
-          <ReceiptsField receipts={receipts} onChange={setReceipts} isDisabled={isSaving} />
+          isOnline ? (
+            <ReceiptsField receipts={receipts} onChange={setReceipts} isDisabled={isSaving} />
+          ) : null
         }
         afterSplit={
           <RoomSplitPanel
@@ -325,15 +453,18 @@ function AddExpenseForm({
           />
         }
       />
-      <SwitchRow
-        label="Save as a quick-add"
-        description="Fill in this name, amount, category and split with one tap next time. A quick-add with the same name is replaced."
-        isSelected={saveAsQuickAdd}
-        onSelectedChange={setSaveAsQuickAdd}
-      />
+      {isOnline ? (
+        <SwitchRow
+          label="Save as a quick-add"
+          description="Fill in this name, amount, category and split with one tap next time. A quick-add with the same name is replaced."
+          isSelected={saveAsQuickAdd}
+          onSelectedChange={setSaveAsQuickAdd}
+        />
+      ) : null}
       <FormAlert
         message={
-          post.error
+          queueError ??
+          (post.error
             ? userErrorMessage(
                 post.error,
                 'Could not save the expense. Please try again.',
@@ -341,12 +472,19 @@ function AddExpenseForm({
               )
             : showErrors && !result.value
               ? 'Check the highlighted fields.'
-              : null
+              : null)
         }
       />
-      <OnlineButton onPress={save} isDisabled={isSaving}>
-        {post.isPending ? 'Saving…' : 'Save expense'}
-      </OnlineButton>
+      {isOnline ? (
+        <OnlineButton onPress={save} isDisabled={isSaving}>
+          {post.isPending ? 'Saving…' : 'Save expense'}
+        </OnlineButton>
+      ) : (
+        <Button onPress={saveOffline} isDisabled={isSaving}>
+          {queueExpense.isPending ? 'Saving…' : 'Save offline'}
+        </Button>
+      )}
+      {dialog}
     </Screen>
   );
 }

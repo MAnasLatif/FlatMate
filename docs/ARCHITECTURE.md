@@ -98,7 +98,7 @@ The app has four layers, and data only moves through them in this order:
 - A failed send never rolls back the write. After a reconnect, or when the app returns to the foreground, the router refreshes everything under its topics instead of trusting that no event was missed.
 - A database test fails if a function writes client-visible data without emitting an event, so new features stay covered.
 
-**Offline reading (decision 0007).** The query cache is saved on the phone, encrypted with a key held in the device keychain, per user, for up to 7 days, and deleted at sign-out. Without a connection, screens show the saved data with the time it was last updated. Anything that writes needs a connection.
+**Offline reading (decision 0007).** The query cache is saved on the phone, encrypted with a key held in the device keychain, per user, for up to 7 days, and deleted at sign-out. Without a connection, screens show the saved data with the time it was last updated. Anything that writes needs a connection, except adding an expense: that waits in a separate encrypted queue on the phone and is sent by itself on reconnect, with its id as the request id (decision 0018).
 
 ```mermaid
 sequenceDiagram

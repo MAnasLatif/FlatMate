@@ -17,9 +17,9 @@ The server already keeps the financial history as events: posted records cannot 
 
 ## Decision
 
-**The server stays the only authority.** The phone keeps a cache of answers the server gave it, not a second database. Nothing financial is written on the phone and synced later. Offline expense drafts remain a separate, later feature (FR-10.7, task 3.4).
+**The server stays the only authority.** The phone keeps a cache of answers the server gave it, not a second database. Nothing financial is written on the phone and synced later. Offline expense drafts remain a separate, later feature (FR-10.7, task 3.4); they became a queue of expenses sent on reconnect (decision 0018).
 
-**1. Network and app lifecycle.** React Query's `onlineManager` is fed by `@react-native-community/netinfo` and its `focusManager` by `AppState`. While offline, queries pause and keep their data instead of failing; when the connection or the app comes back, stale queries refetch. Mutations do not queue while offline: actions that write are disabled with a reason ("Connect to the internet to save"), so a payment or expense is never sent later without the user seeing it happen.
+**1. Network and app lifecycle.** React Query's `onlineManager` is fed by `@react-native-community/netinfo` and its `focusManager` by `AppState`. While offline, queries pause and keep their data instead of failing; when the connection or the app comes back, stale queries refetch. Mutations do not queue while offline: actions that write are disabled with a reason ("Connect to the internet to save"), so a payment or expense is never sent later without the user seeing it happen. *Amended by [decision 0018](0018-offline-expense-queue.md): adding an expense offline queues it on the phone, shown as not sent yet, and it is sent on reconnect.*
 
 **2. A saved, encrypted cache.** The query cache is saved with `@tanstack/react-query-persist-client` and restored before the first signed-in screen renders, behind the splash screen.
 

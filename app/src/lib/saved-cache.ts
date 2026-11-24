@@ -24,8 +24,12 @@ const CACHE_FORMAT = 1;
 const SAVE_INTERVAL_MS = 2000;
 /** The most a slow restore holds the splash screen; the app then starts without it. */
 const RESTORE_TIMEOUT_MS = 5000;
-/** Signed image links expire after an hour, so a saved one would be dead. */
-const UNSAVED_QUERY_ROOTS = new Set(['signed-image-url', 'avatar-url']);
+/**
+ * Signed image links expire after an hour, so a saved one would be dead.
+ * Expenses waiting to be sent have their own encrypted queue and are never
+ * part of the copy of what the server said.
+ */
+const UNSAVED_QUERY_ROOTS = new Set(['signed-image-url', 'avatar-url', 'offline-queue']);
 
 /** Each user's saved cache is a separate entry, so one person never sees another's. */
 export function savedCacheKey(userId: string): string {
