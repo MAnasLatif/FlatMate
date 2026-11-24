@@ -86,7 +86,7 @@ Reminders are written straight to `notifications`, without an audit event: every
 
 ## Rooms and occupancy
 
-`rooms` (with a weight) and `room_occupancies` (who lived in a room from which day to which day) are managed by admins through `save_room`, `archive_room`, `add_room_occupant`, `end_room_occupancy` and `remove_room_occupancy`, serialized per apartment by `private.lock_rooms`. `get_room_split` splits an amount for a period by room weight and days lived, equally within a room, with the largest-remainder rule of `compute_shares`, and lists former members' days as left out. Nothing here stores an amount: the app posts the result as a split by amount. Tests: `tests/database/rooms_test.sql`.
+`rooms` (with a weight) and `room_occupancies` (who lived in a room from which day to which day) are managed by admins through `save_room`, `archive_room`, `add_room_occupant`, `end_room_occupancy` and `remove_room_occupancy`, serialized per apartment by `private.lock_rooms`. `get_room_split` splits an amount for a period by room weight and days lived, equally within a room, with the largest-remainder rule of `compute_shares`, and lists former members' days as left out. Nothing here stores an amount: the app posts the result as a split by amount. A repeatable expense with `split_method = 'room'` and a `room_period` (advance or arrears) is split the same way (`private.room_split`) for the days each charge covers (`private.recurring_room_period`), by `charge_next_period` for a fixed amount, which waits for review when days would be left out, and by `post_recurring_bill` when an admin enters it with `p_split_method = 'room'`. Tests: `tests/database/rooms_test.sql`, `recurring_room_split_test.sql`.
 
 ## Join codes
 

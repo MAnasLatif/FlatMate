@@ -15,10 +15,13 @@ FR-10.6 asks for optional room-based allocations and occupancy-driven splits. In
 
 **Worked out by the server, saved as a split by amount.** `get_room_split` returns the amounts; the app fills them in as a split by amount and notes the period in the expense's notes. The expense is posted and validated like any other, so changing rooms, weights or dates later never changes a posted expense. Only current members can share a new expense, so a former member's days are listed as left out and their room counts as empty on those days.
 
-**Admins, one-time expenses.** Every current member sees the rooms and can work out a split; admins change them. The split is offered when adding or editing an expense. Repeatable expenses split by room are a follow-up (task 3.3.2).
+**Admins.** Every current member sees the rooms and can work out a split; admins change them. The split is offered when adding or editing an expense.
+
+**Repeatable expenses** (added with task 3.3.2, decided on 2026-11-24). A repeatable expense can split by room each time it is charged, either in advance (from its bill date to the day before the next, like rent) or in arrears (from the previous bill date to the day before this one, like electricity); a fixed amount defaults to advance and a variable one to arrears. On the bill day the job charges a fixed amount split by room at once, but waits for an admin when someone's days would be left out or nobody lived in a room. When an admin enters a bill, they can split it by room and the server works it out while posting. Each charge is saved as a split by amount with the period in its notes.
 
 ## Consequences
 
 - Rooms and stays store no amounts and move no money. Changes are `room` audit events, under Settings in the activity timeline, and notify nobody.
 - Room and stay changes in one apartment are serialized with an advisory lock, so two admins cannot put one person in two rooms on the same days.
 - A period is at most 366 days.
+- A template split by room stores `split_method = 'room'`, its `room_period` and no participants; its charges are ordinary expenses split by amount.
