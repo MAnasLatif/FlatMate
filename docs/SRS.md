@@ -155,7 +155,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-10.5 Optional shared inventory, ownership and maintenance costs.
 - FR-10.6 Optional room-based allocations and occupancy-driven splits.
 - FR-10.7 Offline expense **drafts** with explicit review and idempotent submission on reconnect; do not imply a payment is final while offline.
-- FR-10.8 Activity history shows who created/edited/approved/disputed/settled each record.
+- FR-10.8 Activity history shows who created/edited/approved/disputed/settled each record. Each expense, payment and dispute shows its own history, and the apartment's Activity screen shows the whole timeline, newest first, filtered by type and by who did it. Each entry is visible only to those who can read its record (section 12, item 24).
 
 ## 5. Core Business Rules and Examples
 
@@ -296,7 +296,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ## 12. Product Decisions
 
-Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, item 19 on 2026-11-17, and items 20 to 23 on 2026-11-24. Item 10 is still open, and part of item 11.
+Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, item 19 on 2026-11-17, and items 20 to 24 on 2026-11-24. Item 10 is still open, and part of item 11.
 
 1. **Explicit approval mode — decided.** Not part of the MVP. Every expense is accepted automatically, and affected members object within the window (FR-05). An optional approval mode (FR-03.8) may be reconsidered after release.
 2. **What a dispute holds — decided.** A dispute holds every share of the disputed expense until it is resolved, so settlement never sees inconsistent totals. Other expenses stay payable.
@@ -321,6 +321,7 @@ Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 1
 21. **Expense filters and comparison — decided.** Search and filters (title or notes, member, category, status, amount range) live in a sheet on the dashboard and apply within the month shown. Filtering by member finds expenses they share in or paid for. Compare months shows the apartment's total and the user's share for the last six months, without cancelled expenses (FR-10.1).
 22. **Statements and reports — decided.** A statement covers one settlement period: the reader's share and payments of its expenses, payments sent and received, and per person what was carried forward, what is owed each way at close (or so far, while open) and what is held by disputes. The phone makes the PDF and opens the share sheet; nothing is stored on a server. Only admins export the apartment report of per-member totals, since payments between others are private (item 8) (FR-10.2, AC-14).
 23. **Quick-adds and budgets — decided.** Quick-adds belong to the apartment; anyone who may add expenses saves them from the Add expense form or deletes them, and an equal split among everyone includes later joiners. Admins set monthly budgets, for all spending and per category, counted like the month comparison. Every current member is told the first time a month reaches 80% and 100% of a budget, under their own push group (FR-10.3, decision record 0013).
+24. **Activity history — decided.** One timeline per apartment on an Activity screen, newest first, filtered by type and by who did it; each entry opens its record. Entries are as private as their records: payments, netting and adjustments show only to their two people and admins, and join codes, join requests and repeatable expenses only to admins. Former members have no timeline (FR-10.8, decision record 0014).
 
 
 ## 13. Suggested First Implementation Tasks
