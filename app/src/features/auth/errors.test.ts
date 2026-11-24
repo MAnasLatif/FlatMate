@@ -1,4 +1,8 @@
-import { AuthApiError, AuthRetryableFetchError } from '@supabase/supabase-js';
+import {
+  AuthApiError,
+  AuthRetryableFetchError,
+  AuthWeakPasswordError,
+} from '@supabase/supabase-js';
 
 import { authErrorMessage, isEmailNotConfirmed } from './errors';
 
@@ -6,6 +10,16 @@ describe('authErrorMessage', () => {
   it('explains a known error code', () => {
     const error = new AuthApiError('Invalid login credentials', 400, 'invalid_credentials');
     expect(authErrorMessage(error)).toBe('The email or password is incorrect.');
+  });
+
+  it('explains a password found in a data breach', () => {
+    const error = new AuthWeakPasswordError('Password is known to be weak', 422, ['pwned']);
+    expect(authErrorMessage(error)).toMatch(/data breach/);
+  });
+
+  it('keeps the length advice for a password that is only too short', () => {
+    const error = new AuthWeakPasswordError('Password is too short', 422, ['length']);
+    expect(authErrorMessage(error)).toBe('Choose a stronger password with at least 8 characters.');
   });
 
   it('reports a network failure as a connection problem', () => {

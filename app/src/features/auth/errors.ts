@@ -1,4 +1,4 @@
-import { isAuthError } from '@supabase/supabase-js';
+import { isAuthError, isAuthWeakPasswordError } from '@supabase/supabase-js';
 
 const MESSAGES: Record<string, string> = {
   invalid_credentials: 'The email or password is incorrect.',
@@ -16,6 +16,10 @@ const MESSAGES: Record<string, string> = {
 
 const NETWORK_MESSAGE = 'Could not reach FlatMate. Check your connection and try again.';
 const FALLBACK_MESSAGE = 'Something went wrong. Please try again.';
+// Auth rejects passwords found in known data breaches (leaked-password protection) with the
+// same weak_password code as short ones, so the reason decides the sentence.
+const LEAKED_PASSWORD_MESSAGE =
+  'This password has appeared in a data breach, so it is easy to guess. Choose a different one.';
 
 /**
  * Turns an error from Supabase Auth into a sentence that can be shown to the
@@ -25,6 +29,9 @@ export function authErrorMessage(error: unknown): string {
   if (isAuthError(error)) {
     if (error.name === 'AuthRetryableFetchError') {
       return NETWORK_MESSAGE;
+    }
+    if (isAuthWeakPasswordError(error) && error.reasons.includes('pwned')) {
+      return LEAKED_PASSWORD_MESSAGE;
     }
     if (error.code && error.code in MESSAGES) {
       return MESSAGES[error.code];
