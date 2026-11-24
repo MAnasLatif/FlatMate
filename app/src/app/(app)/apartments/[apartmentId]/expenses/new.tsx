@@ -371,7 +371,8 @@ function AddExpenseForm({
         : null;
 
   return (
-    <Screen padTop={false}>
+    // The form says itself what saving offline does.
+    <Screen padTop={false} offlineBanner={false}>
       {queued ? (
         <View className="gap-2">
           <FormAlert

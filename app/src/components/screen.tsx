@@ -27,6 +27,11 @@ type ScreenProps = {
    * shows offline on every screen, with or without this.
    */
   freshness?: Freshness;
+  /**
+   * Off for a screen that explains being offline itself, such as Add expense,
+   * which can still save to the offline queue.
+   */
+  offlineBanner?: boolean;
 };
 
 /** Page container: theme background, safe areas, and room for the keyboard. */
@@ -37,6 +42,7 @@ export function Screen({
   refreshing = false,
   onRefresh,
   freshness,
+  offlineBanner = true,
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollViewInstance>(null);
@@ -64,12 +70,12 @@ export function Screen({
             onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined
           }
         >
-          <FreshnessBanner freshness={freshness} />
+          {offlineBanner ? <FreshnessBanner freshness={freshness} /> : null}
           {children}
         </ScrollView>
       ) : (
         <View className="flex-1 gap-6 px-5" style={padding}>
-          <FreshnessBanner freshness={freshness} />
+          {offlineBanner ? <FreshnessBanner freshness={freshness} /> : null}
           {children}
         </View>
       )}
