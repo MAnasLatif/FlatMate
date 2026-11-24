@@ -199,6 +199,21 @@ function describe(entry: ActivityEntry, context: ActivityContext): string {
       return `${actor} recorded that the deposit was returned to ${person}`;
     case 'deposit.undone':
       return `${actor} undid a change to the deposit ${entry.subject ?? ''}`.trim();
+    case 'inventory_item.created':
+      return `${actor} added ${item(entry)} to the inventory`;
+    case 'inventory_item.updated': {
+      const changed = detail(entry.details, 'changed');
+      const status = text(entry.details, 'status');
+      return Array.isArray(changed) && changed.length === 1 && changed[0] === 'status' && status
+        ? `${actor} marked ${item(entry)} as ${ITEM_STATUS_WORDS[status] ?? 'changed'}`
+        : `${actor} changed ${item(entry)}`;
+    }
+    case 'inventory_item.removed':
+      return `${actor} removed ${item(entry)} from the inventory`;
+    case 'inventory_item.cost_linked':
+      return `${actor} counted ${text(entry.details, 'expense_title') ?? 'an expense'} towards ${item(entry)}`;
+    case 'inventory_item.cost_unlinked':
+      return `${actor} stopped counting ${text(entry.details, 'expense_title') ?? 'an expense'} towards ${item(entry)}`;
     case 'recurring_bill.posted':
       return `${actor} entered the ${entry.subject ?? 'repeatable'} bill`;
     case 'recurring_bill.skipped':
@@ -209,6 +224,17 @@ function describe(entry: ActivityEntry, context: ActivityContext): string {
       return `A ${entry.subject ?? 'repeatable'} bill is waiting for its split to be checked`;
   }
   return entry.subject ? `${actor} changed ${entry.subject}` : `${actor} made a change`;
+}
+
+const ITEM_STATUS_WORDS: Record<string, string> = {
+  in_use: 'in use',
+  needs_repair: 'needing repair',
+  gone: 'gone',
+};
+
+/** "the item Fridge", named from the entry once the item is removed. */
+function item(entry: ActivityEntry): string {
+  return entry.subject ? `the item ${entry.subject}` : 'an item';
 }
 
 /** "for all spending", or "for Groceries" while the category exists. */
@@ -271,6 +297,12 @@ export function activityHref(
       return {
         pathname: '/apartments/[apartmentId]/deposits/[depositId]',
         params: { apartmentId, depositId: entry.entityId },
+      };
+    case 'inventory_item':
+      // A removed item opens as not available.
+      return {
+        pathname: '/apartments/[apartmentId]/inventory/[itemId]',
+        params: { apartmentId, itemId: entry.entityId },
       };
   }
   if (!viewer.isAdmin) return null;
