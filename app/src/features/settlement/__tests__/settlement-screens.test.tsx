@@ -1,4 +1,4 @@
-import { screen, userEvent } from '@testing-library/react-native';
+import { screen, userEvent, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
 import {
@@ -10,6 +10,7 @@ import {
 import { renderWithProviders } from '@/test/render';
 
 import { fetchClosedPeriodsPage, fetchPairObligations, fetchSettlementPreview } from '../api';
+import { OtherDebts } from '../components/other-debts';
 import { SettleWith } from '../components/settle-with';
 import { SettlementOverview } from '../components/settlement-overview';
 
@@ -131,27 +132,30 @@ describe('SettleWith', () => {
   it('shows which obligations payments cover, oldest first, and offers to pay or net off (AC-09)', async () => {
     jest.mocked(fetchPairObligations).mockResolvedValue([
       {
-        expenseId: 'g',
+        source: 'expense',
+        sourceId: 'g',
         title: 'Groceries',
-        expenseDate: '2026-11-02',
+        date: '2026-11-02',
         direction: 'owe',
         amountMinor: 12_000,
         coveredMinor: 0,
         isHeld: false,
       },
       {
-        expenseId: 'c',
+        source: 'expense',
+        sourceId: 'c',
         title: 'Cleaning',
-        expenseDate: '2026-11-01',
+        date: '2026-11-01',
         direction: 'owed',
         amountMinor: 10_000,
         coveredMinor: 10_000,
         isHeld: false,
       },
       {
-        expenseId: 's',
+        source: 'expense',
+        sourceId: 's',
         title: 'Snacks',
-        expenseDate: '2026-11-03',
+        date: '2026-11-03',
         direction: 'owed',
         amountMinor: 5000,
         coveredMinor: 2000,
@@ -177,5 +181,121 @@ describe('SettleWith', () => {
       pathname: '/apartments/[apartmentId]/pay/[memberId]',
       params: { apartmentId: APARTMENT, memberId: ZUBAIR },
     });
+  });
+});
+
+describe('debts that do not come from an expense', () => {
+  const otherDebts = [
+    {
+      source: 'simplification' as const,
+      sourceId: 't',
+      title: 'Debts simplified through Ajmal',
+      date: '2026-11-04',
+      direction: 'owe' as const,
+      amountMinor: 100_000,
+      coveredMinor: 40_000,
+      isHeld: false,
+    },
+    {
+      source: 'deposit' as const,
+      sourceId: 'd',
+      title: 'Flat deposit',
+      date: '2026-11-05',
+      direction: 'owed' as const,
+      amountMinor: 30_000,
+      coveredMinor: 0,
+      isHeld: false,
+    },
+    {
+      source: 'adjustment' as const,
+      sourceId: 'j',
+      title: 'Broken mug',
+      date: '2026-11-06',
+      direction: 'owe' as const,
+      amountMinor: 5000,
+      coveredMinor: 0,
+      isHeld: false,
+    },
+  ];
+
+  it('lists them on Settle with, offers to pay, and opens what made each one', async () => {
+    jest.mocked(fetchPairObligations).mockResolvedValue(otherDebts);
+    await renderWithProviders(
+      <SettleWith apartmentId={APARTMENT} memberId={ZUBAIR} name="Zubair" />,
+    );
+    const user = userEvent.setup();
+
+    await user.press(
+      await screen.findByRole('button', {
+        name: 'Debts simplified through Ajmal, Simplified debts, Rs 1,000.00, partly settled',
+      }),
+    );
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/apartments/[apartmentId]/simplify',
+      params: { apartmentId: APARTMENT },
+    });
+
+    await user.press(
+      screen.getByRole('button', { name: 'Flat deposit, Deposit, Rs 300.00, open' }),
+    );
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/apartments/[apartmentId]/deposits/[depositId]',
+      params: { apartmentId: APARTMENT, depositId: 'd' },
+    });
+
+    // An adjustment has no screen of its own; its reason is its title.
+    expect(screen.getByLabelText('Broken mug, Adjustment, Rs 50.00, open')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: /Broken mug/ })).not.toBeOnTheScreen();
+
+    expect(screen.getByRole('button', { name: 'Pay or net off with Zubair' })).toBeOnTheScreen();
+  });
+
+  it('lists them on the ledger with who owes whom, and leaves expenses to the expense list', async () => {
+    jest.mocked(fetchPairObligations).mockResolvedValue([
+      {
+        source: 'expense',
+        sourceId: 'g',
+        title: 'Groceries',
+        date: '2026-11-02',
+        direction: 'owe',
+        amountMinor: 12_000,
+        coveredMinor: 0,
+        isHeld: false,
+      },
+      ...otherDebts,
+    ]);
+    await renderWithProviders(
+      <OtherDebts
+        apartmentId={APARTMENT}
+        counterpartyId={ZUBAIR}
+        name="Zubair"
+        money={(amountMinor) => `Rs ${amountMinor / 100}`}
+      />,
+    );
+
+    expect(await screen.findByText('Other debts')).toBeOnTheScreen();
+    expect(
+      screen.getByRole('button', {
+        name: 'Flat deposit, Deposit, Zubair owes you, Rs 300, open',
+      }),
+    ).toBeOnTheScreen();
+    expect(
+      screen.getByLabelText('Broken mug, Adjustment, You owe Zubair, Rs 50, open'),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText('Groceries')).not.toBeOnTheScreen();
+  });
+
+  it('shows nothing on the ledger when there are none', async () => {
+    jest.mocked(fetchPairObligations).mockResolvedValue([]);
+    await renderWithProviders(
+      <OtherDebts
+        apartmentId={APARTMENT}
+        counterpartyId={ZUBAIR}
+        name="Zubair"
+        money={(amountMinor) => `Rs ${amountMinor / 100}`}
+      />,
+    );
+    await waitFor(() => expect(fetchPairObligations).toHaveBeenCalled());
+    expect(screen.queryByText('Other debts')).not.toBeOnTheScreen();
   });
 });

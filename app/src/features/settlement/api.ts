@@ -17,10 +17,23 @@ export type PreviewRow = {
 export type SettlementPreview = { period: Period | null; rows: PreviewRow[] };
 
 /** An expense behind what two people owe each other, and how much payments and offsets cover. */
+/** What made a debt: an expense, or a record that moved or added one. */
+export type ObligationSource = 'expense' | 'simplification' | 'deposit' | 'adjustment';
+
+const OBLIGATION_SOURCES: readonly ObligationSource[] = [
+  'expense',
+  'simplification',
+  'deposit',
+  'adjustment',
+];
+
 export type Obligation = {
-  expenseId: string;
+  source: ObligationSource;
+  /** The expense, simplification, deposit or adjustment the debt comes from. */
+  sourceId: string;
   title: string;
-  expenseDate: string;
+  /** The expense's date, or the day the other record was made. */
+  date: string;
   /** 'owe': the user owes the other person; 'owed': the other way round. */
   direction: 'owe' | 'owed';
   amountMinor: number;
@@ -87,9 +100,11 @@ export async function fetchPairObligations(
   });
   if (error) throw error;
   return data.map((row) => ({
-    expenseId: row.expense_id,
+    // A source this version does not know still shows, with its title, but opens nothing.
+    source: OBLIGATION_SOURCES.find((source) => source === row.source) ?? 'adjustment',
+    sourceId: row.source_id,
     title: row.title,
-    expenseDate: row.expense_date,
+    date: row.expense_date,
     direction: row.direction as Obligation['direction'],
     amountMinor: row.amount_minor,
     coveredMinor: row.covered_minor,

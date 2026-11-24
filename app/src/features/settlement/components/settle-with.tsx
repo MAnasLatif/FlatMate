@@ -1,34 +1,27 @@
 import { router } from 'expo-router';
-import { Button, Card, PressableFeedback, Separator, Typography } from 'heroui-native';
+import { Button, Card, Separator, Typography } from 'heroui-native';
 import { View } from 'react-native';
 
 import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
-import { StatusChip } from '@/components/status-chip';
 import { useApartment } from '@/features/apartments/hooks';
 import { useRefreshMoney } from '@/features/expenses/hooks';
 import { UnreadDot, withUnread } from '@/features/notifications/components/unread-dot';
 import { useHasUnread } from '@/features/notifications/hooks';
 import { unreadMatches } from '@/features/notifications/unread';
 import { userErrorMessage } from '@/lib/errors';
-import { formatDate } from '@/lib/time';
 
 import type { Obligation } from '../api';
 import { usePairObligations } from '../hooks';
+import { ObligationRow } from './obligation-row';
 import { obligationState } from '../rules';
 import { formatMoney } from '@/features/apartments/currencies';
 
-const STATE_COLORS = {
-  settled: 'success',
-  'partly settled': 'warning',
-  open: 'default',
-  held: 'danger',
-} as const;
-
 /**
- * The obligations between the user and one person, with how much payments
- * and offsets cover, oldest first, and the way to settle the rest (SRS
- * FR-08.3, FR-06.4, AC-09).
+ * The debts between the user and one person, from expenses and from
+ * simplifications, deposits and adjustments, with how much payments and
+ * offsets cover, oldest first, and the way to settle the rest (SRS FR-06.2,
+ * FR-06.3, AC-09).
  */
 export function SettleWith({
   apartmentId,
@@ -80,8 +73,8 @@ export function SettleWith({
       onRefresh={() => void refreshMoney()}
     >
       <Typography.Paragraph type="body-sm" color="muted">
-        Payments and offsets settle the oldest expenses first. Disputed expenses are held and cannot
-        be paid until the dispute ends.
+        Payments and offsets settle the oldest debts first. Disputed expenses are held and cannot be
+        paid until the dispute ends.
       </Typography.Paragraph>
 
       <ObligationList
@@ -89,14 +82,14 @@ export function SettleWith({
         items={owe}
         money={money}
         apartmentId={apartmentId}
-        empty={`You owe ${name} nothing for shared expenses.`}
+        empty={`You owe ${name} nothing.`}
       />
       <ObligationList
         title={`What ${name} owes you`}
         items={owed}
         money={money}
         apartmentId={apartmentId}
-        empty={`${name} owes you nothing for shared expenses.`}
+        empty={`${name} owes you nothing.`}
       />
 
       {remaining(owe) > 0 ? (
@@ -150,42 +143,12 @@ function ObligationList({
             {empty}
           </Typography.Paragraph>
         ) : (
-          items.map((item, index) => {
-            const { remainingMinor, state } = obligationState(item);
-            return (
-              <View key={item.expenseId} className="gap-2">
-                {index > 0 ? <Separator /> : null}
-                <PressableFeedback
-                  onPress={() =>
-                    router.push({
-                      pathname: '/apartments/[apartmentId]/expenses/[expenseId]',
-                      params: { apartmentId, expenseId: item.expenseId },
-                    })
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel={`${item.title}, ${money(item.amountMinor)}, ${state}`}
-                  className="flex-row items-center gap-3"
-                >
-                  <View className="flex-1 gap-0.5">
-                    <Typography.Paragraph type="body-sm">{item.title}</Typography.Paragraph>
-                    <Typography.Paragraph type="body-xs" color="muted">
-                      {formatDate(item.expenseDate)} · {money(item.amountMinor)}
-                      {state === 'partly settled' ? ` · ${money(remainingMinor)} left` : ''}
-                    </Typography.Paragraph>
-                  </View>
-                  <StatusChip size="sm" variant="soft" color={STATE_COLORS[state]}>
-                    {state === 'settled'
-                      ? 'Settled'
-                      : state === 'held'
-                        ? 'Held'
-                        : state === 'open'
-                          ? 'Open'
-                          : 'Partly settled'}
-                  </StatusChip>
-                </PressableFeedback>
-              </View>
-            );
-          })
+          items.map((item, index) => (
+            <View key={`${item.source}-${item.sourceId}`} className="gap-2">
+              {index > 0 ? <Separator /> : null}
+              <ObligationRow item={item} apartmentId={apartmentId} money={money} />
+            </View>
+          ))
         )}
       </Card.Body>
     </Card>

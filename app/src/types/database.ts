@@ -2982,6 +2982,8 @@ export type Database = {
           expense_date: string;
           expense_id: string;
           is_held: boolean;
+          source: string;
+          source_id: string;
           title: string;
         }[];
       };

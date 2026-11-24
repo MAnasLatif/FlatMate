@@ -41,9 +41,10 @@ describe('describeClosingBalance', () => {
 
 describe('obligationState', () => {
   const obligation = {
-    expenseId: 'e',
+    source: 'expense' as const,
+    sourceId: 'e',
     title: 'Cleaning',
-    expenseDate: '2026-11-01',
+    date: '2026-11-01',
     direction: 'owe' as const,
     amountMinor: 10_000,
     coveredMinor: 0,
