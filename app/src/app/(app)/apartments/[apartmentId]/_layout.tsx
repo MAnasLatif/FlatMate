@@ -34,6 +34,15 @@ export default function ApartmentLayout() {
       <Stack.Screen name="settlement/[memberId]" options={{ title: 'Settle up' }} />
       <Stack.Screen name="statements" options={{ title: 'Statements' }} />
       <Stack.Screen name="activity" options={{ title: 'Activity' }} />
+      <Stack.Screen name="deposits/index" options={{ title: 'Deposit' }} />
+      <Stack.Screen
+        name="deposits/new"
+        options={{ title: 'Record a deposit', ...modalTransition }}
+      />
+      <Stack.Screen name="deposits/[depositId]/index" options={{ title: 'Deposit' }} />
+      <Stack.Screen name="deposits/[depositId]/takeover" options={{ title: 'Share taken over' }} />
+      <Stack.Screen name="deposits/[depositId]/refund" options={{ title: 'Share refunded' }} />
+      <Stack.Screen name="deposits/[depositId]/return" options={{ title: 'Deposit returned' }} />
       <Stack.Screen name="settings" options={{ title: 'Apartment settings' }} />
       <Stack.Screen
         name="recurring/new"

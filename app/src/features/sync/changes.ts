@@ -24,6 +24,7 @@ export const APARTMENT_CHANGE_KINDS = [
   'apartment',
   'budget',
   'category',
+  'deposit',
   'expense',
   'expense_template',
   'invite',
@@ -67,6 +68,8 @@ const apartmentChanges: Record<ApartmentChangeKind, (scope: ApartmentScope) => Q
   settlement_period: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
   // Budgets sit with the money, since their spending changes with every expense.
   budget: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
+  // Deposits live under the money key too: their actions post adjustments.
+  deposit: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
   expense_template: ({ apartmentId }) => [quickAddKeys.list(apartmentId)],
   // Settings change names in lists, and the settlement day and objection window.
   apartment: ({ apartmentId }) => [

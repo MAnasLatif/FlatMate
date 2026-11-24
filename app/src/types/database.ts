@@ -12,6 +12,7 @@ export type Database = {
           created_by: string;
           creditor_id: string;
           debtor_id: string;
+          deposit_action_id: string | null;
           dispute_id: string | null;
           expense_id: string | null;
           id: string;
@@ -28,6 +29,7 @@ export type Database = {
           created_by: string;
           creditor_id: string;
           debtor_id: string;
+          deposit_action_id?: string | null;
           dispute_id?: string | null;
           expense_id?: string | null;
           id?: string;
@@ -43,6 +45,7 @@ export type Database = {
           created_by?: string;
           creditor_id?: string;
           debtor_id?: string;
+          deposit_action_id?: string | null;
           dispute_id?: string | null;
           expense_id?: string | null;
           id?: string;
@@ -77,6 +80,13 @@ export type Database = {
             columns: ['debtor_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'adjustments_deposit_action_id_fkey';
+            columns: ['deposit_action_id'];
+            isOneToOne: false;
+            referencedRelation: 'deposit_actions';
             referencedColumns: ['id'];
           },
           {
@@ -389,6 +399,200 @@ export type Database = {
           },
           {
             foreignKeyName: 'budgets_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      deposit_actions: {
+        Row: {
+          apartment_id: string;
+          client_request_id: string | null;
+          created_at: string;
+          created_by: string;
+          deductions: NonNullable<Json>;
+          deposit_id: string;
+          id: string;
+          kind: string;
+          position: number;
+          received_by: string | null;
+          reverses_action_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          client_request_id?: string | null;
+          created_at?: string;
+          created_by: string;
+          deductions?: NonNullable<Json>;
+          deposit_id: string;
+          id?: string;
+          kind: string;
+          position?: never;
+          received_by?: string | null;
+          reverses_action_id?: string | null;
+        };
+        Update: {
+          apartment_id?: string;
+          client_request_id?: string | null;
+          created_at?: string;
+          created_by?: string;
+          deductions?: NonNullable<Json>;
+          deposit_id?: string;
+          id?: string;
+          kind?: string;
+          position?: never;
+          received_by?: string | null;
+          reverses_action_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'deposit_actions_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_actions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_actions_deposit_id_fkey';
+            columns: ['deposit_id'];
+            isOneToOne: false;
+            referencedRelation: 'deposits';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_actions_received_by_fkey';
+            columns: ['received_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_actions_reverses_action_id_fkey';
+            columns: ['reverses_action_id'];
+            isOneToOne: true;
+            referencedRelation: 'deposit_actions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      deposit_entries: {
+        Row: {
+          action_id: string;
+          amount_minor: number;
+          counterparty_id: string | null;
+          created_at: string;
+          deposit_id: string;
+          id: string;
+          kind: string;
+          reason: string | null;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action_id: string;
+          amount_minor: number;
+          counterparty_id?: string | null;
+          created_at?: string;
+          deposit_id: string;
+          id?: string;
+          kind: string;
+          reason?: string | null;
+          user_id: string;
+        };
+        Update: {
+          action_id?: string;
+          amount_minor?: number;
+          counterparty_id?: string | null;
+          created_at?: string;
+          deposit_id?: string;
+          id?: string;
+          kind?: string;
+          reason?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'deposit_entries_action_id_fkey';
+            columns: ['action_id'];
+            isOneToOne: false;
+            referencedRelation: 'deposit_actions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_entries_counterparty_id_fkey';
+            columns: ['counterparty_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_entries_deposit_id_fkey';
+            columns: ['deposit_id'];
+            isOneToOne: false;
+            referencedRelation: 'deposits';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_entries_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      deposits: {
+        Row: {
+          amount_minor: number;
+          apartment_id: string;
+          created_at: string;
+          created_by: string;
+          held_by: string | null;
+          id: string;
+          paid_on: string;
+          title: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_minor: number;
+          apartment_id: string;
+          created_at?: string;
+          created_by: string;
+          held_by?: string | null;
+          id?: string;
+          paid_on: string;
+          title: string;
+        };
+        Update: {
+          amount_minor?: number;
+          apartment_id?: string;
+          created_at?: string;
+          created_by?: string;
+          held_by?: string | null;
+          id?: string;
+          paid_on?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'deposits_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposits_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
@@ -2474,6 +2678,20 @@ export type Database = {
         Returns: string;
       };
       record_bill_payment: { Args: { p_expense_id: string; p_payers: Json }; Returns: undefined };
+      record_deposit: {
+        Args: {
+          p_amount_minor: number;
+          p_apartment_id: string;
+          p_client_request_id?: string;
+          p_held_by?: string;
+          p_paid_on: string;
+          p_participants: Json;
+          p_payers: Json;
+          p_split_method: string;
+          p_title: string;
+        };
+        Returns: string;
+      };
       record_payment: {
         Args: {
           p_amount_minor: number;
@@ -2484,6 +2702,16 @@ export type Database = {
           p_receiving_account_id?: string;
           p_recipient_id: string;
           p_reference?: string;
+        };
+        Returns: string;
+      };
+      refund_deposit_share: {
+        Args: {
+          p_client_request_id?: string;
+          p_deductions?: Json;
+          p_deposit_id: string;
+          p_refunded_minor: number;
+          p_user_id: string;
         };
         Returns: string;
       };
@@ -2499,6 +2727,16 @@ export type Database = {
       respond_to_dispute: {
         Args: { p_accept: boolean; p_dispute_id: string; p_message?: string };
         Returns: undefined;
+      };
+      return_deposit: {
+        Args: {
+          p_client_request_id?: string;
+          p_deductions?: Json;
+          p_deposit_id: string;
+          p_received_by: string;
+          p_refunded_minor: number;
+        };
+        Returns: string;
       };
       revoke_invite: { Args: { p_invite_id: string }; Returns: undefined };
       save_expense_template: {
@@ -2583,6 +2821,20 @@ export type Database = {
         Returns: undefined;
       };
       skip_recurring_bill: { Args: { p_instance_id: string }; Returns: undefined };
+      take_over_deposit_share: {
+        Args: {
+          p_amount_minor: number;
+          p_client_request_id?: string;
+          p_deposit_id: string;
+          p_from_id: string;
+          p_to_id: string;
+        };
+        Returns: string;
+      };
+      undo_deposit_action: {
+        Args: { p_action_id: string; p_client_request_id?: string };
+        Returns: string;
+      };
       unregister_push_token: { Args: { p_token: string }; Returns: undefined };
       update_apartment_reminders: {
         Args: {

@@ -104,6 +104,32 @@ describe('describeActivity', () => {
     ).toMatch(/^The settlement period .+ closed$/);
   });
 
+  it('words deposit changes', () => {
+    expect(
+      describeActivity(
+        entry({
+          entityType: 'deposit',
+          action: 'recorded',
+          subject: 'Flat deposit',
+          amountMinor: 90_000,
+        }),
+        context,
+      ),
+    ).toBe('Anas recorded the deposit Flat deposit of Rs 900.00');
+    expect(
+      describeActivity(
+        entry({
+          entityType: 'deposit',
+          action: 'share_taken_over',
+          personId: 'zubair',
+          counterpartyId: 'me',
+          amountMinor: 30_000,
+        }),
+        context,
+      ),
+    ).toBe("You took over Rs 300.00 of Zubair's deposit share");
+  });
+
   it('starts every sentence with a capital, and copes with what it does not know', () => {
     expect(
       describeActivity(entry({ subject: null, action: 'finalized', actorId: null }), context),

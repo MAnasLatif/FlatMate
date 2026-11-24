@@ -152,6 +152,20 @@ export const unreadMatches = {
     (item) =>
       item.apartmentId === apartmentId && item.recordType === 'apartment',
 
+  /** Changes to the user's deposit shares, behind the members icon and its Deposit entry. */
+  deposits:
+    (apartmentId: string): UnreadMatch =>
+    (item) =>
+      item.apartmentId === apartmentId && item.recordType === 'deposit',
+
+  /** One deposit, cleared on its screen. */
+  deposit:
+    (apartmentId: string, depositId: string): UnreadMatch =>
+    (item) =>
+      item.apartmentId === apartmentId &&
+      item.recordType === 'deposit' &&
+      item.recordId === depositId,
+
   /** Repeatable bills waiting for an admin, cleared on the repeatable expenses tab. */
   recurring:
     (apartmentId: string): UnreadMatch =>

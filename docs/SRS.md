@@ -151,7 +151,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-10.1 Search/filter expenses by month, member, category, amount and status; compare monthly spending. Filters are applied on the server from a sheet on the dashboard, within the month shown; a member's expenses are those they share in or paid for. The comparison shows the apartment's total and the user's share for the last six months.
 - FR-10.2 Export monthly per-user statements and apartment reports to PDF with gross, net, outstanding and disputed breakdowns. A statement covers one settlement period; carried-forward and closing amounts come from the periods' closing snapshots. The PDF is made on the phone. Only admins export the apartment report.
 - FR-10.3 Quick-add templates for common expenses and budget caps/alerts. Quick-adds belong to the apartment: any member who may add expenses saves one from the Add expense form and deletes it, and picking one fills in the form. Admins set monthly budgets for all spending and per category; every current member is told when a month first reaches 80% and 100% (section 12, item 23).
-- FR-10.4 Track security deposits and refund/exit adjustments.
+- FR-10.4 Track security deposits and refund/exit adjustments. Admins record who paid the landlord and each member's share, linked to balances; a share is refunded by the landlord or taken over by another member when someone moves out, and the rest is returned to one member with deductions shared by share (section 12, item 25).
 - FR-10.5 Optional shared inventory, ownership and maintenance costs.
 - FR-10.6 Optional room-based allocations and occupancy-driven splits.
 - FR-10.7 Offline expense **drafts** with explicit review and idempotent submission on reconnect; do not imply a payment is final while offline.
@@ -211,7 +211,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 | `audit_events` | id, apartment_id, actor_id, entity_type, entity_id, action, before_after_metadata, created_at |
 | `budgets` | id, apartment_id, category_id_nullable (null: all spending), limit_minor per calendar month; alerts sent kept in `budget_alerts` |
 | `expense_templates` | id, apartment_id, title (unique per apartment, any case), amount_minor_nullable, category_id, category_detail, split_method, participants_nullable (null: everyone equally) |
-| `deposits` | id, apartment_id, member_user_id, amount_minor, paid_at, refunded_minor, status |
+| `deposits` | id, apartment_id, title, amount_minor, paid_on, held_by; with `deposit_actions` (recorded, taken_over, refunded, returned, undone) and append-only `deposit_entries` whose sums are each member's share; linked adjustments carry the debts |
 | `inventory_items` | id, apartment_id, name, owner_type, purchase_reference, condition, status |
 | `rooms` / `room_members` | room metadata and occupancy dates for advanced splitting |
 
@@ -296,7 +296,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ## 12. Product Decisions
 
-Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, item 19 on 2026-11-17, and items 20 to 24 on 2026-11-24. Item 10 is still open, and part of item 11.
+Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, item 19 on 2026-11-17, and items 20 to 25 on 2026-11-24. Item 10 is still open, and part of item 11.
 
 1. **Explicit approval mode — decided.** Not part of the MVP. Every expense is accepted automatically, and affected members object within the window (FR-05). An optional approval mode (FR-03.8) may be reconsidered after release.
 2. **What a dispute holds — decided.** A dispute holds every share of the disputed expense until it is resolved, so settlement never sees inconsistent totals. Other expenses stay payable.
@@ -322,6 +322,7 @@ Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 1
 22. **Statements and reports — decided.** A statement covers one settlement period: the reader's share and payments of its expenses, payments sent and received, and per person what was carried forward, what is owed each way at close (or so far, while open) and what is held by disputes. The phone makes the PDF and opens the share sheet; nothing is stored on a server. Only admins export the apartment report of per-member totals, since payments between others are private (item 8) (FR-10.2, AC-14).
 23. **Quick-adds and budgets — decided.** Quick-adds belong to the apartment; anyone who may add expenses saves them from the Add expense form or deletes them, and an equal split among everyone includes later joiners. Admins set monthly budgets, for all spending and per category, counted like the month comparison. Every current member is told the first time a month reaches 80% and 100% of a budget, under their own push group (FR-10.3, decision record 0013).
 24. **Activity history — decided.** One timeline per apartment on an Activity screen, newest first, filtered by type and by who did it; each entry opens its record. Entries are as private as their records: payments, netting and adjustments show only to their two people and admins, and join codes, join requests and repeatable expenses only to admins. Former members have no timeline (FR-10.8, decision record 0014).
+25. **Security deposits — decided.** Admins record a deposit with who paid the landlord and each member's share; whoever paid more than their share is owed the rest through linked adjustments. On moving out a share is refunded by the landlord (with deductions, no change between members) or taken over by a current member, who owes its holder. The rest is returned to one member, deductions shared by share, and that member owes each other holder their refund. The latest change can be undone with reversing entries (FR-10.4, decision record 0015).
 
 
 ## 13. Suggested First Implementation Tasks

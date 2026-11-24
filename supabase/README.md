@@ -76,6 +76,10 @@ Reminders are written straight to `notifications`, without an audit event: every
 
 `get_activity` pages an apartment's `audit_events` newest first for current members, filtered by group (`private.activity_group`) and by actor, with each entry's record name, amount and people where the caller can read them. The audit trail's read policy makes each entry as private as its record: payments, offsets and adjustments follow those tables' policies, and invites, join requests, invitations back and repeatable expenses are for admins. A new audit entity type that is private must be added to that policy. Tests: `tests/database/activity_history_test.sql`.
 
+## Security deposits
+
+`record_deposit`, `take_over_deposit_share`, `refund_deposit_share`, `return_deposit` and `undo_deposit_action` are admin-only and retry-safe. Each locks the deposit, writes a `deposit_actions` row and signed `deposit_entries` (a person's share is the sum of theirs), and posts any debts as adjustments linked by `deposit_action_id`, without their own audit events: the deposit's event tells the people affected. Deductions on a return are split with `private.split_by_weights`, the rounding rule of `compute_shares`. Tests: `tests/database/deposits_test.sql`.
+
 ## Join codes
 
 Each apartment has one join code at a time ([decision 0011](../docs/decisions/0011-one-join-code-per-apartment.md)). `get_join_code` returns it to an admin, making it the first time, and `change_join_code` replaces it, stopping every older code. It does not expire: joining with it only asks to join, an admin approves every request, and wrong guesses are rate-limited. Admins can read the code; joining matches on its hash. `create_invite` stays for app versions that still call it. Tests: `tests/database/join_code_test.sql`, `invites_test.sql`.
