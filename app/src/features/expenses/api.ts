@@ -4,6 +4,7 @@ import type { Json, Tables } from '@/types/database';
 
 import type { ValidExpense } from './draft';
 import { myExpensePosition } from './position';
+import { type ExpenseSearch, NO_SEARCH, searchArguments } from './search';
 import type { Contribution, SplitMethod, SplitParticipant } from './split';
 
 export type ExpenseStatus = 'provisional' | 'disputed' | 'final' | 'void';
@@ -162,23 +163,25 @@ export async function fetchExpensesPage(
   monthStartDate: string,
   nextMonthStartDate: string,
   page: number,
+  search: ExpenseSearch = NO_SEARCH,
 ): Promise<ExpenseListItem[]> {
   const from = page * EXPENSES_PAGE_SIZE;
+  // The server filters, under the caller's own row-level security, so a
+  // filter finds expenses on pages not loaded yet.
   const { data, error } = await supabase
-    .from('expenses')
+    .rpc('search_expenses', {
+      p_apartment_id: apartmentId,
+      p_from: monthStartDate,
+      p_to: nextMonthStartDate,
+      ...searchArguments(search),
+    })
     .select(
       `id, title, amount_minor, currency, expense_date, due_date, category_detail, status, paid_status, created_at, revision,
        category:expense_categories(name),
        revisions:expense_revisions(revision,
-         my_splits:expense_splits(revision, amount_minor),
-         my_payers:expense_payers(revision, amount_minor))`,
+         splits:expense_splits(revision, user_id, amount_minor),
+         payers:expense_payers(revision, user_id, amount_minor))`,
     )
-    .eq('apartment_id', apartmentId)
-    // Only the signed-in user's share and payment in each revision.
-    .eq('revisions.my_splits.user_id', userId)
-    .eq('revisions.my_payers.user_id', userId)
-    .gte('expense_date', monthStartDate)
-    .lt('expense_date', nextMonthStartDate)
     .order('expense_date', { ascending: false })
     .order('created_at', { ascending: false })
     .range(from, from + EXPENSES_PAGE_SIZE - 1);
@@ -189,8 +192,10 @@ export async function fetchExpensesPage(
       status: expense.status,
       paidStatus: expense.paid_status,
       revision,
-      splits: revisions.flatMap((item) => item.my_splits),
-      payers: revisions.flatMap((item) => item.my_payers),
+      // Filters on rows nested this deep are not applied to a function's
+      // results, so the user's own share and payment are picked out here.
+      splits: revisions.flatMap((item) => item.splits).filter((row) => row.user_id === userId),
+      payers: revisions.flatMap((item) => item.payers).filter((row) => row.user_id === userId),
     }),
   }));
 }
@@ -431,4 +436,24 @@ export async function fetchAttachments(expenseId: string): Promise<Attachment[]>
     .order('created_at', { ascending: true });
   if (error) throw error;
   return data;
+}
+
+/** One month of the comparison: the apartment's spending and the user's share. */
+export type MonthSpending = { month: string; totalMinor: number; myShareMinor: number };
+
+/** The last `months` months up to the current one, oldest first. */
+export async function fetchMonthlySpending(
+  apartmentId: string,
+  months: number,
+): Promise<MonthSpending[]> {
+  const { data, error } = await supabase.rpc('get_monthly_spending', {
+    p_apartment_id: apartmentId,
+    p_months: months,
+  });
+  if (error) throw error;
+  return data.map((row) => ({
+    month: row.month,
+    totalMinor: row.total_minor,
+    myShareMinor: row.my_share_minor,
+  }));
 }

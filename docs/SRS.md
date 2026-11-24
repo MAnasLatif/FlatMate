@@ -148,7 +148,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-09.4 Scheduled jobs must be timezone-aware per apartment and retry-safe.
 
 ### FR-10 Reports, Convenience and Advanced Shared Living
-- FR-10.1 Search/filter expenses by month, member, category, amount and status; compare monthly spending.
+- FR-10.1 Search/filter expenses by month, member, category, amount and status; compare monthly spending. Filters are applied on the server from a sheet on the dashboard, within the month shown; a member's expenses are those they share in or paid for. The comparison shows the apartment's total and the user's share for the last six months.
 - FR-10.2 Export monthly per-user statements and apartment reports to PDF with gross, net, outstanding and disputed breakdowns.
 - FR-10.3 Quick-add templates for common expenses and budget caps/alerts.
 - FR-10.4 Track security deposits and refund/exit adjustments.
@@ -295,7 +295,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ## 12. Product Decisions
 
-Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, item 19 on 2026-11-17, and item 20 on 2026-11-24. Item 10 is still open, and part of item 11.
+Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, item 19 on 2026-11-17, and items 20 and 21 on 2026-11-24. Item 10 is still open, and part of item 11.
 
 1. **Explicit approval mode — decided.** Not part of the MVP. Every expense is accepted automatically, and affected members object within the window (FR-05). An optional approval mode (FR-03.8) may be reconsidered after release.
 2. **What a dispute holds — decided.** A dispute holds every share of the disputed expense until it is resolved, so settlement never sees inconsistent totals. Other expenses stay payable.
@@ -317,6 +317,7 @@ Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 1
 18. **Repeatable bills are not categories — decided.** Rent, utilities and internet are set up as repeatable expenses, so new apartments no longer start with those categories and existing apartments archive them; expenses filed under them keep their category. A repeatable expense repeats daily, weekly, every 2 weeks, monthly, every 3 months or yearly (FR-04.2).
 19. **One join code per apartment — decided.** Each apartment has one join code at a time. It does not expire, and admins can see it, copy, share or email it, and change it, which stops the old one. Only admins can read it; joining matches on its hash. See decision record 0011.
 20. **Reminders and push preferences — decided.** A bill's due-date reminder goes to its collector, or to the admins when nobody is named; the settlement reminder goes to members who owe someone, not counting disputed amounts. Admins set both schedules per apartment. Each person turns push off by group for every apartment, and the red dots stay (FR-09.2, decision record 0012).
+21. **Expense filters and comparison — decided.** Search and filters (title or notes, member, category, status, amount range) live in a sheet on the dashboard and apply within the month shown. Filtering by member finds expenses they share in or paid for. Compare months shows the apartment's total and the user's share for the last six months, without cancelled expenses (FR-10.1).
 
 
 ## 13. Suggested First Implementation Tasks

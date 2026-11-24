@@ -12,6 +12,7 @@ import {
   fetchAttachments,
   fetchExpenseDetail,
   fetchExpensesPage,
+  fetchMonthlySpending,
   fetchMyBalances,
   fetchMyMonthlyShare,
   fetchPairBalances,
@@ -23,13 +24,16 @@ import {
   voidExpense,
 } from './api';
 import type { ValidExpense } from './draft';
+import { type ExpenseSearch, NO_SEARCH } from './search';
 import type { Contribution } from './split';
 
 export const expenseKeys = {
   /** Everything about an apartment's money: invalidate after any financial change. */
   apartment: (apartmentId: string) => ['money', apartmentId] as const,
-  list: (apartmentId: string, monthStartDate: string) =>
-    ['money', apartmentId, 'expenses', monthStartDate] as const,
+  list: (apartmentId: string, monthStartDate: string, search: ExpenseSearch = NO_SEARCH) =>
+    ['money', apartmentId, 'expenses', monthStartDate, search] as const,
+  monthlySpending: (apartmentId: string, months: number) =>
+    ['money', apartmentId, 'monthly-spending', months] as const,
   balances: (apartmentId: string) => ['money', apartmentId, 'balances'] as const,
   monthlyShare: (apartmentId: string, monthStartDate: string) =>
     ['money', apartmentId, 'monthly-share', monthStartDate] as const,
@@ -40,10 +44,14 @@ export const expenseKeys = {
     ['money', apartmentId, 'pair-expenses', counterpartyId] as const,
 };
 
-export function useExpenses(apartmentId: string, monthStartDate: string) {
+export function useExpenses(
+  apartmentId: string,
+  monthStartDate: string,
+  search: ExpenseSearch = NO_SEARCH,
+) {
   const userId = useCurrentUserId();
   return useInfiniteQuery({
-    queryKey: expenseKeys.list(apartmentId, monthStartDate),
+    queryKey: expenseKeys.list(apartmentId, monthStartDate, search),
     queryFn: ({ pageParam }) =>
       fetchExpensesPage(
         apartmentId,
@@ -51,10 +59,23 @@ export function useExpenses(apartmentId: string, monthStartDate: string) {
         monthStartDate,
         addMonths(monthStartDate, 1),
         pageParam,
+        search,
       ),
+    // A changed filter keeps the month's list on screen until the new one
+    // arrives; a different month starts from its own loading state.
+    placeholderData: (previous, previousQuery) =>
+      previousQuery?.queryKey[3] === monthStartDate ? previous : undefined,
     initialPageParam: 0,
     getNextPageParam: (lastPage, pages) =>
       lastPage.length === EXPENSES_PAGE_SIZE ? pages.length : undefined,
+  });
+}
+
+/** The apartment's spending and the user's share for the last `months` months. */
+export function useMonthlySpending(apartmentId: string, months: number) {
+  return useQuery({
+    queryKey: expenseKeys.monthlySpending(apartmentId, months),
+    queryFn: () => fetchMonthlySpending(apartmentId, months),
   });
 }
 
