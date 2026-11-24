@@ -316,6 +316,86 @@ export type Database = {
           },
         ];
       };
+      budget_alerts: {
+        Row: {
+          budget_id: string;
+          level: number;
+          month: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          budget_id: string;
+          level: number;
+          month: string;
+        };
+        Update: {
+          budget_id?: string;
+          level?: number;
+          month?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'budget_alerts_budget_id_fkey';
+            columns: ['budget_id'];
+            isOneToOne: false;
+            referencedRelation: 'budgets';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      budgets: {
+        Row: {
+          apartment_id: string;
+          category_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          limit_minor: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          category_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          limit_minor: number;
+          updated_at?: string;
+        };
+        Update: {
+          apartment_id?: string;
+          category_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          limit_minor?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'budgets_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'budgets_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'expense_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'budgets_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       dispute_attachments: {
         Row: {
           content_type: string;
@@ -688,6 +768,71 @@ export type Database = {
           {
             foreignKeyName: 'expense_splits_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      expense_templates: {
+        Row: {
+          amount_minor: number | null;
+          apartment_id: string;
+          category_detail: string | null;
+          category_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          participants: Json | null;
+          split_method: string;
+          title: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_minor?: number | null;
+          apartment_id: string;
+          category_detail?: string | null;
+          category_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          participants?: Json | null;
+          split_method: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount_minor?: number | null;
+          apartment_id?: string;
+          category_detail?: string | null;
+          category_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          participants?: Json | null;
+          split_method?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'expense_templates_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'expense_templates_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'expense_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'expense_templates_created_by_fkey';
+            columns: ['created_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
@@ -2082,6 +2227,7 @@ export type Database = {
       decline_join_request: { Args: { p_request_id: string }; Returns: undefined };
       decline_payment: { Args: { p_payment_id: string; p_reason: string }; Returns: string };
       decline_rejoin_invite: { Args: { p_invite_id: string }; Returns: string };
+      delete_expense_template: { Args: { p_template_id: string }; Returns: undefined };
       edit_expense: {
         Args: {
           p_amount_minor: number;
@@ -2102,6 +2248,15 @@ export type Database = {
       get_apartment_report: {
         Args: { p_apartment_id: string; p_period_id: string };
         Returns: Json;
+      };
+      get_budgets: {
+        Args: { p_apartment_id: string; p_month: string };
+        Returns: {
+          budget_id: string;
+          category_id: string;
+          limit_minor: number;
+          spent_minor: number;
+        }[];
       };
       get_join_code: { Args: { p_apartment_id: string }; Returns: string };
       get_join_requests: {
@@ -2311,6 +2466,10 @@ export type Database = {
         Returns: string;
       };
       register_push_token: { Args: { p_platform: string; p_token: string }; Returns: undefined };
+      remove_budget: {
+        Args: { p_apartment_id: string; p_category_id?: string };
+        Returns: undefined;
+      };
       remove_member: { Args: { p_apartment_id: string; p_user_id: string }; Returns: undefined };
       rename_category: { Args: { p_category_id: string; p_name: string }; Returns: undefined };
       report_push_receipts: { Args: { p_results: Json }; Returns: undefined };
@@ -2320,6 +2479,18 @@ export type Database = {
         Returns: undefined;
       };
       revoke_invite: { Args: { p_invite_id: string }; Returns: undefined };
+      save_expense_template: {
+        Args: {
+          p_amount_minor?: number;
+          p_apartment_id: string;
+          p_category_detail?: string;
+          p_category_id?: string;
+          p_participants?: Json;
+          p_split_method: string;
+          p_title: string;
+        };
+        Returns: string;
+      };
       search_expenses: {
         Args: {
           p_apartment_id: string;
@@ -2364,6 +2535,10 @@ export type Database = {
       set_bill_collector: {
         Args: { p_collector_id: string; p_expense_id: string };
         Returns: undefined;
+      };
+      set_budget: {
+        Args: { p_apartment_id: string; p_category_id?: string; p_limit_minor: number };
+        Returns: string;
       };
       set_expense_category_detail: {
         Args: { p_detail: string; p_expense_id: string };
