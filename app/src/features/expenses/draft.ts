@@ -278,6 +278,36 @@ export type SplitInput = Pick<
   'splitMethod' | 'excluded' | 'percentages' | 'fixedAmounts'
 >;
 
+/** A saved split, back in the form's shape. Anyone listed but not in it starts excluded. */
+export function splitInputFrom(
+  splitMethod: SplitInput['splitMethod'],
+  participants: readonly SplitParticipant[],
+  memberIds: readonly string[],
+  minorUnitDigits = 2,
+): SplitInput {
+  const inSplit = new Set(participants.map((participant) => participant.userId));
+  return {
+    splitMethod,
+    excluded: memberIds.filter((id) => !inSplit.has(id)),
+    percentages: Object.fromEntries(
+      participants
+        .filter((participant) => participant.basisPoints !== undefined)
+        .map((participant) => [
+          participant.userId,
+          minorUnitsToInput(participant.basisPoints ?? 0, 2),
+        ]),
+    ),
+    fixedAmounts: Object.fromEntries(
+      participants
+        .filter((participant) => participant.amountMinor !== undefined)
+        .map((participant) => [
+          participant.userId,
+          minorUnitsToInput(participant.amountMinor ?? 0, minorUnitDigits),
+        ]),
+    ),
+  };
+}
+
 /**
  * Checks a split and returns its participants for the database. Fixed shares
  * are checked against `amountMinor`, and wait while it is null or zero.
