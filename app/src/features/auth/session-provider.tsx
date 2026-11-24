@@ -10,6 +10,7 @@ import {
 } from 'react';
 
 import { queryClient } from '@/lib/query-client';
+import { deleteQueue } from '@/lib/offline-queue';
 import { deleteSavedCache, type SavedCache, startSavedCache } from '@/lib/saved-cache';
 import { supabase } from '@/lib/supabase';
 
@@ -74,6 +75,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           void stopped
             .then(() => deleteSavedCache(ended.userId))
             .catch(() => console.warn('The saved data could not be deleted at sign-out.'));
+          // Expenses still waiting to be sent go too: the next person to
+          // sign in must never see or send them.
+          void deleteQueue(ended.userId).catch(() =>
+            console.warn('The offline queue could not be deleted at sign-out.'),
+          );
         }
       }
       setSession(nextSession);
