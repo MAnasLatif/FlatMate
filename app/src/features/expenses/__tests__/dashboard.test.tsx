@@ -1,7 +1,13 @@
 import { fireEvent, screen, userEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
-import { type Apartment, fetchApartment } from '@/features/apartments/api';
+import {
+  type Apartment,
+  fetchApartment,
+  fetchCategories,
+  fetchMembers,
+  type Member,
+} from '@/features/apartments/api';
 import { fetchUnreadNotifications } from '@/features/notifications/api';
 import type { UnreadNotification } from '@/features/notifications/unread';
 import { addMonths, formatMonth, monthStart, todayInTimeZone } from '@/lib/time';
@@ -10,10 +16,12 @@ import { renderWithProviders } from '@/test/render';
 import {
   type ExpenseListItem,
   fetchExpensesPage,
+  fetchMonthlySpending,
   fetchMyBalances,
   fetchMyMonthlyShare,
 } from '../api';
 import { Dashboard } from '../components/dashboard';
+import { NO_SEARCH } from '../search';
 
 jest.mock('@/lib/supabase', () => ({ supabase: {} }));
 const mockSetOptions = jest.fn();
@@ -27,6 +35,7 @@ jest.mock('../api', () => ({
   fetchExpensesPage: jest.fn(),
   fetchMyBalances: jest.fn(),
   fetchMyMonthlyShare: jest.fn(),
+  fetchMonthlySpending: jest.fn(),
 }));
 jest.mock('@/features/auth/session-provider', () => ({
   useCurrentUserId: () => '11111111-1111-1111-1111-111111111111',
@@ -38,6 +47,8 @@ jest.mock('@/features/notifications/api', () => ({
 jest.mock('@/features/apartments/api', () => ({
   ...jest.requireActual('@/features/apartments/api'),
   fetchApartment: jest.fn(),
+  fetchMembers: jest.fn(),
+  fetchCategories: jest.fn(),
 }));
 
 const apartment: Apartment = {
@@ -86,7 +97,29 @@ beforeEach(() => {
   monthlyShare.mockResolvedValue(0);
   expensesPage.mockResolvedValue([]);
   jest.mocked(fetchUnreadNotifications).mockResolvedValue([]);
+  jest
+    .mocked(fetchMembers)
+    .mockResolvedValue([
+      member('11111111-1111-1111-1111-111111111111', 'Anas'),
+      member('z', 'Zubair'),
+    ]);
+  jest.mocked(fetchCategories).mockResolvedValue([{ id: 'c-food', name: 'Food' }]);
 });
+
+function member(userId: string, displayName: string): Member {
+  return {
+    membershipId: `m-${userId}`,
+    userId,
+    role: 'member',
+    canAddExpense: true,
+    joinedAt: '2026-11-01T00:00:00Z',
+    leftAt: null,
+    leftReason: null,
+    hiddenAt: null,
+    displayName,
+    avatarPath: null,
+  };
+}
 
 it('shows what the user will receive and send (SRS 5.1)', async () => {
   balances.mockResolvedValue([
@@ -222,6 +255,7 @@ it("lists the month's expenses with their status and the user's share", async ()
     thisMonth,
     addMonths(thisMonth, 1),
     0,
+    NO_SEARCH,
   );
 });
 
@@ -303,6 +337,7 @@ it('steps back a month, with no forward arrow on the current one', async () => {
     lastMonth,
     thisMonth,
     0,
+    NO_SEARCH,
   );
   expect(monthlyShare).toHaveBeenCalledWith(apartment.id, lastMonth);
   expect(screen.getByRole('button', { name: 'Next month' })).toBeOnTheScreen();
@@ -324,4 +359,138 @@ it('offers a retry when the expenses cannot be loaded', async () => {
   await renderWithProviders(<Dashboard apartment={apartment} />);
 
   expect(await screen.findByText('Could not load the expenses.')).toBeOnTheScreen();
+});
+
+describe('filters', () => {
+  it('filters by member, category, status and amount on the server, and shows each filter', async () => {
+    await renderWithProviders(<Dashboard apartment={apartment} />);
+    const user = userEvent.setup();
+
+    await user.press(await screen.findByRole('button', { name: 'Filter expenses' }));
+    await user.press(await screen.findByRole('button', { name: 'Zubair' }));
+    await user.press(screen.getByRole('button', { name: 'Food' }));
+    await user.press(screen.getByRole('button', { name: 'Not paid yet' }));
+    await user.type(screen.getByLabelText('Lowest amount'), '100');
+    await user.type(screen.getByLabelText('Highest amount'), '2500.50');
+    await user.type(screen.getByLabelText('Search expenses'), ' groc ');
+    await user.press(screen.getByRole('button', { name: 'Show expenses' }));
+
+    expect(expensesPage).toHaveBeenLastCalledWith(
+      apartment.id,
+      '11111111-1111-1111-1111-111111111111',
+      thisMonth,
+      addMonths(thisMonth, 1),
+      0,
+      {
+        query: 'groc',
+        memberId: 'z',
+        categoryId: 'c-food',
+        status: 'unpaid',
+        minMinor: 10_000,
+        maxMinor: 250_050,
+      },
+    );
+    expect(await screen.findByRole('button', { name: 'Filters, 5 on' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Remove filter: Zubair' })).toBeOnTheScreen();
+    expect(
+      screen.getByRole('button', { name: 'Remove filter: Rs 100.00 – Rs 2,500.50' }),
+    ).toBeOnTheScreen();
+  });
+
+  it('removes one filter when its chip is tapped', async () => {
+    await renderWithProviders(<Dashboard apartment={apartment} />);
+    const user = userEvent.setup();
+
+    await user.press(await screen.findByRole('button', { name: 'Filter expenses' }));
+    await user.press(await screen.findByRole('button', { name: 'Cancelled' }));
+    await user.press(screen.getByRole('button', { name: 'Show expenses' }));
+    await user.press(await screen.findByRole('button', { name: 'Remove filter: Cancelled' }));
+
+    expect(expensesPage).toHaveBeenLastCalledWith(
+      apartment.id,
+      '11111111-1111-1111-1111-111111111111',
+      thisMonth,
+      addMonths(thisMonth, 1),
+      0,
+      NO_SEARCH,
+    );
+    expect(screen.getByRole('button', { name: 'Filter expenses' })).toBeOnTheScreen();
+  });
+
+  it('says how to fix an amount range and keeps the sheet open', async () => {
+    await renderWithProviders(<Dashboard apartment={apartment} />);
+    const user = userEvent.setup();
+
+    await user.press(await screen.findByRole('button', { name: 'Filter expenses' }));
+    await user.type(await screen.findByLabelText('Lowest amount'), '500');
+    await user.type(screen.getByLabelText('Highest amount'), '100');
+    await user.press(screen.getByRole('button', { name: 'Show expenses' }));
+
+    expect(
+      screen.getByText('The lowest amount must not be more than the highest.'),
+    ).toBeOnTheScreen();
+    expect(expensesPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('says when nothing matches, and clears the filters from there', async () => {
+    await renderWithProviders(<Dashboard apartment={apartment} />);
+    const user = userEvent.setup();
+
+    await user.press(await screen.findByRole('button', { name: 'Filter expenses' }));
+    await user.press(await screen.findByRole('button', { name: 'Disputed' }));
+    await user.press(screen.getByRole('button', { name: 'Show expenses' }));
+
+    expect(
+      await screen.findByText(`No expenses in ${formatMonth(thisMonth)} match these filters.`),
+    ).toBeOnTheScreen();
+    await user.press(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(await screen.findByText(`No expenses in ${formatMonth(thisMonth)}`)).toBeOnTheScreen();
+  });
+});
+
+describe('comparing months', () => {
+  it('shows each month newest first, and opens one on the dashboard', async () => {
+    const lastMonth = addMonths(thisMonth, -1);
+    jest.mocked(fetchMonthlySpending).mockResolvedValue([
+      { month: lastMonth, totalMinor: 30_000, myShareMinor: 10_000 },
+      { month: thisMonth, totalMinor: 150_000, myShareMinor: 50_000 },
+    ]);
+    await renderWithProviders(<Dashboard apartment={apartment} />);
+    const user = userEvent.setup();
+
+    await user.press(await screen.findByRole('button', { name: 'Compare months' }));
+
+    const current = await screen.findByRole('button', {
+      name: `${formatMonth(thisMonth)}: apartment total Rs 1,500.00, your share Rs 500.00. Rs 1,200.00 more than ${formatMonth(lastMonth)}.`,
+    });
+    expect(current).toBeOnTheScreen();
+    expect(fetchMonthlySpending).toHaveBeenCalledWith(apartment.id, 6);
+
+    await user.press(
+      screen.getByRole('button', {
+        name: `${formatMonth(lastMonth)}: apartment total Rs 300.00, your share Rs 100.00.`,
+      }),
+    );
+    expect(await screen.findByText(`No expenses in ${formatMonth(lastMonth)}`)).toBeOnTheScreen();
+  });
+
+  it('says so when there is nothing to compare', async () => {
+    jest
+      .mocked(fetchMonthlySpending)
+      .mockResolvedValue([{ month: thisMonth, totalMinor: 0, myShareMinor: 0 }]);
+    await renderWithProviders(<Dashboard apartment={apartment} />);
+
+    await userEvent.setup().press(await screen.findByRole('button', { name: 'Compare months' }));
+
+    expect(await screen.findByText('No expenses in the last 6 months yet.')).toBeOnTheScreen();
+  });
+
+  it('offers a retry when the comparison cannot be loaded', async () => {
+    jest.mocked(fetchMonthlySpending).mockRejectedValue(new Error('boom'));
+    await renderWithProviders(<Dashboard apartment={apartment} />);
+
+    await userEvent.setup().press(await screen.findByRole('button', { name: 'Compare months' }));
+
+    expect(await screen.findByText('Could not load the comparison.')).toBeOnTheScreen();
+  });
 });

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Typography } from 'heroui-native';
+import { Button, LinkButton, Typography } from 'heroui-native';
 import { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 
@@ -22,14 +22,22 @@ import type { ExpenseListItem } from '../api';
 import { useExpenses, useMyMonthlyShare, useRefreshMoney } from '../hooks';
 import { BalanceSummary, type ExpenseFilter } from './balance-summary';
 import { ExpenseRow } from './expense-row';
+import { activeFilterCount, type ExpenseSearch, NO_SEARCH } from '../search';
+import { ActiveFilters } from './active-filters';
+import { ExpenseFilterSheet } from './expense-filter-sheet';
 import { MonthSelector } from './month-selector';
+import { SpendingComparisonSheet } from './spending-comparison';
 import { formatMoney } from '@/features/apartments/currencies';
 
 /** An apartment's main screen: the user's balances, then a month of expenses (SRS 3.2). */
 export function Dashboard({ apartment }: { apartment: Apartment }) {
   const latestMonth = monthStart(todayInTimeZone(apartment.timezone));
   const [month, setMonth] = useState(latestMonth);
-  const expenses = useExpenses(apartment.id, month);
+  const [search, setSearch] = useState<ExpenseSearch>(NO_SEARCH);
+  const [isFilterOpen, setFilterOpen] = useState(false);
+  const [isComparisonOpen, setComparisonOpen] = useState(false);
+  const expenses = useExpenses(apartment.id, month, search);
+  const isSearching = activeFilterCount(search) > 0;
   const refreshMoney = useRefreshMoney(apartment.id);
   const apartmentQuery = useApartment(apartment.id);
   const [refreshing, setRefreshing] = useState(false);
@@ -89,7 +97,38 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
             onFilterChange={setFilter}
           />
           <MonthSelector month={month} latestMonth={latestMonth} onChange={setMonth} />
-          <MonthlyShare apartmentId={apartment.id} month={month} currency={apartment.currency} />
+          <View className="flex-row items-center justify-between gap-2">
+            <MonthlyShare apartmentId={apartment.id} month={month} currency={apartment.currency} />
+            <LinkButton
+              onPress={() => setComparisonOpen(true)}
+              accessibilityLabel="Compare months"
+              hitSlop={12}
+            >
+              <LinkButton.Label className="font-semibold text-accent">Compare</LinkButton.Label>
+            </LinkButton>
+          </View>
+          <ActiveFilters
+            apartmentId={apartment.id}
+            currency={apartment.currency}
+            search={search}
+            onChange={setSearch}
+            onOpen={() => setFilterOpen(true)}
+          />
+          <ExpenseFilterSheet
+            apartmentId={apartment.id}
+            currency={apartment.currency}
+            isOpen={isFilterOpen}
+            onOpenChange={setFilterOpen}
+            search={search}
+            onApply={setSearch}
+          />
+          <SpendingComparisonSheet
+            apartmentId={apartment.id}
+            currency={apartment.currency}
+            isOpen={isComparisonOpen}
+            onOpenChange={setComparisonOpen}
+            onSelectMonth={setMonth}
+          />
         </View>
       }
       ListEmptyComponent={
@@ -100,6 +139,15 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
             message={userErrorMessage(expenses.error, 'Could not load the expenses.')}
             onRetry={() => void expenses.refetch()}
           />
+        ) : isSearching && loaded.length === 0 ? (
+          <View className="items-center gap-3 py-10">
+            <Typography.Paragraph color="muted" className="text-center">
+              No expenses in {formatMonth(month)} match these filters.
+            </Typography.Paragraph>
+            <Button size="sm" variant="secondary" onPress={() => setSearch(NO_SEARCH)}>
+              Clear filters
+            </Button>
+          </View>
         ) : filter && loaded.length > 0 ? (
           <Typography.Paragraph color="muted" className="py-10 text-center">
             {filter === 'receive'
