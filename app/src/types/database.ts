@@ -2245,6 +2245,28 @@ export type Database = {
         };
         Returns: number;
       };
+      get_activity: {
+        Args: {
+          p_actor_id?: string;
+          p_apartment_id: string;
+          p_before?: number;
+          p_group?: string;
+          p_limit?: number;
+        };
+        Returns: {
+          action: string;
+          actor_id: string;
+          amount_minor: number;
+          counterparty_id: string;
+          created_at: string;
+          details: Json;
+          entity_id: string;
+          entity_type: string;
+          id: number;
+          person_id: string;
+          subject: string;
+        }[];
+      };
       get_apartment_report: {
         Args: { p_apartment_id: string; p_period_id: string };
         Returns: Json;
