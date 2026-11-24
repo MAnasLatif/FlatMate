@@ -70,6 +70,7 @@ Balances are never stored as a number that gets overwritten. They are derived fr
 - A **payment** records a transfer that one member claims to have made to another.
 - A **dispute** challenges an allocation or a claimed payment.
 - **Adjustments and settlement entries** record offsets, corrections and reconciliations.
+- A **debt simplification** step, once its three people accept, records that one pays another directly instead of through the third: two transfer entries and a linked adjustment (decision 0019).
 
 These produce **ledger entries** between pairs of members, and every balance shown in the app can be traced back to them. Amounts are integers in minor units. Corrections are new linked entries, so closed periods stay auditable.
 

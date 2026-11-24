@@ -38,3 +38,4 @@ Records are not edited after they are accepted, apart from their status. To chan
 | [0016](0016-shared-inventory.md) | Shared inventory | Accepted |
 | [0017](0017-rooms-and-occupancy.md) | Rooms and occupancy | Accepted |
 | [0018](0018-offline-expense-queue.md) | Expenses added offline are queued and sent on reconnect | Accepted |
+| [0019](0019-debt-simplification.md) | Debt simplification, one agreed step at a time | Accepted |
