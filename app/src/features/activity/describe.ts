@@ -187,6 +187,18 @@ function describe(entry: ActivityEntry, context: ActivityContext): string {
       return `${actor} resumed the repeatable expense ${entry.subject ?? ''}`.trim();
     case 'recurring_template.archived':
       return `${actor} stopped the repeatable expense ${entry.subject ?? ''}`.trim();
+    case 'deposit.recorded':
+      return `${actor} recorded ${entry.subject ? `the deposit ${entry.subject}` : 'a deposit'}${money(entry.amountMinor)}`;
+    case 'deposit.share_taken_over':
+      return entry.amountMinor === null
+        ? `${other} took over ${possessive(person)} deposit share`
+        : `${other} took over ${formatMoney(entry.amountMinor, context.currency)} of ${possessive(person)} deposit share`;
+    case 'deposit.share_refunded':
+      return `${actor} recorded that ${possessive(person)} deposit share was refunded`;
+    case 'deposit.returned':
+      return `${actor} recorded that the deposit was returned to ${person}`;
+    case 'deposit.undone':
+      return `${actor} undid a change to the deposit ${entry.subject ?? ''}`.trim();
     case 'recurring_bill.posted':
       return `${actor} entered the ${entry.subject ?? 'repeatable'} bill`;
     case 'recurring_bill.skipped':
@@ -255,6 +267,11 @@ export function activityHref(
       return { pathname: '/apartments/[apartmentId]/members', params: { apartmentId } };
     case 'expense_template':
       return { pathname: '/apartments/[apartmentId]/quick-adds', params: { apartmentId } };
+    case 'deposit':
+      return {
+        pathname: '/apartments/[apartmentId]/deposits/[depositId]',
+        params: { apartmentId, depositId: entry.entityId },
+      };
   }
   if (!viewer.isAdmin) return null;
   // The rest is managed in the settings, which only admins open.

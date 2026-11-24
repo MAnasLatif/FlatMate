@@ -56,6 +56,13 @@ export function notificationHref(
       return { pathname: '/apartments/[apartmentId]/settlement', params: { apartmentId } };
     case 'apartment':
       break;
+    case 'deposit':
+      if (id)
+        return {
+          pathname: '/apartments/[apartmentId]/deposits/[depositId]',
+          params: { apartmentId, depositId: id },
+        };
+      break;
     // A repeatable bill waiting for an admin, in the apartment's settings.
     case 'recurring':
       return {
