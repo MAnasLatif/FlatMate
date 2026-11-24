@@ -78,7 +78,13 @@ export function ReceiptsField({
           onPress={() => setChoosing(true)}
           isDisabled={isDisabled}
         >
-          <Ionicons name="camera-outline" size={16} color={accent} />
+          <Ionicons
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+            name="camera-outline"
+            size={16}
+            color={accent}
+          />
           <Button.Label>
             {receipts.length > 0 ? 'Add another receipt' : 'Add a receipt'}
           </Button.Label>
@@ -96,11 +102,23 @@ export function ReceiptsField({
               <BottomSheet.Title>Add a receipt</BottomSheet.Title>
               <View className="gap-3">
                 <Button variant="secondary" onPress={() => void add('camera')}>
-                  <Ionicons name="camera-outline" size={18} color={accent} />
+                  <Ionicons
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                    name="camera-outline"
+                    size={18}
+                    color={accent}
+                  />
                   <Button.Label>Take a photo</Button.Label>
                 </Button>
                 <Button variant="secondary" onPress={() => void add('library')}>
-                  <Ionicons name="images-outline" size={18} color={accent} />
+                  <Ionicons
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                    name="images-outline"
+                    size={18}
+                    color={accent}
+                  />
                   <Button.Label>Choose from gallery</Button.Label>
                 </Button>
               </View>

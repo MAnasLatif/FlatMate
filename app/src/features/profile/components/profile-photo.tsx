@@ -95,11 +95,23 @@ export function ProfilePhoto({
               <BottomSheet.Title>Profile photo</BottomSheet.Title>
               <View className="gap-3">
                 <Button variant="secondary" onPress={() => void pickPhoto()}>
-                  <Ionicons name="image-outline" size={18} color={accent} />
+                  <Ionicons
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                    name="image-outline"
+                    size={18}
+                    color={accent}
+                  />
                   <Button.Label>Choose a new photo</Button.Label>
                 </Button>
                 <Button variant="danger-soft" onPress={removePhoto}>
-                  <Ionicons name="trash-outline" size={18} color={danger} />
+                  <Ionicons
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                    name="trash-outline"
+                    size={18}
+                    color={danger}
+                  />
                   <Button.Label>Remove photo</Button.Label>
                 </Button>
               </View>
