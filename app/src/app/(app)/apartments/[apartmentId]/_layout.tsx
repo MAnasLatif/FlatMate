@@ -32,6 +32,7 @@ export default function ApartmentLayout() {
       <Stack.Screen name="settlement/index" options={{ title: 'Settlement' }} />
       <Stack.Screen name="leave" options={{ title: 'Leave apartment', ...modalTransition }} />
       <Stack.Screen name="settlement/[memberId]" options={{ title: 'Settle up' }} />
+      <Stack.Screen name="statements" options={{ title: 'Statements' }} />
       <Stack.Screen name="settings" options={{ title: 'Apartment settings' }} />
       <Stack.Screen
         name="recurring/new"

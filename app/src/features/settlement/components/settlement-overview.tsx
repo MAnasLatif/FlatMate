@@ -115,6 +115,15 @@ export function SettlementOverview({ apartmentId }: { apartmentId: string }) {
         </Card.Body>
       </Card>
 
+      <Button
+        variant="secondary"
+        onPress={() =>
+          router.push({ pathname: '/apartments/[apartmentId]/statements', params: { apartmentId } })
+        }
+      >
+        Statements (PDF)
+      </Button>
+
       <Card>
         <Card.Body className="gap-3">
           <Card.Title>Past periods</Card.Title>
