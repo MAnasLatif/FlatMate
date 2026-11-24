@@ -52,16 +52,20 @@ create table public.deposit_actions (
   reverses_action_id uuid unique references public.deposit_actions (id) on delete restrict,
   -- Deductions taken with a refund or return: [{amount_minor, reason}].
   deductions jsonb not null default '[]',
+  -- For a return, the member the landlord paid it back to.
+  received_by uuid references public.profiles (id) on delete restrict,
   created_by uuid not null references public.profiles (id) on delete restrict,
   client_request_id uuid,
   created_at timestamptz not null default now(),
   constraint deposit_actions_kind_valid check (kind in ('recorded', 'taken_over', 'refunded', 'returned', 'undone')),
   constraint deposit_actions_undo_valid check ((kind = 'undone') = (reverses_action_id is not null)),
+  constraint deposit_actions_received_by_valid check ((kind = 'returned') = (received_by is not null)),
   constraint deposit_actions_request_unique unique (apartment_id, client_request_id)
 );
 
 create index deposit_actions_deposit on public.deposit_actions (deposit_id, position);
 create index deposit_actions_created_by on public.deposit_actions (created_by);
+create index deposit_actions_received_by on public.deposit_actions (received_by) where received_by is not null;
 
 -- One change to one person's share. amount_minor is signed: what it adds to
 -- their share. A reversal repeats the kind with the opposite sign.
@@ -311,7 +315,8 @@ create function private.begin_deposit_action(
   p_kind text,
   p_client_request_id uuid,
   p_deductions jsonb default '[]',
-  p_reverses uuid default null
+  p_reverses uuid default null,
+  p_received_by uuid default null
 )
 returns table (action public.deposit_actions, is_retry boolean)
 language plpgsql
@@ -339,14 +344,19 @@ begin
     end if;
   end if;
 
-  insert into public.deposit_actions (deposit_id, apartment_id, kind, reverses_action_id, deductions, created_by, client_request_id)
-  values (deposit.id, deposit.apartment_id, p_kind, p_reverses, coalesce(p_deductions, '[]'), admin_id, p_client_request_id)
+  insert into public.deposit_actions (
+    deposit_id, apartment_id, kind, reverses_action_id, deductions, received_by, created_by, client_request_id
+  )
+  values (
+    deposit.id, deposit.apartment_id, p_kind, p_reverses, coalesce(p_deductions, '[]'), p_received_by, admin_id,
+    p_client_request_id
+  )
   returning * into created;
   return query select created, false;
 end;
 $$;
 
-revoke execute on function private.begin_deposit_action(uuid, text, uuid, jsonb, uuid) from public;
+revoke execute on function private.begin_deposit_action(uuid, text, uuid, jsonb, uuid, uuid) from public;
 
 -- Records a deposit paid to the landlord: who paid it (as post_expense takes
 -- payers) and each member's share (as post_expense takes a split). Returns
@@ -562,7 +572,11 @@ declare
   deduction jsonb;
   holder record;
 begin
-  select * into started from private.begin_deposit_action(p_deposit_id, 'returned', p_client_request_id, p_deductions);
+  if p_received_by is null then
+    raise exception 'participant_not_member' using errcode = '22023';
+  end if;
+  select * into started
+  from private.begin_deposit_action(p_deposit_id, 'returned', p_client_request_id, p_deductions, null, p_received_by);
   action := started.action;
   if started.is_retry then
     return action.id;

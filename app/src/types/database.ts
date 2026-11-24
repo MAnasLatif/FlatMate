@@ -417,6 +417,7 @@ export type Database = {
           id: string;
           kind: string;
           position: number;
+          received_by: string | null;
           reverses_action_id: string | null;
         };
         ComputedFields: never;
@@ -430,6 +431,7 @@ export type Database = {
           id?: string;
           kind: string;
           position?: never;
+          received_by?: string | null;
           reverses_action_id?: string | null;
         };
         Update: {
@@ -442,6 +444,7 @@ export type Database = {
           id?: string;
           kind?: string;
           position?: never;
+          received_by?: string | null;
           reverses_action_id?: string | null;
         };
         Relationships: [
@@ -464,6 +467,13 @@ export type Database = {
             columns: ['deposit_id'];
             isOneToOne: false;
             referencedRelation: 'deposits';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_actions_received_by_fkey';
+            columns: ['received_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
           {

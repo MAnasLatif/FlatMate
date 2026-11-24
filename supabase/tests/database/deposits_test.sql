@@ -1,7 +1,7 @@
 -- Security deposits (SRS FR-10.4).
 begin;
 
-select plan(30);
+select plan(31);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111111', 'anas@example.test', '{"display_name": "Anas"}'),
@@ -169,6 +169,8 @@ select is(
   'deduction:-5001,refund:-24999,deduction:-5000,refund:-25000',
   'deductions are shared by share, the odd unit by the usual rule, and each refund is the rest');
 select is(pg_temp.shares(), '', 'nothing is held after the return');
+select is((select received_by from public.deposit_actions where id = pg_temp.v('return')::uuid), pg_temp.a(),
+  'the return names who received it');
 select is(pg_temp.owes(pg_temp.a(), pg_temp.w()), 25000::bigint,
   'whoever received the refund owes each other holder their part');
 
