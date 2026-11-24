@@ -84,6 +84,10 @@ Reminders are written straight to `notifications`, without an audit event: every
 
 `inventory_items` holds an apartment's things, each the flat's (`owner_type` apartment) or one member's, with a condition and a status; `inventory_costs` links an expense to at most one item as its purchase or maintenance. Neither table stores an amount: `get_inventory` adds up the linked expenses' current amounts, leaving out cancelled ones. `save_inventory_item` (retry-safe when adding), `link_inventory_cost` and `unlink_inventory_cost` are for anyone who may add expenses; `remove_inventory_item` is for admins. Each writes an `inventory_item` audit event. Tests: `tests/database/inventory_test.sql`.
 
+## Rooms and occupancy
+
+`rooms` (with a weight) and `room_occupancies` (who lived in a room from which day to which day) are managed by admins through `save_room`, `archive_room`, `add_room_occupant`, `end_room_occupancy` and `remove_room_occupancy`, serialized per apartment by `private.lock_rooms`. `get_room_split` splits an amount for a period by room weight and days lived, equally within a room, with the largest-remainder rule of `compute_shares`, and lists former members' days as left out. Nothing here stores an amount: the app posts the result as a split by amount. Tests: `tests/database/rooms_test.sql`.
+
 ## Join codes
 
 Each apartment has one join code at a time ([decision 0011](../docs/decisions/0011-one-join-code-per-apartment.md)). `get_join_code` returns it to an admin, making it the first time, and `change_join_code` replaces it, stopping every older code. It does not expire: joining with it only asks to join, an admin approves every request, and wrong guesses are rate-limited. Admins can read the code; joining matches on its hash. `create_invite` stays for app versions that still call it. Tests: `tests/database/join_code_test.sql`, `invites_test.sql`.

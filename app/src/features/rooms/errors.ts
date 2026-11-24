@@ -1,0 +1,20 @@
+/** Sentences for the error keys the room functions raise. Pass to userErrorMessage. */
+export const ROOM_ERROR_MESSAGES: Record<string, string> = {
+  admin_required: 'Only admins of this apartment can change rooms.',
+  invalid_room_name: 'Give the room a name of up to 60 characters.',
+  invalid_room_weight: 'A room’s weight is a whole number from 1 to 100.',
+  room_name_taken: 'Another room already has this name.',
+  too_many_rooms: 'This apartment already has 30 rooms.',
+  room_not_found: 'This room no longer exists.',
+  room_archived: 'This room is no longer used.',
+  room_occupied: 'Someone still lives in this room. Record when they moved out first.',
+  occupant_not_member: 'Only a current member can be added to a room.',
+  invalid_occupancy_dates: 'The move-out day must be on or after the move-in day.',
+  occupancy_overlaps: 'This person is already in a room on some of these days.',
+  occupancy_already_ended: 'This stay already has a move-out day.',
+  occupancy_not_found: 'This stay was already removed.',
+  invalid_period: 'The period must end on or after the day it starts.',
+  period_too_long: 'Choose a period of at most a year.',
+  no_occupants: 'Nobody who is still a member lived in a room during this period.',
+  invalid_total: 'Enter the amount first.',
+};

@@ -167,6 +167,25 @@ describe('describeActivity', () => {
     });
   });
 
+  it('words room changes', () => {
+    const room = (patch: Partial<ActivityEntry>) =>
+      describeActivity(
+        entry({ entityType: 'room', subject: 'Small', amountMinor: null, ...patch }),
+        context,
+      );
+    expect(room({ action: 'created' })).toBe('Anas added the room Small');
+    expect(room({ action: 'occupant_added', personId: 'zubair' })).toBe(
+      'Anas recorded that Zubair lives in the room Small',
+    );
+    expect(room({ action: 'occupancy_ended', personId: 'me' })).toBe(
+      'Anas recorded that you moved out of the room Small',
+    );
+    expect(room({ action: 'occupancy_removed', personId: 'me' })).toBe(
+      'Anas removed your stay in the room Small',
+    );
+    expect(room({ action: 'archived' })).toBe('Anas stopped using the room Small');
+  });
+
   it('starts every sentence with a capital, and copes with what it does not know', () => {
     expect(
       describeActivity(entry({ subject: null, action: 'finalized', actorId: null }), context),

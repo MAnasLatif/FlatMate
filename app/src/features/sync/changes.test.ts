@@ -33,6 +33,7 @@ describe('apartment change events', () => {
       'recurring_bill',
       'recurring_template',
       'rejoin_invite',
+      'room',
       'settlement_period',
       'profile',
       'account',

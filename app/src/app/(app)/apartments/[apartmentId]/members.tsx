@@ -16,6 +16,7 @@ import { FormAlert } from '@/components/form/form-alert';
 import { ActivityLink } from '@/features/activity/components/activity-link';
 import { DepositLink } from '@/features/deposits/components/deposit-link';
 import { InventoryLink } from '@/features/inventory/components/inventory-link';
+import { RoomsLink } from '@/features/rooms/components/rooms-link';
 import { HEADER_ICON_SIZE } from '@/components/screen-transitions';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
@@ -158,6 +159,7 @@ function MembersList({
       <SettlementLink apartmentId={apartmentId} />
       <DepositLink apartmentId={apartmentId} />
       <InventoryLink apartmentId={apartmentId} />
+      <RoomsLink apartmentId={apartmentId} />
       <ActivityLink apartmentId={apartmentId} />
 
       <View className="gap-3">
