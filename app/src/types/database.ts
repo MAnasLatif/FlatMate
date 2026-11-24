@@ -2099,6 +2099,10 @@ export type Database = {
         };
         Returns: number;
       };
+      get_apartment_report: {
+        Args: { p_apartment_id: string; p_period_id: string };
+        Returns: Json;
+      };
       get_join_code: { Args: { p_apartment_id: string }; Returns: string };
       get_join_requests: {
         Args: { p_apartment_id: string };
@@ -2189,6 +2193,7 @@ export type Database = {
           invited_by_name: string;
         }[];
       };
+      get_my_statement: { Args: { p_apartment_id: string; p_period_id: string }; Returns: Json };
       get_rejoin_invites: {
         Args: { p_apartment_id: string };
         Returns: {
