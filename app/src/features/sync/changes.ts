@@ -6,6 +6,7 @@ import { expenseKeys } from '@/features/expenses/hooks';
 import { notificationKeys } from '@/features/notifications/hooks';
 import { ACCOUNT_PAYMENTS_ROOT } from '@/features/payments/hooks';
 import { profileKeys } from '@/features/profile/hooks';
+import { quickAddKeys } from '@/features/quick-add/hooks';
 import { recurringKeys } from '@/features/recurring/hooks';
 import { settlementKeys } from '@/features/settlement/hooks';
 
@@ -20,8 +21,10 @@ import { settlementKeys } from '@/features/settlement/hooks';
 export const APARTMENT_CHANGE_KINDS = [
   'adjustment',
   'apartment',
+  'budget',
   'category',
   'expense',
+  'expense_template',
   'invite',
   'join_request',
   'member',
@@ -61,6 +64,9 @@ const apartmentChanges: Record<ApartmentChangeKind, (scope: ApartmentScope) => Q
   // Account payment lists span apartments, so all of them are refreshed.
   payment: ({ apartmentId }) => [expenseKeys.apartment(apartmentId), ACCOUNT_PAYMENTS_ROOT],
   settlement_period: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
+  // Budgets sit with the money, since their spending changes with every expense.
+  budget: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
+  expense_template: ({ apartmentId }) => [quickAddKeys.list(apartmentId)],
   // Settings change names in lists, and the settlement day and objection window.
   apartment: ({ apartmentId }) => [
     apartmentKeys.detail(apartmentId),

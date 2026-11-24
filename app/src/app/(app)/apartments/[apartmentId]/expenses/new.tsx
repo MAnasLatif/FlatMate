@@ -3,6 +3,7 @@ import { Button } from 'heroui-native';
 import { useMemo, useState } from 'react';
 
 import { FormAlert } from '@/components/form/form-alert';
+import { SwitchRow } from '@/components/form/switch-row';
 import { OnlineButton } from '@/components/online-button';
 import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
@@ -19,6 +20,11 @@ import { newDraft, validateDraft } from '@/features/expenses/draft';
 import { EXPENSE_ERROR_MESSAGES, receiptUploadErrorMessage } from '@/features/expenses/errors';
 import { ReceiptsField } from '@/features/expenses/components/receipts-field';
 import { usePostExpense, useUploadReceipt } from '@/features/expenses/hooks';
+import { QuickAddChips } from '@/features/quick-add/components/quick-add-chips';
+import type { QuickAddInput } from '@/features/quick-add/api';
+import { QUICK_ADD_ERROR_MESSAGES } from '@/features/quick-add/errors';
+import { useSaveQuickAdd } from '@/features/quick-add/hooks';
+import { applyQuickAdd, quickAddFromExpense } from '@/features/quick-add/templates';
 import { userErrorMessage } from '@/lib/errors';
 import { todayInTimeZone } from '@/lib/time';
 import type { PickedImage } from '@/lib/private-images';
@@ -80,10 +86,15 @@ function AddExpenseForm({
   const [receipts, setReceipts] = useState<PickedImage[]>([]);
   // Set once the expense is posted, so failed receipt uploads are retried on their own.
   const [savedExpenseId, setSavedExpenseId] = useState<string | null>(null);
+  // A quick-add that failed to save after the expense was, kept to retry.
+  const [pendingQuickAdd, setPendingQuickAdd] = useState<QuickAddInput | null>(null);
+  const [saveAsQuickAdd, setSaveAsQuickAdd] = useState(false);
   const post = usePostExpense(apartment.id);
   const upload = useUploadReceipt(apartment.id);
+  const saveQuickAdd = useSaveQuickAdd(apartment.id);
 
   const memberIds = useMemo(() => members.map((member) => member.userId), [members]);
+  const categoryIds = useMemo(() => categories.map((category) => category.id), [categories]);
   const result = useMemo(() => validateDraft(draft, memberIds), [draft, memberIds]);
   const me = members.find((member) => member.userId === userId);
 
@@ -117,26 +128,65 @@ function AddExpenseForm({
     }
   };
 
+  // Saves the quick-add the user asked for. False when it failed, which the
+  // screen then explains; the expense itself is saved either way.
+  const saveTemplate = async (input: QuickAddInput): Promise<boolean> => {
+    try {
+      await saveQuickAdd.mutateAsync(input);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   if (savedExpenseId) {
+    const quickAddFailed = saveQuickAdd.isError && pendingQuickAdd !== null;
+    const isBusy = upload.isPending || saveQuickAdd.isPending;
     return (
       <Screen padTop={false}>
         <FormAlert status="success" message="The expense was saved." />
-        <FormAlert
-          message={
-            upload.error
-              ? `${receipts.length === 1 ? 'A receipt was' : 'Some receipts were'} not attached. ${receiptUploadErrorMessage(upload.error)}`
-              : null
-          }
-        />
-        <ReceiptsField receipts={receipts} onChange={setReceipts} isDisabled={upload.isPending} />
-        <OnlineButton
-          onPress={() => void attachAll(savedExpenseId, receipts)}
-          isDisabled={upload.isPending || receipts.length === 0}
-        >
-          {upload.isPending ? 'Uploading receipts…' : 'Upload receipts'}
-        </OnlineButton>
-        <Button variant="ghost" onPress={() => router.back()} isDisabled={upload.isPending}>
-          Finish without them
+        {quickAddFailed ? (
+          <>
+            <FormAlert
+              message={`The quick-add was not saved. ${userErrorMessage(saveQuickAdd.error, 'Please try again.', QUICK_ADD_ERROR_MESSAGES)}`}
+            />
+            <OnlineButton
+              variant="secondary"
+              onPress={() =>
+                void saveTemplate(pendingQuickAdd).then((saved) => {
+                  if (saved) setPendingQuickAdd(null);
+                })
+              }
+              isDisabled={isBusy}
+            >
+              {saveQuickAdd.isPending ? 'Saving the quick-add…' : 'Save the quick-add again'}
+            </OnlineButton>
+          </>
+        ) : null}
+        {receipts.length > 0 || upload.isError ? (
+          <>
+            <FormAlert
+              message={
+                upload.error
+                  ? `${receipts.length === 1 ? 'A receipt was' : 'Some receipts were'} not attached. ${receiptUploadErrorMessage(upload.error)}`
+                  : null
+              }
+            />
+            <ReceiptsField
+              receipts={receipts}
+              onChange={setReceipts}
+              isDisabled={upload.isPending}
+            />
+            <OnlineButton
+              onPress={() => void attachAll(savedExpenseId, receipts)}
+              isDisabled={isBusy || receipts.length === 0}
+            >
+              {upload.isPending ? 'Uploading receipts…' : 'Upload receipts'}
+            </OnlineButton>
+          </>
+        ) : null}
+        <Button variant="ghost" onPress={() => router.back()} isDisabled={isBusy}>
+          {receipts.length > 0 ? 'Finish without them' : 'Finish'}
         </Button>
       </Screen>
     );
@@ -145,10 +195,16 @@ function AddExpenseForm({
   const save = () => {
     setShowErrors(true);
     if (!result.value) return;
+    const quickAdd = saveAsQuickAdd ? quickAddFromExpense(result.value, memberIds) : null;
     post.mutate(
       { expense: result.value, requestId },
       {
-        onSuccess: (expenseId) => {
+        onSuccess: async (expenseId) => {
+          if (quickAdd && !(await saveTemplate(quickAdd))) {
+            setPendingQuickAdd(quickAdd);
+            setSavedExpenseId(expenseId);
+            return;
+          }
           if (receipts.length === 0) {
             router.back();
             return;
@@ -159,10 +215,16 @@ function AddExpenseForm({
       },
     );
   };
-  const isSaving = post.isPending || upload.isPending;
+  const isSaving = post.isPending || upload.isPending || saveQuickAdd.isPending;
 
   return (
     <Screen padTop={false}>
+      <QuickAddChips
+        apartmentId={apartment.id}
+        onPick={(template) =>
+          setDraft((current) => applyQuickAdd(current, template, memberIds, categoryIds))
+        }
+      />
       <ExpenseForm
         draft={draft}
         setDraft={setDraft}
@@ -176,6 +238,12 @@ function AddExpenseForm({
         afterDate={
           <ReceiptsField receipts={receipts} onChange={setReceipts} isDisabled={isSaving} />
         }
+      />
+      <SwitchRow
+        label="Save as a quick-add"
+        description="Fill in this name, amount, category and split with one tap next time. A quick-add with the same name is replaced."
+        isSelected={saveAsQuickAdd}
+        onSelectedChange={setSaveAsQuickAdd}
       />
       <FormAlert
         message={
