@@ -64,6 +64,10 @@ Reminders are written straight to `notifications`, without an audit event: every
 
 `search_expenses` returns an apartment's expenses for a date range, filtered by member (shares in or paid for, in the current version), category, status (`unpaid` for a bill nobody has paid), amount range and a literal text match on the title, Other detail and notes. It runs as the caller, so row-level security applies, and returns `expenses` rows, so the app embeds and pages them as it would the table. Filters on rows embedded two levels deep are not applied to a function's results, so the app picks out the user's own shares itself. `get_monthly_spending` gives current members the apartment's total and their own share per month, in the apartment's timezone. Tests: `tests/database/expense_search_test.sql`.
 
+## Statements
+
+`get_my_statement` and `get_apartment_report` (admins only) return one settlement period as JSON for the app, which makes the PDF. What was carried forward comes from the previous period's closing snapshot in `settlement_balances`, and the closing figures from the period's own snapshot, or from the ledger while it is open (`private.pair_balances_now`). Tests: `tests/database/statements_test.sql`.
+
 ## Join codes
 
 Each apartment has one join code at a time ([decision 0011](../docs/decisions/0011-one-join-code-per-apartment.md)). `get_join_code` returns it to an admin, making it the first time, and `change_join_code` replaces it, stopping every older code. It does not expire: joining with it only asks to join, an admin approves every request, and wrong guesses are rate-limited. Admins can read the code; joining matches on its hash. `create_invite` stays for app versions that still call it. Tests: `tests/database/join_code_test.sql`, `invites_test.sql`.
