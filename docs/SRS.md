@@ -153,7 +153,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-10.3 Quick-add templates for common expenses and budget caps/alerts. Quick-adds belong to the apartment: any member who may add expenses saves one from the Add expense form and deletes it, and picking one fills in the form. Admins set monthly budgets for all spending and per category; every current member is told when a month first reaches 80% and 100% (section 12, item 23).
 - FR-10.4 Track security deposits and refund/exit adjustments. Admins record who paid the landlord and each member's share, linked to balances; a share is refunded by the landlord or taken over by another member when someone moves out, and the rest is returned to one member with deductions shared by share (section 12, item 25).
 - FR-10.5 Optional shared inventory, ownership and maintenance costs. An item belongs to the flat or to one member, as a record that moves no money, with a condition and a status (in use, needs repair, gone). Its purchase and maintenance costs are ordinary expenses linked to it, and the item shows what they add up to. Anyone who may add expenses manages items and links; admins remove items added by mistake (section 12, item 26).
-- FR-10.6 Optional room-based allocations and occupancy-driven splits.
+- FR-10.6 Optional room-based allocations and occupancy-driven splits. Admins record rooms with a weight and who lived in each when. A bill for a period can be split by room: by room weight and days lived, equally within a room. The server works out the amounts and the expense is saved as a split by amount, so later room changes never alter it (section 12, item 27).
 - FR-10.7 Offline expense **drafts** with explicit review and idempotent submission on reconnect; do not imply a payment is final while offline.
 - FR-10.8 Activity history shows who created/edited/approved/disputed/settled each record. Each expense, payment and dispute shows its own history, and the apartment's Activity screen shows the whole timeline, newest first, filtered by type and by who did it. Each entry is visible only to those who can read its record (section 12, item 24).
 
@@ -213,7 +213,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 | `expense_templates` | id, apartment_id, title (unique per apartment, any case), amount_minor_nullable, category_id, category_detail, split_method, participants_nullable (null: everyone equally) |
 | `deposits` | id, apartment_id, title, amount_minor, paid_on, held_by; with `deposit_actions` (recorded, taken_over, refunded, returned, undone) and append-only `deposit_entries` whose sums are each member's share; linked adjustments carry the debts |
 | `inventory_items` | id, apartment_id, name, notes, owner_type (apartment or member), owner_id_nullable, condition, status; costs are expenses linked in `inventory_costs` (expense_id, item_id, kind purchase or maintenance), and the item stores no amounts |
-| `rooms` / `room_members` | room metadata and occupancy dates for advanced splitting |
+| `rooms` / `room_occupancies` | rooms: id, apartment_id, name, weight (1–100), archived_at; occupancies: room_id, user_id, starts_on, ends_on_nullable (both days included, one room per person at a time); no amounts stored |
 
 **Implementation notes:**
 - Design a normalized obligation/ledger model and use **transactional Postgres functions** (RPC) for financial postings, reversals, settlements and dispute resolution. A naive mutable `balance` column is insufficient.
@@ -296,7 +296,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ## 12. Product Decisions
 
-Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, item 19 on 2026-11-17, and items 20 to 26 on 2026-11-24. Item 10 is still open, and part of item 11.
+Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, item 19 on 2026-11-17, and items 20 to 27 on 2026-11-24. Item 10 is still open, and part of item 11.
 
 1. **Explicit approval mode — decided.** Not part of the MVP. Every expense is accepted automatically, and affected members object within the window (FR-05). An optional approval mode (FR-03.8) may be reconsidered after release.
 2. **What a dispute holds — decided.** A dispute holds every share of the disputed expense until it is resolved, so settlement never sees inconsistent totals. Other expenses stay payable.
@@ -324,6 +324,7 @@ Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 1
 24. **Activity history — decided.** One timeline per apartment on an Activity screen, newest first, filtered by type and by who did it; each entry opens its record. Entries are as private as their records: payments, netting and adjustments show only to their two people and admins, and join codes, join requests and repeatable expenses only to admins. Former members have no timeline (FR-10.8, decision record 0014).
 25. **Security deposits — decided.** Admins record a deposit with who paid the landlord and each member's share; whoever paid more than their share is owed the rest through linked adjustments. On moving out a share is refunded by the landlord (with deductions, no change between members) or taken over by a current member, who owes its holder. The rest is returned to one member, deductions shared by share, and that member owes each other holder their refund. The latest change can be undone with reversing entries (FR-10.4, decision record 0015).
 26. **Shared inventory — decided.** An item is the flat's or one member's, which moves no money. What it cost to buy and maintain are ordinary expenses linked to it, each to one item at most, and the item adds them up. Anyone who may add expenses adds items, changes their condition and status, and links expenses; admins remove items added by mistake. A sale, disposal or owner moving out is a change of status, with any money recorded as an expense or payment (FR-10.5, decision record 0016).
+27. **Rooms and occupancy — decided.** Admins record rooms with a weight and who lived in each from which day to which day. Splitting a bill by room shares each day of its period among the rooms lived in by weight, and within a room equally; empty rooms and days take no part. The server works out the amounts and the expense is posted as a split by amount with the period in its notes, so later room changes never alter it. Former members' days are left out and shown as such. Available for one-time expenses; repeatable expenses follow (FR-10.6, decision record 0017).
 
 
 ## 13. Suggested First Implementation Tasks
