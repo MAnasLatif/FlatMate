@@ -36,7 +36,7 @@ export type PaidToAccount = {
   identifierMasked: string;
 };
 
-/** The recipient's objection to a payment (decision record 0005). */
+/** The recipient's objection to a payment (SRS FR-07). */
 export type PaymentObjection = {
   id: string;
   raisedBy: string;

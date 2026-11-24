@@ -11,7 +11,7 @@ import { unreadMatches } from '@/features/notifications/unread';
  * Opens the settlement: this period with each person, past periods and what
  * carried forward. The dashboard has no Settle up button, so members reach it
  * from the members screen, and payments, offsets and closed periods show their
- * dot here (decision 0008).
+ * dot here (SRS section 6.2).
  */
 export function SettlementLink({ apartmentId }: { apartmentId: string }) {
   const iconColor = useThemeColor('muted');

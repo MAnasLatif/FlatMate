@@ -1,6 +1,6 @@
 /**
  * Split arithmetic for previews. The database computes the real shares with
- * the same rules (decision record 0003); keep the two in step.
+ * the same rules (SRS section 5); keep the two in step.
  *
  * All amounts are integer minor units. Intermediate products use BigInt, so
  * nothing is ever rounded by floating point.

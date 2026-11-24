@@ -306,7 +306,7 @@ describe('PaymentDetailView', () => {
         buttons?.find((button) => button.text === 'Record')?.onPress?.();
       });
 
-    it('lets the payer record that they owe part of it again (decision 0006)', async () => {
+    it('lets the payer record that they owe part of it again (SRS FR-08)', async () => {
       const alert = confirmEveryAlert();
       jest.mocked(fetchPaymentDetail).mockResolvedValue(lateDetail());
       jest.mocked(recordPaymentAdjustment).mockResolvedValue('adjustment-1');

@@ -5,7 +5,7 @@ import { EncryptedStorage, type KeyValueStore } from './encrypted-storage';
 
 /**
  * Writes saved on the phone while offline, waiting to be sent when the
- * connection returns (FR-10.7, decision 0018). They are kept apart from the
+ * connection returns (SRS FR-10.7). They are kept apart from the
  * saved query cache: a queued write is something the server has not accepted
  * yet, never a copy of what it said. Each user's queue is one encrypted
  * entry, deleted at sign-out, and an entry older than 30 days is dropped

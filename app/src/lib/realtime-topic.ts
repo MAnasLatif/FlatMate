@@ -3,7 +3,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
 /**
- * Listening to one change-event topic over Supabase Realtime (decision 0007).
+ * Listening to one change-event topic over Supabase Realtime (SRS section 7).
  * Events are private Broadcast messages sent by the database. Each says only
  * which kind of record changed, so the app refetches what it shows.
  */

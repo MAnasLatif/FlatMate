@@ -239,7 +239,7 @@ describe('adjustedSplit', () => {
   const Z = '22222222-2222-2222-2222-222222222222';
   const J = '33333333-3333-3333-3333-333333333333';
 
-  it('spreads the difference over the others in proportion to their shares (decision 0004)', () => {
+  it('spreads the difference over the others in proportion to their shares (SRS FR-05)', () => {
     const shares = [
       { userId: A, amountMinor: 10_000 },
       { userId: Z, amountMinor: 10_000 },

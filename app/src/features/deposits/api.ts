@@ -5,7 +5,7 @@ import type { Json } from '@/types/database';
 
 /**
  * A security deposit paid to the landlord, with each member's share (FR-10.4,
- * decision 0015). Shares are never stored as numbers: each is the sum of its
+ * SRS FR-10.4). Shares are never stored as numbers: each is the sum of its
  * holder's entries, which actions only ever add to.
  */
 export type DepositActionKind = 'recorded' | 'taken_over' | 'refunded' | 'returned' | 'undone';

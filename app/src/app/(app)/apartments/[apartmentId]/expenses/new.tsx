@@ -308,7 +308,7 @@ function AddExpenseForm({
   }
 
   // Offline, the expense waits on the phone and is sent by itself once the
-  // connection is back (decision 0018).
+  // connection is back (SRS FR-10.7).
   const saveOffline = () => {
     setShowErrors(true);
     if (!result.value) return;

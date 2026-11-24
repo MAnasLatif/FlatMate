@@ -14,7 +14,7 @@ import { roomKeys } from '@/features/rooms/hooks';
 import { settlementKeys } from '@/features/settlement/hooks';
 
 /**
- * Which cached data each change event makes stale (decision 0007). The kinds
+ * Which cached data each change event makes stale (SRS section 7). The kinds
  * are the ones the database sends: the entity types of `audit_events` on an
  * apartment topic, plus the triggers on profiles and receiving accounts. A
  * new kind added on the server must be added here; until it is, an unknown

@@ -6,7 +6,7 @@ export type DisputeKind = 'decline' | 'adjustment';
 export type DisputeState = 'open' | 'escalated' | 'resolved';
 export type DisputeResolution = 'adjusted' | 'upheld' | 'withdrawn';
 
-/** A member's objection to an expense (decision record 0004). */
+/** A member's objection to an expense (SRS FR-05). */
 export type Dispute = {
   id: string;
   apartmentId: string;
