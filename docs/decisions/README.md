@@ -37,3 +37,4 @@ Records are not edited after they are accepted, apart from their status. To chan
 | [0015](0015-security-deposits.md) | Security deposits | Accepted |
 | [0016](0016-shared-inventory.md) | Shared inventory | Accepted |
 | [0017](0017-rooms-and-occupancy.md) | Rooms and occupancy | Accepted |
+| [0018](0018-offline-expense-queue.md) | Expenses added offline are queued and sent on reconnect | Accepted |
