@@ -40,6 +40,7 @@ insert into allowed values
   ('record_exit', 'helper', 'records an exit balance for leave and remove, which record the change'),
   ('write_deposit_adjustment', 'helper', 'posts a deposit action''s debts for its callers, which record the change'),
   ('begin_deposit_action', 'helper', 'starts a deposit action for its callers, which record the change'),
+  ('note_room_split', 'helper', 'notes a room split on a charge its callers just posted and recorded'),
   ('handle_new_user', 'standalone', 'creates the profile at sign-up, before anyone else can see it'),
   ('add_default_categories', 'standalone', 'runs as an apartment is created, which create_apartment records'),
   ('register_push_token', 'standalone', 'stores a device''s push token, which no one is ever shown'),

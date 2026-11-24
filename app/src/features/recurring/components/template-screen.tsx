@@ -10,6 +10,7 @@ import { Screen } from '@/components/screen';
 import type { Apartment, Member } from '@/features/apartments/api';
 import { useApartment, useMembers, useMyMembership } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
+import { useRooms } from '@/features/rooms/hooks';
 import { userErrorMessage } from '@/lib/errors';
 import { formatDate, todayInTimeZone } from '@/lib/time';
 import { randomUuid } from '@/lib/uuid';
@@ -114,6 +115,9 @@ function TemplateEditor({
   const [requestId] = useState(randomUuid);
   const [showErrors, setShowErrors] = useState(false);
   const save = useSaveTemplate(apartment.id);
+  // A failed load only hides the split by room for a template not already using it.
+  const rooms = useRooms(apartment.id);
+  const hasRooms = rooms.data?.rooms.some((room) => room.archivedAt === null) ?? false;
   const result = useMemo(
     () => validateRecurringDraft(draft, memberIds, today),
     [draft, memberIds, today],
@@ -149,6 +153,7 @@ function TemplateEditor({
         currency={apartment.currency}
         today={today}
         mode={template ? 'edit' : 'add'}
+        hasRooms={hasRooms}
       />
       <FormAlert
         message={

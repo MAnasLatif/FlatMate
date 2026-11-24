@@ -2229,6 +2229,7 @@ export type Database = {
           paused_at: string | null;
           repeat_every: number;
           repeat_unit: string;
+          room_period: string | null;
           split_method: string;
           title: string;
           updated_at: string;
@@ -2251,6 +2252,7 @@ export type Database = {
           paused_at?: string | null;
           repeat_every: number;
           repeat_unit: string;
+          room_period?: string | null;
           split_method: string;
           title: string;
           updated_at?: string;
@@ -2272,6 +2274,7 @@ export type Database = {
           paused_at?: string | null;
           repeat_every?: number;
           repeat_unit?: string;
+          room_period?: string | null;
           split_method?: string;
           title?: string;
           updated_at?: string;
@@ -2664,6 +2667,7 @@ export type Database = {
           p_participants: Json;
           p_repeat_every: number;
           p_repeat_unit: string;
+          p_room_period?: string;
           p_split_method: string;
           p_title: string;
         };
@@ -3173,6 +3177,7 @@ export type Database = {
           p_participants: Json;
           p_repeat_every: number;
           p_repeat_unit: string;
+          p_room_period?: string;
           p_split_method: string;
           p_template_id: string;
           p_title: string;

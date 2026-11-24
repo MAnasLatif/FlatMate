@@ -14,6 +14,7 @@ import { View } from 'react-native';
 import { ChoiceChips } from '@/components/choice-chips';
 import { DateField } from '@/components/form/date-field';
 import { FormAlert } from '@/components/form/form-alert';
+import { SwitchRow } from '@/components/form/switch-row';
 import { OnlineButton } from '@/components/online-button';
 import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
@@ -25,12 +26,13 @@ import { SplitFields } from '@/features/expenses/components/split-fields';
 import { receiptUploadErrorMessage } from '@/features/expenses/errors';
 import { useUploadReceipt } from '@/features/expenses/hooks';
 import { memberLabel } from '@/features/expenses/member-label';
+import { useRooms } from '@/features/rooms/hooks';
 import { userErrorMessage } from '@/lib/errors';
 import type { PickedImage } from '@/lib/private-images';
 import { formatDate, todayInTimeZone } from '@/lib/time';
 
 import type { WaitingBill } from '../api';
-import { draftFromBill, validateBillDraft } from '../draft';
+import { defaultRoomPeriod, draftFromBill, roomSplitDays, validateBillDraft } from '../draft';
 import { RECURRING_ERROR_MESSAGES } from '../errors';
 import { useBillActions, useWaitingBills } from '../hooks';
 import { currencySymbol } from '@/features/apartments/currencies';
@@ -114,6 +116,8 @@ function BillEditor({
   const [chargedExpenseId, setChargedExpenseId] = useState<string | null>(null);
   const { post } = useBillActions(apartment.id);
   const upload = useUploadReceipt(apartment.id);
+  const rooms = useRooms(apartment.id);
+  const hasRooms = rooms.data?.rooms.some((room) => room.archivedAt === null) ?? false;
   const result = useMemo(
     () => (bill && draft ? validateBillDraft(draft, bill.billDate, memberIds) : null),
     [bill, draft, memberIds],
@@ -206,7 +210,9 @@ function BillEditor({
           Arrived {formatDate(bill.billDate)}.{' '}
           {bill.reason === 'amount_needed'
             ? 'Enter the amount on the bill. Nothing is charged until you do.'
-            : 'Someone in its split has left. Check who shares it this time.'}
+            : bill.template.splitMethod === 'room'
+              ? 'Someone who has left lived in a room in these days, or nobody did. Check who shares it this time.'
+              : 'Someone in its split has left. Check who shares it this time.'}
         </Typography.Paragraph>
       </View>
 
@@ -252,15 +258,33 @@ function BillEditor({
         <Description>They are told. Nobody owes anything until the bill is paid.</Description>
       </View>
 
-      <SplitFields
-        value={draft}
-        onChange={update}
-        shares={result.shares}
-        error={showErrors || draft.splitMethod !== 'equal' ? result.errors.split : undefined}
-        members={members}
-        currentUserId={userId}
-        currency={apartment.currency}
-      />
+      {hasRooms || draft.byRoom ? (
+        <SwitchRow
+          label="Split by room"
+          description={(() => {
+            const days = roomSplitDays(
+              bill.billDate,
+              bill.template.repeat,
+              bill.template.billDay,
+              bill.template.roomPeriod ?? defaultRoomPeriod(bill.template.kind),
+            );
+            return `Shared by room weight and the days each person lived in their room from ${formatDate(days.from)} to ${formatDate(days.to)}. Days of anyone who has left are not included.`;
+          })()}
+          isSelected={draft.byRoom}
+          onSelectedChange={(byRoom) => update({ byRoom })}
+        />
+      ) : null}
+      {draft.byRoom ? null : (
+        <SplitFields
+          value={draft}
+          onChange={update}
+          shares={result.shares}
+          error={showErrors || draft.splitMethod !== 'equal' ? result.errors.split : undefined}
+          members={members}
+          currentUserId={userId}
+          currency={apartment.currency}
+        />
+      )}
       <Typography.Paragraph type="body-xs" color="muted">
         This split is for this bill only. To change it for later bills, edit the repeatable expense.
       </Typography.Paragraph>
