@@ -19,8 +19,10 @@ describe('apartment change events', () => {
     const sentByDatabase = [
       'adjustment',
       'apartment',
+      'budget',
       'category',
       'expense',
+      'expense_template',
       'invite',
       'join_request',
       'member',
@@ -40,7 +42,14 @@ describe('apartment change events', () => {
   });
 
   it('refreshes all of an apartment money for any financial change', () => {
-    for (const kind of ['expense', 'payment', 'offset', 'adjustment', 'settlement_period']) {
+    for (const kind of [
+      'expense',
+      'payment',
+      'offset',
+      'adjustment',
+      'settlement_period',
+      'budget',
+    ]) {
       expect(keysForApartmentChange(kind, apartmentId)).toContainEqual(['money', apartmentId]);
     }
   });

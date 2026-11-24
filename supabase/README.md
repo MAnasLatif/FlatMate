@@ -68,6 +68,10 @@ Reminders are written straight to `notifications`, without an audit event: every
 
 `get_my_statement` and `get_apartment_report` (admins only) return one settlement period as JSON for the app, which makes the PDF. What was carried forward comes from the previous period's closing snapshot in `settlement_balances`, and the closing figures from the period's own snapshot, or from the ledger while it is open (`private.pair_balances_now`). Tests: `tests/database/statements_test.sql`.
 
+## Quick-adds and budgets
+
+`expense_templates` holds an apartment's quick-adds, which `save_expense_template` (replacing one of the same name) and `delete_expense_template` change for anyone who may add expenses. `budgets` holds admin-set monthly caps, for all spending (`category_id` null) or one category; `set_budget`, `remove_budget` and `get_budgets` (with the month's spending, for current members) are the interface. The `send-budget-alerts` job raises the level in `budget_alerts` and notifies members at 80% and 100%. Tests: `tests/database/quick_add_and_budgets_test.sql`.
+
 ## Join codes
 
 Each apartment has one join code at a time ([decision 0011](../docs/decisions/0011-one-join-code-per-apartment.md)). `get_join_code` returns it to an admin, making it the first time, and `change_join_code` replaces it, stopping every older code. It does not expire: joining with it only asks to join, an admin approves every request, and wrong guesses are rate-limited. Admins can read the code; joining matches on its hash. `create_invite` stays for app versions that still call it. Tests: `tests/database/join_code_test.sql`, `invites_test.sql`.

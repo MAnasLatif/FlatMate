@@ -35,6 +35,11 @@ export const PUSH_CATEGORIES = [
     label: 'Settlement',
     description: 'A settlement period closing, with its summary.',
   },
+  {
+    value: 'budgets',
+    label: 'Budgets',
+    description: 'Spending reaching 80% and 100% of a monthly budget.',
+  },
 ] as const;
 
 export type PushCategory = (typeof PUSH_CATEGORIES)[number]['value'];

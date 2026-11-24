@@ -44,6 +44,7 @@ export default function ApartmentLayout() {
         options={{ title: 'Enter bill', ...modalTransition }}
       />
       <Stack.Screen name="expenses/new" options={{ title: 'Add expense', ...modalTransition }} />
+      <Stack.Screen name="quick-adds" options={{ title: 'Quick-adds' }} />
       <Stack.Screen name="expenses/[expenseId]/index" options={{ title: 'Expense' }} />
       <Stack.Screen
         name="expenses/[expenseId]/edit"
