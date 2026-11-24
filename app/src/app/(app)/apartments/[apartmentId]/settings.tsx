@@ -32,6 +32,7 @@ import { InviteByEmail } from '@/features/apartments/components/invite-by-email'
 import { JoinRequests } from '@/features/apartments/components/join-requests';
 import { ManageMembers } from '@/features/apartments/components/manage-members';
 import { ReminderSettings } from '@/features/apartments/components/reminder-settings';
+import { BudgetSettings } from '@/features/budgets/components/budget-settings';
 import { joinCodeMessage } from '@/features/apartments/join-code';
 import { APARTMENT_ERROR_MESSAGES } from '@/features/apartments/errors';
 import {
@@ -146,6 +147,12 @@ function SettingsTabs({
       <Tabs.Content value="expenses" className="flex-1">
         <Screen padTop={false}>
           <CategoriesSection apartmentId={apartment.id} />
+          <Separator />
+          <BudgetSettings
+            apartmentId={apartment.id}
+            currency={apartment.currency}
+            timezone={apartment.timezone}
+          />
         </Screen>
       </Tabs.Content>
       <Tabs.Content value="recurring" className="flex-1">

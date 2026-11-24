@@ -2,6 +2,7 @@ import { BottomSheet, PressableFeedback, Typography } from 'heroui-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { ProgressBar } from '@/components/progress-bar';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { formatMoney } from '@/features/apartments/currencies';
 import { userErrorMessage } from '@/lib/errors';
@@ -134,8 +135,8 @@ function MonthRows({
               </Typography.Paragraph>
               <Typography.Paragraph type="body-sm">{total}</Typography.Paragraph>
             </View>
-            <Bar percent={barPercent(month.totalMinor, largest)} className="bg-accent" />
-            <Bar percent={barPercent(month.myShareMinor, largest)} className="bg-success" />
+            <ProgressBar percent={barPercent(month.totalMinor, largest)} className="bg-accent" />
+            <ProgressBar percent={barPercent(month.myShareMinor, largest)} className="bg-success" />
             <View className="flex-row justify-between gap-2">
               <Typography.Paragraph type="body-xs" color="muted">
                 Your share {share}
@@ -149,14 +150,6 @@ function MonthRows({
           </PressableFeedback>
         );
       })}
-    </View>
-  );
-}
-
-function Bar({ percent, className }: { percent: number; className: string }) {
-  return (
-    <View className="h-2 overflow-hidden rounded-full bg-default">
-      <View className={`h-2 rounded-full ${className}`} style={{ width: `${percent}%` }} />
     </View>
   );
 }

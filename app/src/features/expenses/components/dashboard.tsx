@@ -13,6 +13,7 @@ import {
 import { useHeaderShadowOnScroll } from '@/components/use-header-shadow-on-scroll';
 import type { Apartment } from '@/features/apartments/api';
 import { useApartment } from '@/features/apartments/hooks';
+import { BudgetProgress } from '@/features/budgets/components/budget-progress';
 import { useIsUnread } from '@/features/notifications/hooks';
 import { unreadMatches } from '@/features/notifications/unread';
 import { userErrorMessage } from '@/lib/errors';
@@ -107,6 +108,7 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
               <LinkButton.Label className="font-semibold text-accent">Compare</LinkButton.Label>
             </LinkButton>
           </View>
+          <BudgetProgress apartmentId={apartment.id} month={month} currency={apartment.currency} />
           <ActiveFilters
             apartmentId={apartment.id}
             currency={apartment.currency}
