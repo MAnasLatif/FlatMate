@@ -214,7 +214,7 @@ function StayRow({
               size="sm"
               variant="ghost"
               onPress={onRemove}
-              accessibilityLabel={`Remove ${name}'s stay`}
+              accessibilityLabel={name === 'You' ? 'Remove your stay' : `Remove ${name}'s stay`}
             >
               Remove
             </Button>
