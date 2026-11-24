@@ -22,6 +22,7 @@ import { formatMonth, monthStart, todayInTimeZone } from '@/lib/time';
 import type { ExpenseListItem } from '../api';
 import { useExpenses, useMyMonthlyShare, useRefreshMoney } from '../hooks';
 import { BalanceSummary, type ExpenseFilter } from './balance-summary';
+import { QueuedExpenses } from './queued-expenses';
 import { ExpenseRow } from './expense-row';
 import { activeFilterCount, type ExpenseSearch, NO_SEARCH } from '../search';
 import { ActiveFilters } from './active-filters';
@@ -91,6 +92,7 @@ export function Dashboard({ apartment }: { apartment: Apartment }) {
       ListHeaderComponent={
         <View className="gap-4 pb-1">
           <FreshnessBanner freshness={expenses} />
+          <QueuedExpenses apartmentId={apartment.id} currency={apartment.currency} />
           <BalanceSummary
             apartmentId={apartment.id}
             currency={apartment.currency}

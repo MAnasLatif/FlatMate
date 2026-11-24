@@ -2,6 +2,7 @@ import Stack from 'expo-router/stack';
 
 import { modalTransition, pushTransition } from '@/components/screen-transitions';
 import { useCurrentUserId } from '@/features/auth/session-provider';
+import { useSendQueuedExpenses } from '@/features/expenses/offline-queue-hooks';
 import { useOpenTappedNotification, usePushRegistration } from '@/features/notifications/hooks';
 import { useUserChanges } from '@/features/sync/hooks';
 
@@ -12,6 +13,8 @@ export default function AppLayout() {
   // Push notifications reach this device, and tapping one opens its record.
   usePushRegistration(userId);
   useOpenTappedNotification(userId);
+  // Expenses saved offline are sent by themselves once the connection is back.
+  useSendQueuedExpenses(userId);
 
   return (
     <Stack
