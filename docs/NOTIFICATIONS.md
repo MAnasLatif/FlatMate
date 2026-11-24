@@ -10,6 +10,7 @@ flowchart LR
   AUDIT -->|trigger, same transaction| NOTIF[("notifications<br/>one row per person")]
   NOTIF -->|unread, RLS| APP["Red dots in the app"]
   REMIND["pg_cron, every 15 min<br/>send-reminders"] -->|due dates, settlement| NOTIF
+  BUDGET["pg_cron, every 5 min<br/>send-budget-alerts"] -->|80% and 100%| NOTIF
   CRON["pg_cron, every 10 s<br/>while anything is due"] -->|pg_net + delivery secret| FN["Edge Function<br/>deliver-push"]
   FN -->|claim_pushes / report_pushes| NOTIF
   FN -->|HTTPS| EXPO["Expo push service"]
@@ -21,7 +22,8 @@ flowchart LR
 - **Push** is a queue. While anything is due, pg_cron calls the `deliver-push` Edge Function, which claims a batch, sends it to Expo, and reports Expo's answer. Failed pushes are retried up to five times with growing delays, tokens of uninstalled apps are deleted, and pushes older than a day are skipped.
 - **Receipts.** Expo accepting a push (its ticket) does not mean Google or Apple took it. Each accepted push keeps its ticket id in `push_tickets`, and about 15 minutes later the same function asks Expo for the receipt. An ok receipt is deleted. `DeviceNotRegistered` deletes the device's token. Any other error stays in `push_tickets` for 30 days and is logged by its code; `InvalidCredentials` and `MismatchSenderId` are logged as `push_credentials_invalid` errors, because every push fails until they are fixed. A receipt Expo still has not produced after a day is recorded as `NoReceipt`.
 - **Reminders** are not changes, so they have no audit event. The `send-reminders` job writes them straight to `notifications`: an unpaid bill's collector, or the admins when nobody is named, before its due date and on the day; and members who owe someone before the settlement day. Admins set how many days ahead in the apartment's General settings, and they go out from 09:00 in the apartment's timezone. A key per reminder and person means none is sent twice ([decision 0012](decisions/0012-reminders-and-push-preferences.md)).
-- **Preferences.** In their profile, each person turns push off by group (expenses, payments, disputes, members, reminders, settlement) for every apartment. The notification is still created, so the red dot stays; only the push is skipped.
+- **Budget alerts** have no audit event either. The `send-budget-alerts` job tells every current member the first time a month's spending reaches 80% and 100% of a budget; `budget_alerts` keeps the level sent per budget and month, so nothing is sent twice. They open the dashboard ([decision 0013](decisions/0013-quick-adds-and-budgets.md)).
+- **Preferences.** In their profile, each person turns push off by group (expenses, payments, disputes, members, reminders, settlement, budgets) for every apartment. The notification is still created, so the red dot stays; only the push is skipped.
 - **Push text is generic** ("An expense that includes you was added."), because it shows on lock screens. It never contains names, amounts or account details. The app, behind sign-in, shows the record itself.
 - **Opening a notification** loads it under the user's own access and then opens its record. That screen checks access again, so a record the user may no longer see shows as not available (FR-09.3).
 
