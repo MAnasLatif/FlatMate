@@ -72,6 +72,10 @@ Reminders are written straight to `notifications`, without an audit event: every
 
 `expense_templates` holds an apartment's quick-adds, which `save_expense_template` (replacing one of the same name) and `delete_expense_template` change for anyone who may add expenses. `budgets` holds admin-set monthly caps, for all spending (`category_id` null) or one category; `set_budget`, `remove_budget` and `get_budgets` (with the month's spending, for current members) are the interface. The `send-budget-alerts` job raises the level in `budget_alerts` and notifies members at 80% and 100%. Tests: `tests/database/quick_add_and_budgets_test.sql`.
 
+## Activity history
+
+`get_activity` pages an apartment's `audit_events` newest first for current members, filtered by group (`private.activity_group`) and by actor, with each entry's record name, amount and people where the caller can read them. The audit trail's read policy makes each entry as private as its record: payments, offsets and adjustments follow those tables' policies, and invites, join requests, invitations back and repeatable expenses are for admins. A new audit entity type that is private must be added to that policy. Tests: `tests/database/activity_history_test.sql`.
+
 ## Join codes
 
 Each apartment has one join code at a time ([decision 0011](../docs/decisions/0011-one-join-code-per-apartment.md)). `get_join_code` returns it to an admin, making it the first time, and `change_join_code` replaces it, stopping every older code. It does not expire: joining with it only asks to join, an admin approves every request, and wrong guesses are rate-limited. Admins can read the code; joining matches on its hash. `create_invite` stays for app versions that still call it. Tests: `tests/database/join_code_test.sql`, `invites_test.sql`.

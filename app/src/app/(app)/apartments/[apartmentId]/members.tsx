@@ -13,6 +13,7 @@ import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
+import { ActivityLink } from '@/features/activity/components/activity-link';
 import { HEADER_ICON_SIZE } from '@/components/screen-transitions';
 import { LoadError, LoadingRows } from '@/components/query-states';
 import { Screen } from '@/components/screen';
@@ -153,6 +154,7 @@ function MembersList({
       />
 
       <SettlementLink apartmentId={apartmentId} />
+      <ActivityLink apartmentId={apartmentId} />
 
       <View className="gap-3">
         {current.map((member) => (
