@@ -2353,6 +2353,121 @@ export type Database = {
           },
         ];
       };
+      room_occupancies: {
+        Row: {
+          apartment_id: string;
+          created_at: string;
+          created_by: string | null;
+          ends_on: string | null;
+          id: string;
+          room_id: string;
+          starts_on: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          ends_on?: string | null;
+          id?: string;
+          room_id: string;
+          starts_on: string;
+          user_id: string;
+        };
+        Update: {
+          apartment_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          ends_on?: string | null;
+          id?: string;
+          room_id?: string;
+          starts_on?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'room_occupancies_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'room_occupancies_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'room_occupancies_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'rooms';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'room_occupancies_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      rooms: {
+        Row: {
+          apartment_id: string;
+          archived_at: string | null;
+          client_request_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          updated_at: string;
+          weight: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          archived_at?: string | null;
+          client_request_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          updated_at?: string;
+          weight?: number;
+        };
+        Update: {
+          apartment_id?: string;
+          archived_at?: string | null;
+          client_request_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+          weight?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'rooms_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rooms_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       settlement_balances: {
         Row: {
           disputed_minor: number;
@@ -2498,9 +2613,14 @@ export type Database = {
         Args: { p_payment_id: string; p_storage_path: string };
         Returns: string;
       };
+      add_room_occupant: {
+        Args: { p_ends_on?: string; p_room_id: string; p_starts_on: string; p_user_id: string };
+        Returns: string;
+      };
       approve_join_request: { Args: { p_request_id: string }; Returns: undefined };
       archive_category: { Args: { p_category_id: string }; Returns: undefined };
       archive_recurring_template: { Args: { p_template_id: string }; Returns: undefined };
+      archive_room: { Args: { p_room_id: string }; Returns: undefined };
       cancel_join_request: { Args: { p_request_id: string }; Returns: undefined };
       cancel_rejoin_invite: { Args: { p_invite_id: string }; Returns: undefined };
       change_join_code: { Args: { p_apartment_id: string }; Returns: string };
@@ -2573,6 +2693,10 @@ export type Database = {
           p_title: string;
         };
         Returns: number;
+      };
+      end_room_occupancy: {
+        Args: { p_ends_on: string; p_occupancy_id: string };
+        Returns: undefined;
       };
       get_activity: {
         Args: {
@@ -2727,6 +2851,15 @@ export type Database = {
           user_id: string;
         }[];
       };
+      get_room_split: {
+        Args: { p_amount_minor: number; p_apartment_id: string; p_from: string; p_to: string };
+        Returns: {
+          amount_minor: number;
+          days: number;
+          included: boolean;
+          user_id: string;
+        }[];
+      };
       get_settlement_preview: {
         Args: { p_apartment_id: string };
         Returns: {
@@ -2870,6 +3003,7 @@ export type Database = {
       };
       remove_inventory_item: { Args: { p_item_id: string }; Returns: undefined };
       remove_member: { Args: { p_apartment_id: string; p_user_id: string }; Returns: undefined };
+      remove_room_occupancy: { Args: { p_occupancy_id: string }; Returns: undefined };
       rename_category: { Args: { p_category_id: string; p_name: string }; Returns: undefined };
       report_push_receipts: { Args: { p_results: Json }; Returns: undefined };
       report_pushes: { Args: { p_results: Json }; Returns: undefined };
@@ -2911,6 +3045,16 @@ export type Database = {
           p_owner_type: string;
           p_request_id?: string;
           p_status?: string;
+        };
+        Returns: string;
+      };
+      save_room: {
+        Args: {
+          p_apartment_id: string;
+          p_name: string;
+          p_request_id?: string;
+          p_room_id?: string;
+          p_weight: number;
         };
         Returns: string;
       };
