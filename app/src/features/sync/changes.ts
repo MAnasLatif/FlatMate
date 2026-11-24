@@ -1,6 +1,7 @@
 import type { QueryKey } from '@tanstack/react-query';
 
 import { accountKeys } from '@/features/accounts/hooks';
+import { activityKeys } from '@/features/activity/hooks';
 import { apartmentKeys } from '@/features/apartments/hooks';
 import { expenseKeys } from '@/features/expenses/hooks';
 import { notificationKeys } from '@/features/notifications/hooks';
@@ -132,9 +133,10 @@ function isUserKind(kind: string | null): kind is UserChangeKind {
 
 /** Everything cached about one apartment, for catching up and for unknown kinds. */
 export function apartmentTopicKeys(apartmentId: string): QueryKey[] {
-  return uniqueKeys(
-    APARTMENT_CHANGE_KINDS.flatMap((kind) => apartmentChanges[kind]({ apartmentId })),
-  );
+  return uniqueKeys([
+    ...APARTMENT_CHANGE_KINDS.flatMap((kind) => apartmentChanges[kind]({ apartmentId })),
+    activityKeys.all(apartmentId),
+  ]);
 }
 
 /** Everything cached about the user across apartments. */
@@ -144,7 +146,8 @@ export function userTopicKeys(userId: string): QueryKey[] {
 
 export function keysForApartmentChange(kind: string | null, apartmentId: string): QueryKey[] {
   return isApartmentKind(kind)
-    ? apartmentChanges[kind]({ apartmentId })
+    ? // Every change is an entry in the apartment's timeline.
+      [...apartmentChanges[kind]({ apartmentId }), activityKeys.all(apartmentId)]
     : apartmentTopicKeys(apartmentId);
 }
 

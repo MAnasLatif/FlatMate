@@ -58,7 +58,15 @@ describe('apartment change events', () => {
     expect(keysForApartmentChange('member', apartmentId)).toEqual([
       ['apartments', apartmentId, 'members'],
       ['money', apartmentId],
+      ['activity', apartmentId],
     ]);
+  });
+
+  it('adds every change to the apartment timeline', () => {
+    for (const kind of APARTMENT_CHANGE_KINDS) {
+      expect(keysForApartmentChange(kind, apartmentId)).toContainEqual(['activity', apartmentId]);
+    }
+    expect(apartmentTopicKeys(apartmentId)).toContainEqual(['activity', apartmentId]);
   });
 
   it('refreshes names when someone renames themselves', () => {
