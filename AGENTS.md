@@ -16,9 +16,9 @@ A few product facts shape almost every technical decision:
 - **Expenses are accepted by default.** Nobody has to click "accept". An affected member can object within a window (7 days by default), which opens a dispute.
 - **Android ships first, iOS from the same codebase.** UI copy is English for now, written so it can be localized later.
 
-The full requirements live in [docs/SRS.md](docs/SRS.md). Its section 12 lists product decisions that are still open. If your task depends on one of them, stop and ask instead of quietly choosing.
+The full requirements live in [docs/SRS.md](docs/SRS.md), which is the single source of truth for what the product does. Its section 14 records every product decision and marks the few still open. If your task depends on an open decision, or needs a new one, stop and ask instead of quietly choosing. The journeys through the app are in [docs/USER-FLOWS.md](docs/USER-FLOWS.md).
 
-The remaining work is listed in order in [docs/TASKS.md](docs/TASKS.md). When the user asks you to continue or to do the next task, take the first unticked one. Tick a task in the same change that completes it, and add a task there when you find work the list is missing.
+There is no task list. Work on what the user asks for; the remaining phase of work is summarized in SRS section 12.
 
 ## Repository map
 
@@ -27,7 +27,7 @@ The remaining work is listed in order in [docs/TASKS.md](docs/TASKS.md). When th
 | [app/](app/) | The mobile application: Expo, React Native, TypeScript. This is the product. |
 | [supabase/](supabase/) | The backend: database migrations, RLS policies, Postgres functions, Edge Functions, seed data, database tests. |
 | [web/](web/) | The public marketing website (Next.js). It presents the app and sends people to the stores. It has no accounts and handles no user data. |
-| [docs/](docs/) | All project documentation: requirements, architecture, decision records. |
+| [docs/](docs/) | All project documentation: the SRS, the architecture, the user flows and testing. There are no other documents. |
 | [.github/](.github/) | CI workflows, issue and pull request templates. |
 
 `app/` and `web/` are independent projects, each with its own `package.json` and lockfile. There is no shared workspace, and none should be added until two projects need to share real code.
@@ -41,7 +41,7 @@ The repository started as a scaffold. A folder without a `package.json` (or, for
 - **Website:** Next.js with TypeScript.
 - **Package manager:** npm, with the lockfile committed.
 
-Versions are whatever is installed, not whatever you remember. Before using a framework or library API, check the installed version in `package.json` and read the official documentation for that version. The app is on Expo SDK 58 with HeroUI Native 1.x, and runs on an Android device ([decision 0002](docs/decisions/0002-heroui-native-on-expo-sdk-58.md)). Individual HeroUI components have not been exercised on a device yet, so confirm a component exists and works before building on it.
+Versions are whatever is installed, not whatever you remember. Before using a framework or library API, check the installed version in `package.json` and read the official documentation for that version. The app is on Expo SDK 58 with HeroUI Native 1.x, and runs on an Android device (SRS section 13). Individual HeroUI components have not been exercised on a device yet, so confirm a component exists and works before building on it.
 
 ## Roles
 
@@ -57,7 +57,7 @@ Every task is done in one of these roles. Pick the one that matches the work. A 
 
 **Reviewer.** Reads a diff with fresh eyes before it is called done: correctness, security, the money rules below, missing tests, and changes that fall outside the task. Runs the checks instead of trusting that they pass.
 
-**Docs maintainer** (`docs/`). Keeps the documentation true. Updates it in the same change that alters behavior, and records significant decisions.
+**Docs maintainer** (`docs/`). Keeps the documentation true. Updates it in the same change that alters behavior, and records product decisions in SRS section 14 and technical ones in section 13.
 
 ## Skills
 
@@ -197,7 +197,7 @@ Comment the decisions a reader could not guess, not what the code already says. 
 
 Keep four concerns apart: UI, business logic, data access, and infrastructure. A screen composes components and calls hooks. It does not build queries or compute splits. Organize by feature (auth, apartments, expenses, payments, disputes, settlements, and so on) so that one feature's code lives together and its dependencies on other modules are explicit and one-directional. No circular imports.
 
-Choose the plainest pattern that fits the app's size. Do not add global state libraries, extra services, queues or new infrastructure until a concrete problem requires them, and record the reason in a decision record when you do.
+Choose the plainest pattern that fits the app's size. Do not add global state libraries, extra services, queues or new infrastructure until a concrete problem requires them, and record the reason in SRS section 13 when you do.
 
 ### UI and UX
 
@@ -225,7 +225,7 @@ Keep contracts consistent and predictable across RPC functions and Edge Function
 
 Index for the queries the app really makes, and optimize a query once it is shown to be slow.
 
-The app is event-driven ([decision 0007](docs/decisions/0007-offline-reading-and-live-sync.md)). Every write that changes data another member, or the same user on another device, can see must send a change event, either by writing `audit_events` in the same transaction or through `private.emit_change`, and the app's event router (`app/src/features/sync/changes.ts`) must map the new event kind to the cache keys it refreshes. Events carry only the kind of record that changed, never ids, amounts or personal details. The app never polls.
+The app is event-driven ([SRS section 7](docs/SRS.md#7-offline-use-and-live-updates)). Every write that changes data another member, or the same user on another device, can see must send a change event, either by writing `audit_events` in the same transaction or through `private.emit_change`, and the app's event router (`app/src/features/sync/changes.ts`) must map the new event kind to the cache keys it refreshes. Events carry only the kind of record that changed, never ids, amounts or personal details. The app never polls.
 
 ### Performance
 
@@ -261,7 +261,7 @@ Committing is automatic. Pushing is not: never push, force-push, rewrite publish
 
 ## Documentation
 
-Documentation is part of the change. When behavior, configuration, setup steps or the schema change, update the relevant document in the same piece of work, including `.env.example` when a variable is added. Record significant architectural decisions in [docs/decisions/](docs/decisions/). Document public interfaces and business rules that are not obvious from the code. Keep it short and accurate, and do not restate what the code already says.
+Documentation is part of the change. When behavior, configuration, setup steps or the schema change, update the relevant document in the same piece of work, including `.env.example` when a variable is added. Keep the documentation to four files: the SRS (requirements and every decision: product decisions in section 14, technical ones in section 13), ARCHITECTURE.md, USER-FLOWS.md, and TESTING.md (how FlatMate is tested and the record of the last device test pass). Do not add other documents in `docs/`; setup steps belong in the README of the folder they concern. Document public interfaces and business rules that are not obvious from the code. Keep it short and accurate, and do not restate what the code already says.
 
 ## Releases and production
 

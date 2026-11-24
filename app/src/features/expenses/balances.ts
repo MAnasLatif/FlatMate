@@ -22,7 +22,7 @@ export type BalanceSummary = {
  * it lands in is flagged as provisional. A positive result is owed by the user
  * and a negative one is owed to them. Disputed amounts are held: they are
  * netted per person on their own and reported separately, never mixed into
- * what is payable (decision record 0003).
+ * what is payable (SRS section 5).
  */
 export function summarizeBalances(balances: readonly Balance[]): BalanceSummary {
   const summary: BalanceSummary = {

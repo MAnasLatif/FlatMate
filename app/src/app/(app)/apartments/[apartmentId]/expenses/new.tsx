@@ -308,7 +308,7 @@ function AddExpenseForm({
   }
 
   // Offline, the expense waits on the phone and is sent by itself once the
-  // connection is back (decision 0018).
+  // connection is back (SRS FR-10.7).
   const saveOffline = () => {
     setShowErrors(true);
     if (!result.value) return;
@@ -371,7 +371,8 @@ function AddExpenseForm({
         : null;
 
   return (
-    <Screen padTop={false}>
+    // The form says itself what saving offline does.
+    <Screen padTop={false} offlineBanner={false}>
       {queued ? (
         <View className="gap-2">
           <FormAlert

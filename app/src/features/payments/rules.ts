@@ -63,7 +63,7 @@ export type PaymentPermissions = {
   canAdjust: boolean;
 };
 
-/** What the viewer can do with a payment. The database enforces the same rules (decision 0005). */
+/** What the viewer can do with a payment. The database enforces the same rules (SRS FR-07). */
 export function paymentPermissions(
   payment: Pick<Payment, 'payerId' | 'recipientId' | 'status'>,
   viewerId: string,

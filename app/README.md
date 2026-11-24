@@ -2,7 +2,7 @@
 
 The FlatMate application for Android and iOS, built with Expo, React Native and TypeScript. This is the product itself. Everything a user does in FlatMate happens here.
 
-> **Status: Phase 1 in progress.** Accounts, apartments (joining with an admin's approval), expenses, disputes, payments, settlement, member exit, offline reading, live sync and notifications work. What is left is in [docs/TASKS.md](../docs/TASKS.md).
+> **Status: features complete through Phase 3** (see the [SRS](../docs/SRS.md)); Phase 4 is the release work.
 
 ## Run it
 
@@ -103,9 +103,9 @@ React Query follows the device: `src/lib/network.ts` tells it when the device go
 
 Loaded data is saved on the device (`src/lib/saved-cache.ts`), so it stays readable offline and appears at once on the next launch. It is encrypted with `EncryptedStorage` (`src/lib/encrypted-storage.ts`), the same scheme as the session, kept per user for up to 7 days, and deleted at sign-out. Signed image links and failed loads are never saved. The splash screen stays up until it is restored. A query whose data must never be saved goes in `UNSAVED_QUERY_ROOTS` there.
 
-The app is event-driven ([decision 0007](../docs/decisions/0007-offline-reading-and-live-sync.md)). `src/lib/realtime-topic.ts` joins a private Realtime topic; `src/features/sync/` holds the router: `changes.ts` maps each kind of change event to the cache keys it makes stale, and `hooks.ts` listens on the user's topic while signed in (`(app)/_layout.tsx`) and on the open apartment's topic while it is open (`apartments/[apartmentId]/_layout.tsx`). On (re)joining a topic it refreshes what may have missed an event; when a membership ends it stops listening and drops that apartment's unshown money data.
+The app is event-driven ([SRS section 7](../docs/SRS.md#7-offline-use-and-live-updates)). `src/lib/realtime-topic.ts` joins a private Realtime topic; `src/features/sync/` holds the router: `changes.ts` maps each kind of change event to the cache keys it makes stale, and `hooks.ts` listens on the user's topic while signed in (`(app)/_layout.tsx`) and on the open apartment's topic while it is open (`apartments/[apartmentId]/_layout.tsx`). On (re)joining a topic it refreshes what may have missed an event; when a membership ends it stops listening and drops that apartment's unshown money data.
 
-Notifications live in `src/features/notifications/`: the red dots for unread notifications (`unread.ts` says which place each belongs to and which screen clears it, [decision 0008](../docs/decisions/0008-unread-dots-instead-of-an-inbox.md)), registering the device for push after sign-in, and opening the record a tapped push is about. Sign-out removes the device first. Android push needs a Firebase file at build time, through `GOOGLE_SERVICES_JSON`; the setup is in [docs/NOTIFICATIONS.md](../docs/NOTIFICATIONS.md).
+Notifications live in `src/features/notifications/`: the red dots for unread notifications (`unread.ts` says which place each belongs to and which screen clears it, [SRS section 6.2](../docs/SRS.md#62-where-the-red-dots-are)), registering the device for push after sign-in, and opening the record a tapped push is about. Sign-out removes the device first. Android push needs a Firebase file at build time, through `GOOGLE_SERVICES_JSON`; the setup is in [supabase/README.md](../supabase/README.md#push-notifications-setup).
 
 ## Rules specific to this folder
 

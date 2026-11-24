@@ -45,7 +45,7 @@ function midSentence(name: string): string {
 }
 
 function possessive(name: string): string {
-  return name === 'You' ? 'your' : `${name}'s`;
+  return name === 'You' || name === 'you' ? 'your' : `${name}'s`;
 }
 
 function describe(entry: ActivityEntry, context: ActivityContext): string {
@@ -55,8 +55,10 @@ function describe(entry: ActivityEntry, context: ActivityContext): string {
   const plainMoney = (value: number | null | undefined) =>
     value === null || value === undefined ? '' : ` ${formatMoney(value, context.currency)}`;
   const actor = entry.actorId ? nameOf(entry.actorId) : 'FlatMate';
-  const person = entry.personId ? nameOf(entry.personId) : 'someone';
-  const other = entry.counterpartyId ? nameOf(entry.counterpartyId) : 'someone';
+  // The people an entry is about, as they read inside a sentence ("you",
+  // not "You"); the sentence's first letter is capitalized afterwards.
+  const person = midSentence(entry.personId ? nameOf(entry.personId) : 'someone');
+  const other = midSentence(entry.counterpartyId ? nameOf(entry.counterpartyId) : 'someone');
   const expense = entry.subject ?? 'an expense';
   const key = `${entry.entityType}.${entry.action}`;
 
@@ -105,7 +107,7 @@ function describe(entry: ActivityEntry, context: ActivityContext): string {
     case 'offset.netted_off':
       return `${actor} netted off debts${money(entry.amountMinor)} between ${person} and ${other}`;
     case 'adjustment.recorded':
-      return `${actor} recorded an adjustment${money(entry.amountMinor)}: ${person} owes ${other}`;
+      return `${actor} recorded an adjustment${money(entry.amountMinor)}: ${person} ${person === 'you' ? 'owe' : 'owes'} ${other}`;
     case 'settlement_period.closed': {
       const from = text(entry.details, 'starts_on');
       const to = text(entry.details, 'ends_on');
@@ -228,19 +230,19 @@ function describe(entry: ActivityEntry, context: ActivityContext): string {
     case 'room.archived':
       return `${actor} stopped using the room ${entry.subject ?? ''}`.trim();
     case 'room.occupant_added':
-      return `${actor} recorded that ${midSentence(person)} live${person === 'You' ? '' : 's'} in ${room(entry)}`;
+      return `${actor} recorded that ${midSentence(person)} live${person === 'you' ? '' : 's'} in ${room(entry)}`;
     case 'room.occupancy_ended':
       return `${actor} recorded that ${midSentence(person)} moved out of ${room(entry)}`;
     case 'room.occupancy_removed':
       return `${actor} removed ${possessive(person)} stay in ${room(entry)}`;
     case 'debt_transfer.proposed':
-      return `${actor} suggested that ${midSentence(person)} ${person === 'You' ? 'pay' : 'pays'} ${midSentence(other)}${plainMoney(entry.amountMinor)} directly`;
+      return `${actor} suggested that ${midSentence(person)} ${person === 'you' ? 'pay' : 'pays'} ${midSentence(other)}${plainMoney(entry.amountMinor)} directly`;
     case 'debt_transfer.accepted':
-      return `${actor} agreed that ${midSentence(person)} ${person === 'You' ? 'pay' : 'pays'} ${midSentence(other)}${plainMoney(entry.amountMinor)} directly`;
+      return `${actor} agreed that ${midSentence(person)} ${person === 'you' ? 'pay' : 'pays'} ${midSentence(other)}${plainMoney(entry.amountMinor)} directly`;
     case 'debt_transfer.declined':
       return `${actor} declined simplifying debts${money(entry.amountMinor)}`;
     case 'debt_transfer.applied':
-      return `Debts were simplified: ${midSentence(person)} now ${person === 'You' ? 'pay' : 'pays'} ${midSentence(other)}${plainMoney(entry.amountMinor)} directly`;
+      return `Debts were simplified: ${midSentence(person)} now ${person === 'you' ? 'pay' : 'pays'} ${midSentence(other)}${plainMoney(entry.amountMinor)} directly`;
     case 'debt_transfer.lapsed':
       return `A suggestion to simplify debts${money(entry.amountMinor)} lapsed`;
     case 'recurring_bill.posted':

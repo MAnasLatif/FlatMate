@@ -16,7 +16,7 @@ function isActive(viewer: Viewer): viewer is NonNullable<Viewer> {
 /**
  * Whether the viewer can object to the expense now: a current member in its
  * split who did not add it, while it is not void and not already disputed.
- * Mirrors raise_dispute, which has the final say (decision record 0004).
+ * Mirrors raise_dispute, which has the final say (SRS FR-05).
  */
 export function canRaiseDispute(
   expense: Pick<ExpenseDetail, 'status' | 'createdBy' | 'splits'>,

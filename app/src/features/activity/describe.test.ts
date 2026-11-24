@@ -49,7 +49,7 @@ describe('describeActivity', () => {
         }),
         context,
       ),
-    ).toBe('A payment of Rs 50.00 from Zubair to You became final. Nobody objected in time');
+    ).toBe('A payment of Rs 50.00 from Zubair to you became final. Nobody objected in time');
   });
 
   it('gives a payment its amount and the person paid', () => {
@@ -165,6 +165,28 @@ describe('describeActivity', () => {
       pathname: '/apartments/[apartmentId]/inventory/[itemId]',
       params: { apartmentId: APT, itemId: 'i1' },
     });
+  });
+
+  it('writes "you" in the middle of a sentence', () => {
+    const people = { personId: 'zubair', counterpartyId: 'me', amountMinor: 10_000 };
+    expect(
+      describeActivity(entry({ entityType: 'payment', action: 'recorded', ...people }), context),
+    ).toBe('Anas recorded a payment of Rs 100.00 to you');
+    expect(
+      describeActivity(entry({ entityType: 'offset', action: 'netted_off', ...people }), context),
+    ).toBe('Anas netted off debts of Rs 100.00 between Zubair and you');
+    expect(
+      describeActivity(
+        entry({
+          entityType: 'adjustment',
+          action: 'recorded',
+          ...people,
+          personId: 'me',
+          counterpartyId: 'anas',
+        }),
+        context,
+      ),
+    ).toBe('Anas recorded an adjustment of Rs 100.00: you owe Anas');
   });
 
   it('words room changes', () => {

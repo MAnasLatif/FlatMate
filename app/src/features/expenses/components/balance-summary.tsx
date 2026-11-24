@@ -90,7 +90,7 @@ export function BalanceSummary({
 
 // A short note instead of a chip: the figure counts provisional amounts as
 // payable, since expenses are accepted by default, but it is not final yet
-// (decision 0003).
+// (SRS section 5).
 const PROVISIONAL_NOTE = 'Includes amounts not final yet';
 
 const TONE_CLASSES = {

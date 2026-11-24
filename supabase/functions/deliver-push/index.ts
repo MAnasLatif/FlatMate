@@ -15,7 +15,7 @@ const EXPO_RECEIPTS_URL = 'https://exp.host/--/api/v2/push/getReceipts';
 const EXPO_RECEIPT_BATCH_SIZE = 1000;
 /**
  * Receipt errors that mean every push fails until a maintainer fixes the
- * credentials in EAS or Firebase (docs/NOTIFICATIONS.md, Troubleshooting).
+ * credentials in EAS or Firebase (supabase/README.md (Push notifications setup), Troubleshooting).
  */
 const CREDENTIAL_ERRORS = new Set(['InvalidCredentials', 'MismatchSenderId', 'InvalidProviderToken']);
 /** Expo accepts at most 100 messages per request. */

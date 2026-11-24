@@ -2,7 +2,7 @@ import type { ExpoConfig } from 'expo/config';
 
 // Firebase identifies the Android app for push notifications. EAS cloud builds
 // get the file from the GOOGLE_SERVICES_JSON file environment variable, and
-// local builds from the same variable in app/.env (docs/NOTIFICATIONS.md).
+// local builds from the same variable in app/.env (supabase/README.md (Push notifications setup)).
 // Without it the app builds and runs, and Android push is unavailable.
 const googleServicesFile = process.env.GOOGLE_SERVICES_JSON;
 

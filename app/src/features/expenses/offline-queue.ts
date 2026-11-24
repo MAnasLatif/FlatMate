@@ -7,7 +7,7 @@ import { EXPENSE_ERROR_MESSAGES } from './errors';
 
 /**
  * An expense added while offline, waiting on the phone to be sent (FR-10.7,
- * decision 0018). It is sent by itself when the connection returns, with its
+ * SRS FR-10.7). It is sent by itself when the connection returns, with its
  * id as the request id, so however often it is sent it is added once. Until
  * the server accepts it, it is not an expense: nobody else sees it and no
  * balance includes it.

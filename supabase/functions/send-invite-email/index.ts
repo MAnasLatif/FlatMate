@@ -1,4 +1,4 @@
-// Emails a join code to someone an admin invites (SRS FR-02.2, decision 0010).
+// Emails a join code to someone an admin invites (SRS FR-02.4).
 //
 // The app calls this with the admin's own token. Every decision lives in the
 // database: private.prepare_invite_email checks that the caller is an admin,

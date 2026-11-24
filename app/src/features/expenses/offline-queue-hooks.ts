@@ -102,7 +102,7 @@ async function sendQueue(userId: string, queryClient: QueryClient): Promise<void
 }
 
 /**
- * Sends expenses saved offline by themselves (decision 0018): when the app
+ * Sends expenses saved offline by themselves (SRS FR-10.7): when the app
  * starts online and whenever the connection comes back. Mount once while
  * signed in. Runs never overlap; a reconnect during a run starts another
  * once it ends. Each is sent with its own id as the request id, so sending

@@ -13,7 +13,7 @@ import { CACHE_MAX_AGE_MS } from './query-client';
 
 /**
  * The saved copy of the query cache, so data the user has loaded stays
- * readable offline and appears at once on the next launch (decision 0007).
+ * readable offline and appears at once on the next launch (SRS section 7).
  * It is a copy of what the server said, never a source of truth: screens
  * still refetch it as soon as they can.
  */
