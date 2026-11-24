@@ -10,6 +10,7 @@ import { ACCOUNT_PAYMENTS_ROOT } from '@/features/payments/hooks';
 import { profileKeys } from '@/features/profile/hooks';
 import { quickAddKeys } from '@/features/quick-add/hooks';
 import { recurringKeys } from '@/features/recurring/hooks';
+import { roomKeys } from '@/features/rooms/hooks';
 import { settlementKeys } from '@/features/settlement/hooks';
 
 /**
@@ -37,6 +38,7 @@ export const APARTMENT_CHANGE_KINDS = [
   'recurring_bill',
   'recurring_template',
   'payment',
+  'room',
   'settlement_period',
   'profile',
   'account',
@@ -88,6 +90,8 @@ const apartmentChanges: Record<ApartmentChangeKind, (scope: ApartmentScope) => Q
     expenseKeys.apartment(apartmentId),
   ],
   invite: ({ apartmentId }) => [apartmentKeys.invites(apartmentId)],
+  // Rooms and who lives in them. Expenses split by room keep their amounts.
+  room: ({ apartmentId }) => [roomKeys.all(apartmentId)],
   // Repeatable expenses, which only admins read. A bill entered or charged
   // also sends an expense event for the charge itself.
   recurring_template: ({ apartmentId }) => [recurringKeys.apartment(apartmentId)],

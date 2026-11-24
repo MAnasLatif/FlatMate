@@ -50,6 +50,13 @@ export default function ApartmentLayout() {
         name="inventory/[itemId]/edit"
         options={{ title: 'Edit item', ...modalTransition }}
       />
+      <Stack.Screen name="rooms/index" options={{ title: 'Rooms' }} />
+      <Stack.Screen name="rooms/new" options={{ title: 'Add a room', ...modalTransition }} />
+      <Stack.Screen name="rooms/[roomId]/index" options={{ title: 'Room' }} />
+      <Stack.Screen
+        name="rooms/[roomId]/edit"
+        options={{ title: 'Edit room', ...modalTransition }}
+      />
       <Stack.Screen name="settings" options={{ title: 'Apartment settings' }} />
       <Stack.Screen
         name="recurring/new"

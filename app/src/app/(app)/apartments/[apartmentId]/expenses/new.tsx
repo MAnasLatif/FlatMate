@@ -26,6 +26,7 @@ import type { CostKind } from '@/features/inventory/api';
 import { INVENTORY_ERROR_MESSAGES } from '@/features/inventory/errors';
 import { useInventory, useLinkInventoryCost } from '@/features/inventory/hooks';
 import { COST_KIND_LABEL } from '@/features/inventory/items';
+import { RoomSplitPanel } from '@/features/rooms/components/room-split-panel';
 import { QuickAddChips } from '@/features/quick-add/components/quick-add-chips';
 import type { QuickAddInput } from '@/features/quick-add/api';
 import { QUICK_ADD_ERROR_MESSAGES } from '@/features/quick-add/errors';
@@ -311,6 +312,17 @@ function AddExpenseForm({
         currentUserId={userId}
         afterDate={
           <ReceiptsField receipts={receipts} onChange={setReceipts} isDisabled={isSaving} />
+        }
+        afterSplit={
+          <RoomSplitPanel
+            apartmentId={apartment.id}
+            draft={draft}
+            setDraft={setDraft}
+            members={members}
+            currentUserId={userId}
+            currency={apartment.currency}
+            today={today}
+          />
         }
       />
       <SwitchRow

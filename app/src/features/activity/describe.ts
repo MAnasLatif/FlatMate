@@ -39,6 +39,11 @@ export function describeActivity(entry: ActivityEntry, context: ActivityContext)
   return sentence.charAt(0).toUpperCase() + sentence.slice(1);
 }
 
+/** A name in the middle of a sentence: "you" for the reader. */
+function midSentence(name: string): string {
+  return name === 'You' ? 'you' : name;
+}
+
 function possessive(name: string): string {
   return name === 'You' ? 'your' : `${name}'s`;
 }
@@ -214,6 +219,18 @@ function describe(entry: ActivityEntry, context: ActivityContext): string {
       return `${actor} counted ${text(entry.details, 'expense_title') ?? 'an expense'} towards ${item(entry)}`;
     case 'inventory_item.cost_unlinked':
       return `${actor} stopped counting ${text(entry.details, 'expense_title') ?? 'an expense'} towards ${item(entry)}`;
+    case 'room.created':
+      return `${actor} added the room ${entry.subject ?? ''}`.trim();
+    case 'room.updated':
+      return `${actor} changed the room ${entry.subject ?? ''}`.trim();
+    case 'room.archived':
+      return `${actor} stopped using the room ${entry.subject ?? ''}`.trim();
+    case 'room.occupant_added':
+      return `${actor} recorded that ${midSentence(person)} live${person === 'You' ? '' : 's'} in ${room(entry)}`;
+    case 'room.occupancy_ended':
+      return `${actor} recorded that ${midSentence(person)} moved out of ${room(entry)}`;
+    case 'room.occupancy_removed':
+      return `${actor} removed ${possessive(person)} stay in ${room(entry)}`;
     case 'recurring_bill.posted':
       return `${actor} entered the ${entry.subject ?? 'repeatable'} bill`;
     case 'recurring_bill.skipped':
@@ -235,6 +252,11 @@ const ITEM_STATUS_WORDS: Record<string, string> = {
 /** "the item Fridge", named from the entry once the item is removed. */
 function item(entry: ActivityEntry): string {
   return entry.subject ? `the item ${entry.subject}` : 'an item';
+}
+
+/** "the room Master", named from the entry once the room is gone. */
+function room(entry: ActivityEntry): string {
+  return entry.subject ? `the room ${entry.subject}` : 'a room';
 }
 
 /** "for all spending", or "for Groceries" while the category exists. */
@@ -297,6 +319,11 @@ export function activityHref(
       return {
         pathname: '/apartments/[apartmentId]/deposits/[depositId]',
         params: { apartmentId, depositId: entry.entityId },
+      };
+    case 'room':
+      return {
+        pathname: '/apartments/[apartmentId]/rooms/[roomId]',
+        params: { apartmentId, roomId: entry.entityId },
       };
     case 'inventory_item':
       // A removed item opens as not available.

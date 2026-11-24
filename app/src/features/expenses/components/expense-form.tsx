@@ -32,6 +32,8 @@ type ExpenseFormProps = {
   isPaidStatusFixed?: boolean;
   /** Shown fourth, after the title, amount and date, such as the receipts when adding. */
   afterDate?: ReactNode;
+  /** Shown under the split, such as a way to split by room. */
+  afterSplit?: ReactNode;
 };
 
 /** The fields of an expense: details, who paid, how it is split, then notes. */
@@ -246,16 +248,20 @@ function SplitSection({
   members,
   currentUserId,
   currency,
+  afterSplit,
 }: ExpenseFormProps) {
   return (
-    <SplitFields
-      value={draft}
-      onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
-      shares={result.shares}
-      error={showErrors || draft.splitMethod !== 'equal' ? result.errors.split : undefined}
-      members={members}
-      currentUserId={currentUserId}
-      currency={currency}
-    />
+    <View className="gap-3">
+      <SplitFields
+        value={draft}
+        onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+        shares={result.shares}
+        error={showErrors || draft.splitMethod !== 'equal' ? result.errors.split : undefined}
+        members={members}
+        currentUserId={currentUserId}
+        currency={currency}
+      />
+      {afterSplit}
+    </View>
   );
 }

@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Button, Label, TextArea, TextField, Typography } from 'heroui-native';
-import { useMemo, useState } from 'react';
+import { type Dispatch, type ReactNode, type SetStateAction, useMemo, useState } from 'react';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
@@ -14,20 +14,33 @@ import { todayInTimeZone } from '@/lib/time';
 
 import type { ExpenseDetail } from '../api';
 import { canEditExpense } from '../detail';
-import { draftFromExpense, validateDraft } from '../draft';
+import { draftFromExpense, type ExpenseDraft, validateDraft } from '../draft';
 import { EXPENSE_ERROR_MESSAGES } from '../errors';
 import { useEditExpense, useExpenseDetail } from '../hooks';
 import { ExpenseForm } from './expense-form';
 
 const REASON_MAX_LENGTH = 500;
 
+/** What a section under the split, added by another feature, works with. */
+export type SplitExtraProps = {
+  draft: ExpenseDraft;
+  setDraft: Dispatch<SetStateAction<ExpenseDraft>>;
+  members: Member[];
+  currentUserId: string;
+  currency: string;
+  today: string;
+};
+
 /** Edits a posted expense. Money changes become a new revision on the server. */
 export function EditExpense({
   apartmentId,
   expenseId,
+  renderAfterSplit,
 }: {
   apartmentId: string;
   expenseId: string;
+  /** A section under the split, such as splitting by room. */
+  renderAfterSplit?: (props: SplitExtraProps) => ReactNode;
 }) {
   const userId = useCurrentUserId();
   const detail = useExpenseDetail(apartmentId, expenseId);
@@ -86,6 +99,7 @@ export function EditExpense({
       expense={detail.data}
       members={formMembers(members.data, detail.data)}
       categories={categories.data}
+      renderAfterSplit={renderAfterSplit}
     />
   );
 }
@@ -104,11 +118,13 @@ function EditExpenseForm({
   expense,
   members,
   categories,
+  renderAfterSplit,
 }: {
   apartment: Apartment;
   expense: ExpenseDetail;
   members: Member[];
   categories: Category[];
+  renderAfterSplit?: (props: SplitExtraProps) => ReactNode;
 }) {
   const userId = useCurrentUserId();
   const today = todayInTimeZone(apartment.timezone);
@@ -165,6 +181,14 @@ function EditExpenseForm({
         today={today}
         currentUserId={userId}
         isPaidStatusFixed
+        afterSplit={renderAfterSplit?.({
+          draft,
+          setDraft,
+          members,
+          currentUserId: userId,
+          currency: expense.currency,
+          today,
+        })}
       />
       <TextField isInvalid={reasonError !== undefined}>
         <Label>Reason for the change (optional)</Label>
