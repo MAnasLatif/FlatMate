@@ -15,8 +15,14 @@ import {
 import { minorUnitsToInput, parseAmountToMinorUnits } from '@/lib/money';
 import { addDays, addMonths, monthStart } from '@/lib/time';
 
-import type { RecurringKind, RecurringTemplate, WaitingBill } from './api';
-import { isMonthly, type Repeat } from './schedule';
+import type {
+  RecurringKind,
+  RecurringSplitMethod,
+  RecurringTemplate,
+  RoomPeriod,
+  WaitingBill,
+} from './api';
+import { isMonthly, type Repeat, REPEATS } from './schedule';
 
 export const MAX_DUE_AFTER_DAYS = 90;
 /** A daily or weekly expense can start up to a year ahead, as the database allows. */
@@ -38,6 +44,8 @@ export type RecurringDraft = SplitInput & {
   firstPeriod: string;
   /** Daily and weekly, when adding: the first charge, as YYYY-MM-DD. */
   startDate: string;
+  /** Set when it is split by room each time; the split fields are then not used. */
+  roomPeriod: RoomPeriod | null;
 };
 
 export type ValidRecurring = {
@@ -51,9 +59,16 @@ export type ValidRecurring = {
   firstDate: string;
   dueAfterDays: number | null;
   collectorId: string | null;
-  splitMethod: SplitInput['splitMethod'];
+  splitMethod: RecurringSplitMethod;
+  /** Empty for a split by room. */
   participants: SplitParticipant[];
+  roomPeriod: RoomPeriod | null;
 };
+
+/** A split by room's period when it is first turned on: rent in advance, a changing bill in arrears. */
+export function defaultRoomPeriod(kind: RecurringKind): RoomPeriod {
+  return kind === 'fixed' ? 'advance' : 'arrears';
+}
 
 export type RecurringField =
   'title' | 'amount' | 'billDay' | 'startDate' | 'dueAfterDays' | 'split';
@@ -75,6 +90,29 @@ export function billDateIn(period: string, billDay: number): string {
   return `${start.slice(0, 8)}${String(Math.min(billDay, lastDay)).padStart(2, '0')}`;
 }
 
+/**
+ * The days a charge on `billDate` covers when it is split by room, as
+ * private.recurring_room_period works them out: from the bill date to the
+ * day before the next one in advance, or from the previous bill date to the
+ * day before this one in arrears. For showing only; the server decides.
+ */
+export function roomSplitDays(
+  billDate: string,
+  repeat: Repeat,
+  billDay: number | null,
+  period: RoomPeriod,
+): { from: string; to: string } {
+  const { unit, every } = REPEATS[repeat];
+  const day = billDay ?? Number(billDate.slice(8, 10));
+  const step = (direction: 1 | -1) =>
+    unit === 'month'
+      ? billDateIn(addMonths(monthStart(billDate), direction * every), day)
+      : addDays(billDate, direction * (unit === 'week' ? 7 : 1) * every);
+  return period === 'advance'
+    ? { from: billDate, to: addDays(step(1), -1) }
+    : { from: step(-1), to: addDays(billDate, -1) };
+}
+
 /** The month of the next bill day still to come: this month's, or next month's once it has passed. */
 export function nextFirstPeriod(billDay: number, today: string): string {
   const thisMonth = monthStart(today);
@@ -92,6 +130,7 @@ export function newRecurringDraft(today: string): RecurringDraft {
     collectorId: null,
     firstPeriod: nextFirstPeriod(1, today),
     startDate: today,
+    roomPeriod: null,
     splitMethod: 'equal',
     excluded: [],
     percentages: {},
@@ -116,7 +155,16 @@ export function draftFromTemplate(
     collectorId: template.collectorId,
     firstPeriod: monthStart(template.nextBillDate),
     startDate: template.nextBillDate,
-    ...splitInputFrom(template.splitMethod, template.participants, memberIds, minorUnitDigits),
+    roomPeriod: template.splitMethod === 'room' ? template.roomPeriod : null,
+    // A split by room starts the split fields from everyone equally, in case it is turned off.
+    ...(template.splitMethod === 'room'
+      ? splitInputFrom(
+          'equal',
+          memberIds.map((userId) => ({ userId })),
+          memberIds,
+          minorUnitDigits,
+        )
+      : splitInputFrom(template.splitMethod, template.participants, memberIds, minorUnitDigits)),
   };
 }
 
@@ -196,16 +244,20 @@ export function validateRecurringDraft(
   // A variable bill's amount is unknown until it arrives, so it cannot be split by amount.
   const splitMethod =
     draft.kind === 'variable' && draft.splitMethod === 'fixed' ? 'equal' : draft.splitMethod;
-  const split = validateSplit(
-    { ...draft, splitMethod },
-    memberIds,
-    errors.amount ? null : amountMinor,
-    minorUnitDigits,
-  );
+  // A split by room is worked out by the server for each charge, so it names nobody ahead.
+  const byRoom = draft.roomPeriod !== null;
+  const split = byRoom
+    ? { participants: [] as SplitParticipant[], error: undefined }
+    : validateSplit(
+        { ...draft, splitMethod },
+        memberIds,
+        errors.amount ? null : amountMinor,
+        minorUnitDigits,
+      );
   if (split.error) errors.split = split.error;
 
   const shares =
-    split.participants && amountMinor !== null && errors.amount === undefined
+    !byRoom && split.participants && amountMinor !== null && errors.amount === undefined
       ? sharesOf(amountMinor, splitMethod, split.participants)
       : undefined;
 
@@ -227,8 +279,9 @@ export function validateRecurringDraft(
               draft.collectorId !== null && memberIds.includes(draft.collectorId)
                 ? draft.collectorId
                 : null,
-            splitMethod,
+            splitMethod: byRoom ? 'room' : splitMethod,
             participants: split.participants,
+            roomPeriod: draft.roomPeriod,
           }
         : undefined,
   };
@@ -242,13 +295,16 @@ export type BillDraft = SplitInput & {
   /** YYYY-MM-DD, or ''. */
   dueDate: string;
   collectorId: string | null;
+  /** Split by room on the server for the bill's days; the split fields are then not used. */
+  byRoom: boolean;
 };
 
 export type ValidBill = {
   amountMinor: number;
   dueDate: string | null;
   collectorId: string | null;
-  splitMethod: SplitInput['splitMethod'];
+  splitMethod: RecurringSplitMethod;
+  /** Empty for a split by room. */
   participants: SplitParticipant[];
 };
 
@@ -271,6 +327,7 @@ export function draftFromBill(
   const stillHere = template.participants.filter((participant) =>
     memberIds.includes(participant.userId),
   );
+  const byRoom = template.splitMethod === 'room';
   return {
     amount:
       template.amountMinor === null ? '' : minorUnitsToInput(template.amountMinor, minorUnitDigits),
@@ -279,7 +336,15 @@ export function draftFromBill(
       template.collectorId !== null && memberIds.includes(template.collectorId)
         ? template.collectorId
         : null,
-    ...splitInputFrom(template.splitMethod, stillHere, memberIds, minorUnitDigits),
+    byRoom,
+    ...(template.splitMethod === 'room'
+      ? splitInputFrom(
+          'equal',
+          memberIds.map((userId) => ({ userId })),
+          memberIds,
+          minorUnitDigits,
+        )
+      : splitInputFrom(template.splitMethod, stillHere, memberIds, minorUnitDigits)),
   };
 }
 
@@ -304,16 +369,13 @@ export function validateBillDraft(
     else if (dueDate < billDate) errors.dueDate = 'The due date cannot be before the bill arrived.';
   }
 
-  const split = validateSplit(
-    draft,
-    memberIds,
-    errors.amount ? null : amountMinor,
-    minorUnitDigits,
-  );
+  const split = draft.byRoom
+    ? { participants: [] as SplitParticipant[], error: undefined }
+    : validateSplit(draft, memberIds, errors.amount ? null : amountMinor, minorUnitDigits);
   if (split.error) errors.split = split.error;
 
   const shares =
-    split.participants && amountMinor !== null && errors.amount === undefined
+    !draft.byRoom && split.participants && amountMinor !== null && errors.amount === undefined
       ? sharesOf(amountMinor, draft.splitMethod, split.participants)
       : undefined;
 
@@ -329,7 +391,7 @@ export function validateBillDraft(
               draft.collectorId !== null && memberIds.includes(draft.collectorId)
                 ? draft.collectorId
                 : null,
-            splitMethod: draft.splitMethod,
+            splitMethod: draft.byRoom ? 'room' : draft.splitMethod,
             participants: split.participants,
           }
         : undefined,

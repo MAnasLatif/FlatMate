@@ -7,6 +7,17 @@ import type { ValidBill, ValidRecurring } from './draft';
 import { type Repeat, repeatOf, REPEATS } from './schedule';
 
 export type RecurringKind = 'fixed' | 'variable';
+/**
+ * How a repeatable expense is shared: as an expense is, or by room each time
+ * it is charged (FR-10.6), which the server works out for the charge's days.
+ */
+export type RecurringSplitMethod = SplitMethod | 'room';
+/**
+ * Which days a charge split by room covers: from its bill date to the day
+ * before the next (advance, like rent), or from the previous bill date to the
+ * day before this one (arrears, like electricity).
+ */
+export type RoomPeriod = 'advance' | 'arrears';
 export type { Repeat } from './schedule';
 
 /** A repeatable expense as admins manage it (SRS FR-04). Only admins can read these. */
@@ -25,8 +36,11 @@ export type RecurringTemplate = {
   /** The charge is due this many days after the bill day; null for no due date. */
   dueAfterDays: number | null;
   collectorId: string | null;
-  splitMethod: SplitMethod;
+  splitMethod: RecurringSplitMethod;
+  /** Empty for a split by room. */
   participants: SplitParticipant[];
+  /** Set for a split by room only. */
+  roomPeriod: RoomPeriod | null;
   /** The next bill date to charge, as YYYY-MM-DD. */
   nextBillDate: string;
   isPaused: boolean;
@@ -43,7 +57,7 @@ export type WaitingBill = {
 };
 
 const TEMPLATE_COLUMNS =
-  'id, title, kind, amount_minor, repeat_unit, repeat_every, bill_day, due_after_days, collector_id, split_method, participants, next_bill_date, paused_at';
+  'id, title, kind, amount_minor, repeat_unit, repeat_every, bill_day, due_after_days, collector_id, split_method, participants, room_period, next_bill_date, paused_at';
 
 type TemplateRow = {
   id: string;
@@ -57,6 +71,7 @@ type TemplateRow = {
   collector_id: string | null;
   split_method: string;
   participants: Json;
+  room_period: string | null;
   next_bill_date: string;
   paused_at: string | null;
 };
@@ -71,8 +86,10 @@ function toTemplate(row: TemplateRow): RecurringTemplate {
     billDay: row.bill_day,
     dueAfterDays: row.due_after_days,
     collectorId: row.collector_id,
-    splitMethod: row.split_method as SplitMethod,
+    splitMethod: row.split_method as RecurringSplitMethod,
     participants: fromRpcParticipants(row.participants),
+    roomPeriod:
+      row.room_period === 'advance' || row.room_period === 'arrears' ? row.room_period : null,
     nextBillDate: row.next_bill_date,
     isPaused: row.paused_at !== null,
   };
@@ -140,6 +157,7 @@ export async function createTemplate(
     p_collector_id: input.collectorId ?? undefined,
     p_first_date: firstDate,
     p_client_request_id: requestId,
+    p_room_period: input.roomPeriod ?? undefined,
   });
   if (error) throw error;
   return data;
@@ -155,6 +173,7 @@ export async function updateTemplate(templateId: string, input: ValidRecurring):
     p_split_method: input.splitMethod,
     p_participants: toRpcParticipants(input.participants),
     p_collector_id: input.collectorId ?? undefined,
+    p_room_period: input.roomPeriod ?? undefined,
   });
   if (error) throw error;
 }

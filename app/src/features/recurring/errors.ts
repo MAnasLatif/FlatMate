@@ -19,4 +19,8 @@ export const RECURRING_ERROR_MESSAGES: Record<string, string> = {
   recurring_bill_not_found: 'This bill no longer exists.',
   recurring_bill_not_waiting: 'Another admin has already dealt with this bill.',
   due_date_before_expense_date: 'The due date cannot be before the bill arrived.',
+  no_rooms: 'Add a room under Rooms on the members screen first.',
+  invalid_room_period: 'Choose whether each charge is in advance or in arrears.',
+  room_period_without_room_split: 'Turn on Split by room, or leave out the period.',
+  no_occupants: 'Nobody who is still a member lived in a room in these days. Choose another split.',
 };

@@ -3,16 +3,18 @@ import type { Dispatch, SetStateAction } from 'react';
 import { View } from 'react-native';
 
 import { ChoiceChips } from '@/components/choice-chips';
+import { SwitchRow } from '@/components/form/switch-row';
 import type { Member } from '@/features/apartments/api';
 import { SplitFields } from '@/features/expenses/components/split-fields';
 import { memberLabel } from '@/features/expenses/member-label';
 import { DateField } from '@/components/form/date-field';
 import { addDays, addMonths, formatDate, monthStart } from '@/lib/time';
 
-import type { RecurringKind } from '../api';
+import type { RecurringKind, RoomPeriod } from '../api';
 import { isMonthly, type Repeat } from '../schedule';
 import {
   billDateIn,
+  defaultRoomPeriod,
   MAX_START_DAYS_AHEAD,
   nextFirstPeriod,
   type RecurringDraft,
@@ -23,6 +25,11 @@ import { currencySymbol } from '@/features/apartments/currencies';
 const KIND_CHOICES: { value: RecurringKind; label: string }[] = [
   { value: 'fixed', label: 'Same amount each time' },
   { value: 'variable', label: 'Amount changes' },
+];
+
+const ROOM_PERIOD_CHOICES: { value: RoomPeriod; label: string }[] = [
+  { value: 'advance', label: 'In advance' },
+  { value: 'arrears', label: 'In arrears' },
 ];
 
 const REPEAT_CHOICES: { value: Repeat; label: string }[] = [
@@ -45,6 +52,8 @@ type TemplateFormProps = {
   today: string;
   /** Adding chooses the kind and the first charge; editing keeps them. */
   mode: 'add' | 'edit';
+  /** Whether the flat has rooms, so it can be split by room. */
+  hasRooms: boolean;
 };
 
 /** The fields of a repeatable expense: what it is, when it comes, who pays and how it is split. */
@@ -58,6 +67,7 @@ export function TemplateForm({
   currency,
   today,
   mode,
+  hasRooms,
 }: TemplateFormProps) {
   const error = (field: keyof RecurringResult['errors']) =>
     showErrors ? result.errors[field] : undefined;
@@ -250,16 +260,49 @@ export function TemplateForm({
         </Description>
       </View>
 
-      <SplitFields
-        value={draft}
-        onChange={update}
-        shares={result.shares}
-        error={showErrors || draft.splitMethod !== 'equal' ? result.errors.split : undefined}
-        members={members}
-        currentUserId={currentUserId}
-        currency={currency}
-        methods={isVariable ? ['equal', 'percentage'] : undefined}
-      />
+      {hasRooms || draft.roomPeriod !== null ? (
+        <View className="gap-2">
+          <SwitchRow
+            label="Split by room each time"
+            description="Each charge is shared by room weight and the days each person lived in their room, worked out when it is charged."
+            isSelected={draft.roomPeriod !== null}
+            onSelectedChange={(on) =>
+              update({ roomPeriod: on ? defaultRoomPeriod(draft.kind) : null })
+            }
+          />
+          {draft.roomPeriod !== null ? (
+            <>
+              <ChoiceChips
+                accessibilityLabel="Which days each charge covers"
+                choices={ROOM_PERIOD_CHOICES}
+                selected={draft.roomPeriod}
+                onSelect={(roomPeriod) => update({ roomPeriod })}
+              />
+              <Description>
+                {draft.roomPeriod === 'advance'
+                  ? 'Each charge covers the days from its bill date to the day before the next, like rent.'
+                  : 'Each charge covers the days since the previous bill date, like electricity.'}{' '}
+                {isVariable
+                  ? 'You enter the amount, then it is split by room.'
+                  : 'If someone who has left lived there in those days, the charge waits for you to check it.'}
+              </Description>
+            </>
+          ) : null}
+        </View>
+      ) : null}
+
+      {draft.roomPeriod === null ? (
+        <SplitFields
+          value={draft}
+          onChange={update}
+          shares={result.shares}
+          error={showErrors || draft.splitMethod !== 'equal' ? result.errors.split : undefined}
+          members={members}
+          currentUserId={currentUserId}
+          currency={currency}
+          methods={isVariable ? ['equal', 'percentage'] : undefined}
+        />
+      ) : null}
     </View>
   );
 }

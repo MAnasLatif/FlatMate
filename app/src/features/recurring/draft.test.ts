@@ -1,9 +1,13 @@
-import type { WaitingBill } from './api';
+import type { RecurringTemplate, WaitingBill } from './api';
 import {
   billDateIn,
+  defaultRoomPeriod,
   draftFromBill,
+  draftFromTemplate,
   newRecurringDraft,
   nextFirstPeriod,
+  type RecurringDraft,
+  roomSplitDays,
   validateBillDraft,
   validateRecurringDraft,
 } from './draft';
@@ -166,6 +170,7 @@ describe('waiting bills', () => {
       ],
       nextBillDate: '2026-12-05',
       isPaused: false,
+      roomPeriod: null,
     },
   };
 
@@ -203,5 +208,93 @@ describe('waiting bills', () => {
   it('is not due before the bill arrived', () => {
     const draft = { ...draftFromBill(bill, MEMBERS), amount: '10', dueDate: '2026-11-04' };
     expect(validateBillDraft(draft, bill.billDate, MEMBERS).errors.dueDate).toBeDefined();
+  });
+});
+
+describe('splitting by room', () => {
+  const MEMBER_IDS = ['a', 'z'];
+  const draftFor = (patch: Partial<RecurringDraft>): RecurringDraft => ({
+    ...newRecurringDraft('2026-11-24'),
+    title: 'Rent',
+    amount: '3000',
+    ...patch,
+  });
+
+  it('works out the days a charge covers, as the database does', () => {
+    expect(roomSplitDays('2026-11-01', 'monthly', 1, 'advance')).toEqual({
+      from: '2026-11-01',
+      to: '2026-11-30',
+    });
+    expect(roomSplitDays('2026-12-05', 'monthly', 5, 'arrears')).toEqual({
+      from: '2026-11-05',
+      to: '2026-12-04',
+    });
+    expect(roomSplitDays('2027-02-28', 'quarterly', 31, 'arrears')).toEqual({
+      from: '2026-11-30',
+      to: '2027-02-27',
+    });
+    expect(roomSplitDays('2026-11-02', 'fortnightly', null, 'advance')).toEqual({
+      from: '2026-11-02',
+      to: '2026-11-15',
+    });
+    expect(roomSplitDays('2026-11-02', 'daily', null, 'arrears')).toEqual({
+      from: '2026-11-01',
+      to: '2026-11-01',
+    });
+  });
+
+  it('saves a split by room with its period and nobody named', () => {
+    const result = validateRecurringDraft(
+      draftFor({ roomPeriod: 'advance', splitMethod: 'fixed', excluded: ['a', 'z'] }),
+      MEMBER_IDS,
+      '2026-11-24',
+    );
+    expect(result.errors).toEqual({});
+    expect(result.value).toMatchObject({
+      splitMethod: 'room',
+      participants: [],
+      roomPeriod: 'advance',
+    });
+    expect(result.shares).toBeUndefined();
+  });
+
+  it('starts rent in advance and a changing bill in arrears', () => {
+    expect(defaultRoomPeriod('fixed')).toBe('advance');
+    expect(defaultRoomPeriod('variable')).toBe('arrears');
+  });
+
+  it('opens a template split by room with that split, and its bills split by room', () => {
+    const template: RecurringTemplate = {
+      id: 't',
+      title: 'Rent',
+      kind: 'fixed',
+      amountMinor: 300_000,
+      repeat: 'monthly',
+      billDay: 1,
+      dueAfterDays: null,
+      collectorId: null,
+      splitMethod: 'room',
+      participants: [],
+      roomPeriod: 'arrears',
+      nextBillDate: '2026-12-01',
+      isPaused: false,
+    };
+    const draft = draftFromTemplate(template, MEMBER_IDS);
+    expect(draft.roomPeriod).toBe('arrears');
+    expect(draft.splitMethod).toBe('equal');
+
+    const bill = draftFromBill(
+      { id: 'b', billDate: '2026-12-01', reason: 'split_needs_review', template },
+      MEMBER_IDS,
+    );
+    expect(bill.byRoom).toBe(true);
+    expect(validateBillDraft(bill, '2026-12-01', MEMBER_IDS).value).toMatchObject({
+      amountMinor: 300_000,
+      splitMethod: 'room',
+      participants: [],
+    });
+    expect(
+      validateBillDraft({ ...bill, byRoom: false }, '2026-12-01', MEMBER_IDS).value,
+    ).toMatchObject({ splitMethod: 'equal', participants: [{ userId: 'a' }, { userId: 'z' }] });
   });
 });

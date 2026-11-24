@@ -78,6 +78,7 @@ const rent: RecurringTemplate = {
   participants: [{ userId: ME }],
   nextBillDate: '2026-12-01',
   isPaused: false,
+  roomPeriod: null,
 };
 
 const electricity: RecurringTemplate = {
