@@ -387,6 +387,7 @@ These shape the code and are summarized here; [ARCHITECTURE.md](ARCHITECTURE.md)
 4. **Event-driven sync** through private Realtime Broadcast messages that carry only a kind (section 7), chosen over polling, Postgres Changes or a local-first database, which would let writes skip the server's checks.
 5. **Unread dots instead of an inbox** (section 6.2).
 6. **Supabase Edge Functions** only where the database cannot do the work itself: push delivery and invite emails.
+7. **Passwords** need at least 8 characters. Supabase's leaked-password protection (passwords found in known breaches are refused) needs the Pro plan, so it is off on the free plan and is to be turned on with the production upgrade; the app already explains that refusal.
 
 ## 14. Product decisions
 
