@@ -33,6 +33,7 @@ export default function ApartmentLayout() {
       <Stack.Screen name="leave" options={{ title: 'Leave apartment', ...modalTransition }} />
       <Stack.Screen name="settlement/[memberId]" options={{ title: 'Settle up' }} />
       <Stack.Screen name="statements" options={{ title: 'Statements' }} />
+      <Stack.Screen name="simplify" options={{ title: 'Simplify debts' }} />
       <Stack.Screen name="activity" options={{ title: 'Activity' }} />
       <Stack.Screen name="deposits/index" options={{ title: 'Deposit' }} />
       <Stack.Screen

@@ -130,7 +130,8 @@ function HeaderActions({ apartmentId }: { apartmentId: string }) {
   const unread =
     useUnreadCount(unreadMatches.members(apartmentId)) +
     useUnreadCount(unreadMatches.settlement(apartmentId)) +
-    useUnreadCount(unreadMatches.deposits(apartmentId));
+    useUnreadCount(unreadMatches.deposits(apartmentId)) +
+    useUnreadCount(unreadMatches.debtTransfers(apartmentId));
 
   return (
     <View className="flex-row items-center gap-4 pr-4">

@@ -120,7 +120,7 @@ FlatMate helps roommates, students, friends, and other shared-living groups reco
 - FR-06.2 Members directory shows, **relative to current viewer**, amounts viewer owes each member, amounts each owes viewer, and net.
 - FR-06.3 Tapping a member opens all relevant shared expenses, payments, outstanding dues, disputes, and explicitly shared receiving accounts.
 - FR-06.4 Show gross pairwise dues and **net-off** option; present exactly which obligations will be offset. Do not double-count an expense or a settlement.
-- FR-06.5 Offer debt simplification suggestions across a group to reduce transfer count; require explicit settlement allocation and preserve the underlying ledger/audit history. Do not silently reassign creditors.
+- FR-06.5 Offer debt simplification suggestions across a group to reduce transfer count; require explicit settlement allocation and preserve the underlying ledger/audit history. Do not silently reassign creditors. A suggestion is one step among three people (one pays another directly instead of through a third), from amounts payable now; it applies only once all three accept, within 7 days, and is written as new ledger entries (section 12, item 30).
 - FR-06.6 Monetary values use integer minor units (e.g. paisa) or exact numeric arithmetic, never binary floats; apply stable rounding rules.
 
 ### FR-07 Payment Recording and Objections
@@ -296,7 +296,7 @@ Use Supabase Auth `auth.users` for identity and `public.profiles` for app profil
 
 ## 12. Product Decisions
 
-Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, item 19 on 2026-11-17, and items 20 to 29 on 2026-11-24. Item 10 is still open, and part of item 11.
+Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 15, item 18 on 2026-11-16, item 19 on 2026-11-17, and items 20 to 30 on 2026-11-24. Item 10 is still open, and part of item 11.
 
 1. **Explicit approval mode — decided.** Not part of the MVP. Every expense is accepted automatically, and affected members object within the window (FR-05). An optional approval mode (FR-03.8) may be reconsidered after release.
 2. **What a dispute holds — decided.** A dispute holds every share of the disputed expense until it is resolved, so settlement never sees inconsistent totals. Other expenses stay payable.
@@ -327,6 +327,7 @@ Items 1–9 and 12 were decided on 2026-11-13, items 13–17 on 2026-11-14 and 1
 27. **Rooms and occupancy — decided.** Admins record rooms with a weight and who lived in each from which day to which day. Splitting a bill by room shares each day of its period among the rooms lived in by weight, and within a room equally; empty rooms and days take no part. The server works out the amounts and the expense is posted as a split by amount with the period in its notes, so later room changes never alter it. Former members' days are left out and shown as such. Available for one-time expenses (FR-10.6, decision record 0017).
 28. **Repeatable expenses split by room — decided.** A repeatable expense can split by room in advance (from its bill date, like rent) or in arrears (up to the day before it, like electricity). The job charges a fixed amount split by room at once unless someone's days would be left out or nobody lived in a room, when an admin checks it; an admin entering a variable bill can have the server split it by room. Charges are saved as splits by amount with their period noted (FR-10.6, FR-04, decision record 0017).
 29. **Expenses added offline — decided.** Instead of drafts to review, an expense added offline waits in an encrypted queue on the phone and is sent by itself on reconnect, checked against the current members and posted with its id as the request id so it is added once. The dashboard shows it as waiting or, when turned down, why; it can be changed, fixed or deleted. Only adding expenses can wait; at most 20 per apartment, for up to 30 days, deleted at sign-out (FR-10.7, decision record 0018, amending 0007).
+30. **Debt simplification — decided.** One step at a time among three people: when one owes a second who owes a third, the first pays the third directly, and nobody's net changes. Steps are suggested only when they cut the number of transfers, from amounts payable now (never disputed ones). Any of the three proposes; it applies only once all three accept within 7 days, and lapses if the debts change first. Each sees only the amount moved. Applying writes two transfer entries and a linked adjustment, never changing earlier records (FR-06.5, decision record 0019).
 
 
 ## 13. Suggested First Implementation Tasks

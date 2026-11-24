@@ -52,6 +52,8 @@ function describe(entry: ActivityEntry, context: ActivityContext): string {
   const { nameOf } = context;
   const money = (value: number | null | undefined) =>
     value === null || value === undefined ? '' : ` of ${formatMoney(value, context.currency)}`;
+  const plainMoney = (value: number | null | undefined) =>
+    value === null || value === undefined ? '' : ` ${formatMoney(value, context.currency)}`;
   const actor = entry.actorId ? nameOf(entry.actorId) : 'FlatMate';
   const person = entry.personId ? nameOf(entry.personId) : 'someone';
   const other = entry.counterpartyId ? nameOf(entry.counterpartyId) : 'someone';
@@ -231,6 +233,16 @@ function describe(entry: ActivityEntry, context: ActivityContext): string {
       return `${actor} recorded that ${midSentence(person)} moved out of ${room(entry)}`;
     case 'room.occupancy_removed':
       return `${actor} removed ${possessive(person)} stay in ${room(entry)}`;
+    case 'debt_transfer.proposed':
+      return `${actor} suggested that ${midSentence(person)} ${person === 'You' ? 'pay' : 'pays'} ${midSentence(other)}${plainMoney(entry.amountMinor)} directly`;
+    case 'debt_transfer.accepted':
+      return `${actor} agreed that ${midSentence(person)} ${person === 'You' ? 'pay' : 'pays'} ${midSentence(other)}${plainMoney(entry.amountMinor)} directly`;
+    case 'debt_transfer.declined':
+      return `${actor} declined simplifying debts${money(entry.amountMinor)}`;
+    case 'debt_transfer.applied':
+      return `Debts were simplified: ${midSentence(person)} now ${person === 'You' ? 'pay' : 'pays'} ${midSentence(other)}${plainMoney(entry.amountMinor)} directly`;
+    case 'debt_transfer.lapsed':
+      return `A suggestion to simplify debts${money(entry.amountMinor)} lapsed`;
     case 'recurring_bill.posted':
       return `${actor} entered the ${entry.subject ?? 'repeatable'} bill`;
     case 'recurring_bill.skipped':
@@ -320,6 +332,8 @@ export function activityHref(
         pathname: '/apartments/[apartmentId]/deposits/[depositId]',
         params: { apartmentId, depositId: entry.entityId },
       };
+    case 'debt_transfer':
+      return { pathname: '/apartments/[apartmentId]/simplify', params: { apartmentId } };
     case 'room':
       return {
         pathname: '/apartments/[apartmentId]/rooms/[roomId]',

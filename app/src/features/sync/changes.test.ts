@@ -21,6 +21,7 @@ describe('apartment change events', () => {
       'apartment',
       'budget',
       'category',
+      'debt_transfer',
       'deposit',
       'expense',
       'expense_template',

@@ -158,6 +158,12 @@ export const unreadMatches = {
     (item) =>
       item.apartmentId === apartmentId && item.recordType === 'deposit',
 
+  /** Debt simplifications the user is part of, cleared on the Simplify debts screen. */
+  debtTransfers:
+    (apartmentId: string): UnreadMatch =>
+    (item) =>
+      item.apartmentId === apartmentId && item.recordType === 'debt_transfer',
+
   /** One deposit, cleared on its screen. */
   deposit:
     (apartmentId: string, depositId: string): UnreadMatch =>
