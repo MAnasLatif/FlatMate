@@ -15,7 +15,8 @@ export type NotificationRecordType =
   | 'join_request'
   | 'rejoin_invite'
   | 'recurring'
-  | 'deposit';
+  | 'deposit'
+  | 'debt_transfer';
 
 /** What a notification is about: enough to open it, and nothing that names anyone. */
 export type NotificationTarget = {

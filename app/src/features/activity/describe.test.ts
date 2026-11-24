@@ -186,6 +186,28 @@ describe('describeActivity', () => {
     expect(room({ action: 'archived' })).toBe('Anas stopped using the room Small');
   });
 
+  it('words simplified debts', () => {
+    const transfer = (patch: Partial<ActivityEntry>) =>
+      describeActivity(
+        entry({
+          entityType: 'debt_transfer',
+          subject: null,
+          amountMinor: 100_000,
+          personId: 'zubair',
+          counterpartyId: 'me',
+          ...patch,
+        }),
+        context,
+      );
+    expect(transfer({ action: 'proposed' })).toBe(
+      'Anas suggested that Zubair pays you Rs 1,000.00 directly',
+    );
+    expect(
+      transfer({ action: 'applied', actorId: 'me', personId: 'me', counterpartyId: 'anas' }),
+    ).toBe('Debts were simplified: you now pay Anas Rs 1,000.00 directly');
+    expect(transfer({ action: 'declined' })).toBe('Anas declined simplifying debts of Rs 1,000.00');
+  });
+
   it('starts every sentence with a capital, and copes with what it does not know', () => {
     expect(
       describeActivity(entry({ subject: null, action: 'finalized', actorId: null }), context),

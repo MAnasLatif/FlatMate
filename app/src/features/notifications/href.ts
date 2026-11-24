@@ -63,6 +63,8 @@ export function notificationHref(
           params: { apartmentId, depositId: id },
         };
       break;
+    case 'debt_transfer':
+      return { pathname: '/apartments/[apartmentId]/simplify', params: { apartmentId } };
     // A repeatable bill waiting for an admin, in the apartment's settings.
     case 'recurring':
       return {

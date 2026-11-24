@@ -15,7 +15,10 @@ import { unreadMatches } from '@/features/notifications/unread';
  */
 export function SettlementLink({ apartmentId }: { apartmentId: string }) {
   const iconColor = useThemeColor('muted');
-  const unread = useHasUnread(unreadMatches.settlement(apartmentId));
+  // Simplifications are reached from the settlement screen, so they show here too.
+  const settlementUnread = useHasUnread(unreadMatches.settlement(apartmentId));
+  const simplifyUnread = useHasUnread(unreadMatches.debtTransfers(apartmentId));
+  const unread = settlementUnread || simplifyUnread;
 
   return (
     <PressableFeedback

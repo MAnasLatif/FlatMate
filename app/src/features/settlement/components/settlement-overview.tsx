@@ -10,6 +10,7 @@ import { useApartment } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
 import { useRefreshMoney } from '@/features/expenses/hooks';
 import { UnreadDot } from '@/features/notifications/components/unread-dot';
+import { SimplifyLink } from '@/features/debt-transfers/components/simplify-link';
 import { useIsUnread, useMarkSeen } from '@/features/notifications/hooks';
 import { type UnreadMatch, unreadMatches } from '@/features/notifications/unread';
 import { userErrorMessage } from '@/lib/errors';
@@ -114,6 +115,8 @@ export function SettlementOverview({ apartmentId }: { apartmentId: string }) {
           )}
         </Card.Body>
       </Card>
+
+      <SimplifyLink apartmentId={apartmentId} />
 
       <Button
         variant="secondary"

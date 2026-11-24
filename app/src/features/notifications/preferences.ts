@@ -13,7 +13,8 @@ export const PUSH_CATEGORIES = [
   {
     value: 'payments',
     label: 'Payments',
-    description: 'Payments to and from you, objections, netting off, adjustments and deposits.',
+    description:
+      'Payments to and from you, objections, netting off, adjustments, deposits and simplified debts.',
   },
   {
     value: 'disputes',

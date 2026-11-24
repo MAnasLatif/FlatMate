@@ -26,6 +26,7 @@ export const APARTMENT_CHANGE_KINDS = [
   'apartment',
   'budget',
   'category',
+  'debt_transfer',
   'deposit',
   'expense',
   'expense_template',
@@ -74,6 +75,8 @@ const apartmentChanges: Record<ApartmentChangeKind, (scope: ApartmentScope) => Q
   budget: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
   // Deposits live under the money key too: their actions post adjustments.
   deposit: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
+  // Simplifications sit with the money: applying one changes balances.
+  debt_transfer: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
   expense_template: ({ apartmentId }) => [quickAddKeys.list(apartmentId)],
   // Items and which expenses count towards them. Their totals follow the
   // expenses, which refresh under the money key.
