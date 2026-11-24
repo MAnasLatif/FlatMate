@@ -24,6 +24,7 @@ describe('apartment change events', () => {
       'deposit',
       'expense',
       'expense_template',
+      'inventory_item',
       'invite',
       'join_request',
       'member',

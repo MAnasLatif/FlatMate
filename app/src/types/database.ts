@@ -1142,6 +1142,131 @@ export type Database = {
           },
         ];
       };
+      inventory_costs: {
+        Row: {
+          apartment_id: string;
+          created_at: string;
+          expense_id: string;
+          item_id: string;
+          kind: string;
+          linked_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          created_at?: string;
+          expense_id: string;
+          item_id: string;
+          kind: string;
+          linked_by?: string | null;
+        };
+        Update: {
+          apartment_id?: string;
+          created_at?: string;
+          expense_id?: string;
+          item_id?: string;
+          kind?: string;
+          linked_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_costs_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_costs_expense_id_fkey';
+            columns: ['expense_id'];
+            isOneToOne: true;
+            referencedRelation: 'expenses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_costs_item_id_fkey';
+            columns: ['item_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_items';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_costs_linked_by_fkey';
+            columns: ['linked_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_items: {
+        Row: {
+          apartment_id: string;
+          client_request_id: string | null;
+          condition: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          notes: string | null;
+          owner_id: string | null;
+          owner_type: string;
+          status: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          apartment_id: string;
+          client_request_id?: string | null;
+          condition?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          notes?: string | null;
+          owner_id?: string | null;
+          owner_type: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          apartment_id?: string;
+          client_request_id?: string | null;
+          condition?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          owner_id?: string | null;
+          owner_type?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_items_apartment_id_fkey';
+            columns: ['apartment_id'];
+            isOneToOne: false;
+            referencedRelation: 'apartments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_items_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_items_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       join_requests: {
         Row: {
           apartment_id: string;
@@ -2484,6 +2609,25 @@ export type Database = {
           spent_minor: number;
         }[];
       };
+      get_inventory: {
+        Args: { p_apartment_id: string };
+        Returns: {
+          condition: string;
+          cost_count: number;
+          created_at: string;
+          created_by: string;
+          has_provisional: boolean;
+          id: string;
+          maintenance_minor: number;
+          name: string;
+          notes: string;
+          owner_id: string;
+          owner_type: string;
+          purchase_minor: number;
+          status: string;
+          updated_at: string;
+        }[];
+      };
       get_join_code: { Args: { p_apartment_id: string }; Returns: string };
       get_join_requests: {
         Args: { p_apartment_id: string };
@@ -2614,6 +2758,10 @@ export type Database = {
       invite_back: { Args: { p_apartment_id: string; p_user_id: string }; Returns: string };
       join_apartment: { Args: { p_code: string }; Returns: Json };
       leave_apartment: { Args: { p_apartment_id: string }; Returns: undefined };
+      link_inventory_cost: {
+        Args: { p_expense_id: string; p_item_id: string; p_kind: string };
+        Returns: undefined;
+      };
       mark_notifications_read: { Args: { p_ids?: string[] }; Returns: number };
       net_off: {
         Args: {
@@ -2720,6 +2868,7 @@ export type Database = {
         Args: { p_apartment_id: string; p_category_id?: string };
         Returns: undefined;
       };
+      remove_inventory_item: { Args: { p_item_id: string }; Returns: undefined };
       remove_member: { Args: { p_apartment_id: string; p_user_id: string }; Returns: undefined };
       rename_category: { Args: { p_category_id: string; p_name: string }; Returns: undefined };
       report_push_receipts: { Args: { p_results: Json }; Returns: undefined };
@@ -2748,6 +2897,20 @@ export type Database = {
           p_participants?: Json;
           p_split_method: string;
           p_title: string;
+        };
+        Returns: string;
+      };
+      save_inventory_item: {
+        Args: {
+          p_apartment_id: string;
+          p_condition?: string;
+          p_item_id?: string;
+          p_name: string;
+          p_notes?: string;
+          p_owner_id?: string;
+          p_owner_type: string;
+          p_request_id?: string;
+          p_status?: string;
         };
         Returns: string;
       };
@@ -2835,6 +2998,7 @@ export type Database = {
         Args: { p_action_id: string; p_client_request_id?: string };
         Returns: string;
       };
+      unlink_inventory_cost: { Args: { p_expense_id: string }; Returns: undefined };
       unregister_push_token: { Args: { p_token: string }; Returns: undefined };
       update_apartment_reminders: {
         Args: {

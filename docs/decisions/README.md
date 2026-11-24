@@ -35,3 +35,4 @@ Records are not edited after they are accepted, apart from their status. To chan
 | [0013](0013-quick-adds-and-budgets.md) | Quick-adds and budgets | Accepted |
 | [0014](0014-activity-history.md) | Activity history | Accepted |
 | [0015](0015-security-deposits.md) | Security deposits | Accepted |
+| [0016](0016-shared-inventory.md) | Shared inventory | Accepted |

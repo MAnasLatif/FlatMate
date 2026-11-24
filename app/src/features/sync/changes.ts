@@ -4,6 +4,7 @@ import { accountKeys } from '@/features/accounts/hooks';
 import { activityKeys } from '@/features/activity/hooks';
 import { apartmentKeys } from '@/features/apartments/hooks';
 import { expenseKeys } from '@/features/expenses/hooks';
+import { inventoryKeys } from '@/features/inventory/hooks';
 import { notificationKeys } from '@/features/notifications/hooks';
 import { ACCOUNT_PAYMENTS_ROOT } from '@/features/payments/hooks';
 import { profileKeys } from '@/features/profile/hooks';
@@ -27,6 +28,7 @@ export const APARTMENT_CHANGE_KINDS = [
   'deposit',
   'expense',
   'expense_template',
+  'inventory_item',
   'invite',
   'join_request',
   'member',
@@ -71,6 +73,9 @@ const apartmentChanges: Record<ApartmentChangeKind, (scope: ApartmentScope) => Q
   // Deposits live under the money key too: their actions post adjustments.
   deposit: ({ apartmentId }) => [expenseKeys.apartment(apartmentId)],
   expense_template: ({ apartmentId }) => [quickAddKeys.list(apartmentId)],
+  // Items and which expenses count towards them. Their totals follow the
+  // expenses, which refresh under the money key.
+  inventory_item: ({ apartmentId }) => [inventoryKeys.all(apartmentId)],
   // Settings change names in lists, and the settlement day and objection window.
   apartment: ({ apartmentId }) => [
     apartmentKeys.detail(apartmentId),

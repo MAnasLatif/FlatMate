@@ -130,6 +130,43 @@ describe('describeActivity', () => {
     ).toBe("You took over Rs 300.00 of Zubair's deposit share");
   });
 
+  it('words inventory changes, naming a removed item from the entry', () => {
+    const inventory = (patch: Partial<ActivityEntry>) =>
+      describeActivity(
+        entry({ entityType: 'inventory_item', subject: 'Fridge', amountMinor: null, ...patch }),
+        context,
+      );
+    expect(inventory({ action: 'created' })).toBe('Anas added the item Fridge to the inventory');
+    expect(
+      inventory({ action: 'updated', details: { changed: ['status'], status: 'needs_repair' } }),
+    ).toBe('Anas marked the item Fridge as needing repair');
+    expect(
+      inventory({ action: 'updated', details: { changed: ['status', 'notes'], status: 'gone' } }),
+    ).toBe('Anas changed the item Fridge');
+    expect(
+      inventory({
+        actorId: 'me',
+        action: 'cost_linked',
+        details: { expense_title: 'Fridge gas', kind: 'maintenance' },
+      }),
+    ).toBe('You counted Fridge gas towards the item Fridge');
+    expect(inventory({ action: 'cost_unlinked', details: {} })).toBe(
+      'Anas stopped counting an expense towards the item Fridge',
+    );
+    expect(inventory({ action: 'removed' })).toBe(
+      'Anas removed the item Fridge from the inventory',
+    );
+    expect(
+      activityHref(entry({ entityType: 'inventory_item', entityId: 'i1' }), APT, {
+        userId: 'me',
+        isAdmin: false,
+      }),
+    ).toEqual({
+      pathname: '/apartments/[apartmentId]/inventory/[itemId]',
+      params: { apartmentId: APT, itemId: 'i1' },
+    });
+  });
+
   it('starts every sentence with a capital, and copes with what it does not know', () => {
     expect(
       describeActivity(entry({ subject: null, action: 'finalized', actorId: null }), context),

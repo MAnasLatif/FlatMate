@@ -80,6 +80,10 @@ Reminders are written straight to `notifications`, without an audit event: every
 
 `record_deposit`, `take_over_deposit_share`, `refund_deposit_share`, `return_deposit` and `undo_deposit_action` are admin-only and retry-safe. Each locks the deposit, writes a `deposit_actions` row and signed `deposit_entries` (a person's share is the sum of theirs), and posts any debts as adjustments linked by `deposit_action_id`, without their own audit events: the deposit's event tells the people affected. Deductions on a return are split with `private.split_by_weights`, the rounding rule of `compute_shares`. Tests: `tests/database/deposits_test.sql`.
 
+## Shared inventory
+
+`inventory_items` holds an apartment's things, each the flat's (`owner_type` apartment) or one member's, with a condition and a status; `inventory_costs` links an expense to at most one item as its purchase or maintenance. Neither table stores an amount: `get_inventory` adds up the linked expenses' current amounts, leaving out cancelled ones. `save_inventory_item` (retry-safe when adding), `link_inventory_cost` and `unlink_inventory_cost` are for anyone who may add expenses; `remove_inventory_item` is for admins. Each writes an `inventory_item` audit event. Tests: `tests/database/inventory_test.sql`.
+
 ## Join codes
 
 Each apartment has one join code at a time ([decision 0011](../docs/decisions/0011-one-join-code-per-apartment.md)). `get_join_code` returns it to an admin, making it the first time, and `change_join_code` replaces it, stopping every older code. It does not expire: joining with it only asks to join, an admin approves every request, and wrong guesses are rate-limited. Admins can read the code; joining matches on its hash. `create_invite` stays for app versions that still call it. Tests: `tests/database/join_code_test.sql`, `invites_test.sql`.
