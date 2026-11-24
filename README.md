@@ -53,6 +53,7 @@ More detail is in the [app README](app/README.md). Backend setup, local and host
 - [Software Requirements Specification](docs/SRS.md): what the product must do
 - [Architecture](docs/ARCHITECTURE.md): how the pieces fit together
 - [User and UX flows](docs/USER-FLOWS.md): the screens and journeys through the app
+- [Testing](docs/TESTING.md): automated tests and the last device test pass
 - [AGENTS.md](AGENTS.md): working rules for AI coding agents and a quick orientation for contributors
 
 ## Roadmap

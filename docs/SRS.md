@@ -7,7 +7,7 @@
 **Platforms:** Android first, iOS from the same codebase
 **Stack:** Expo SDK 58, React Native, TypeScript (strict), Expo Router (typed routes), HeroUI Native 1.x, TanStack Query; Supabase (Auth, PostgreSQL with row-level security, Storage, Realtime, Edge Functions, pg_cron); Expo push service
 
-This is the single source of truth for what FlatMate does and the rules behind it. How the parts are built is in [ARCHITECTURE.md](ARCHITECTURE.md), and the journeys through the app are in [USER-FLOWS.md](USER-FLOWS.md). When behavior changes, update this document in the same change.
+This is the single source of truth for what FlatMate does and the rules behind it. How the parts are built is in [ARCHITECTURE.md](ARCHITECTURE.md), and the journeys through the app are in [USER-FLOWS.md](USER-FLOWS.md), and how it is tested in [TESTING.md](TESTING.md). When behavior changes, update this document in the same change.
 
 ## 1. Introduction
 

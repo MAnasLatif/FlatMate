@@ -27,7 +27,7 @@ There is no task list. Work on what the user asks for; the remaining phase of wo
 | [app/](app/) | The mobile application: Expo, React Native, TypeScript. This is the product. |
 | [supabase/](supabase/) | The backend: database migrations, RLS policies, Postgres functions, Edge Functions, seed data, database tests. |
 | [web/](web/) | The public marketing website (Next.js). It presents the app and sends people to the stores. It has no accounts and handles no user data. |
-| [docs/](docs/) | All project documentation: the SRS, the architecture and the user flows. There are no other documents. |
+| [docs/](docs/) | All project documentation: the SRS, the architecture, the user flows and testing. There are no other documents. |
 | [.github/](.github/) | CI workflows, issue and pull request templates. |
 
 `app/` and `web/` are independent projects, each with its own `package.json` and lockfile. There is no shared workspace, and none should be added until two projects need to share real code.
@@ -261,7 +261,7 @@ Committing is automatic. Pushing is not: never push, force-push, rewrite publish
 
 ## Documentation
 
-Documentation is part of the change. When behavior, configuration, setup steps or the schema change, update the relevant document in the same piece of work, including `.env.example` when a variable is added. Keep the documentation to three files: the SRS (requirements and every decision: product decisions in section 14, technical ones in section 13), ARCHITECTURE.md, and USER-FLOWS.md. Do not add other documents in `docs/`; setup steps belong in the README of the folder they concern. Document public interfaces and business rules that are not obvious from the code. Keep it short and accurate, and do not restate what the code already says.
+Documentation is part of the change. When behavior, configuration, setup steps or the schema change, update the relevant document in the same piece of work, including `.env.example` when a variable is added. Keep the documentation to four files: the SRS (requirements and every decision: product decisions in section 14, technical ones in section 13), ARCHITECTURE.md, USER-FLOWS.md, and TESTING.md (how FlatMate is tested and the record of the last device test pass). Do not add other documents in `docs/`; setup steps belong in the README of the folder they concern. Document public interfaces and business rules that are not obvious from the code. Keep it short and accurate, and do not restate what the code already says.
 
 ## Releases and production
 
