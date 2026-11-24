@@ -6,9 +6,9 @@ How FlatMate is tested, and the record of the last full test pass. Requirements 
 
 | Suite | Where | Command | Last result (2026-11-24) |
 |---|---|---|---|
-| App unit and component tests (Jest, React Native Testing Library) | `app/src/**/*.test.ts(x)` | `cd app && npm test` | 778 passed (2026-11-25) |
+| App unit and component tests (Jest, React Native Testing Library) | `app/src/**/*.test.ts(x)` | `cd app && npm test` | 783 passed (2026-11-25) |
 | App lint and types | `app/` | `npm run lint`, `npx tsc --noEmit` | Clean |
-| Database tests (pgTAP): RLS, money arithmetic, every function and job | `supabase/tests/database/` | `npx supabase@3.1.0 db reset` then `npx supabase@3.1.0 test db` | 940 passed in 47 files |
+| Database tests (pgTAP): RLS, money arithmetic, every function and job | `supabase/tests/database/` | `npx supabase@3.1.0 db reset` then `npx supabase@3.1.0 test db` | 953 passed in 48 files (2026-11-25) |
 | Database lint | local stack | `npx supabase@3.1.0 db lint --level warning` | Two known warnings (unused loop variables in `generate_invite_code` and `charge_due_recurring`) |
 
 CI runs the app, Supabase and web checks on every pull request. Run `db reset` before the database tests if end-to-end scripts have left data in the local stack.
@@ -94,13 +94,13 @@ Also checked along the way: the profile name saves itself; a former member's vie
 
 ### Results
 
-**21 checks: 19 passed, 1 passed after fixing a bug found here, 1 failed (an open bug, below).**
+**21 checks: 19 passed, 2 passed after fixing a bug found here.**
 
 | # | Area | Action | Result | Notes |
 |---|---|---|---|---|
 | 1 | Simplification | Three-person suggestion "Umar pays Vera Rs 1,000 directly" | Pass | |
 | 2 | Simplification | A proposes; B sees a red dot and accepts; Vera accepts | Pass | Applied live on both phones; Umar owes Vera Rs 1,000, Tara square with Umar |
-| 3 | Simplification | The settle and ledger screens explain the moved debt | **Fail** | Open bug 1 below |
+| 3 | Simplification | The settle and ledger screens explain the moved debt | Pass after fix | Bug 1 below. Checked again after the fix: "Settle with Vera" lists "Debts simplified through Tara Local" with Rs 600 left and offers Pay; the ledger with Tara lists the deposit share under Other debts; both open their record |
 | 4 | Payments | B pays Vera with a reference and a proof from the photo picker | Pass after fix | Bug fixed: the form flashed "You do not owe Vera Local anything right now" while the proof uploaded |
 | 5 | Payments | The proof opens | Pass | |
 | 6 | Finalizing | An expense becomes final after its window | Pass | "Final since Nov 25, 2026" |
@@ -122,13 +122,13 @@ Also checked along the way: the profile name saves itself; a former member's vie
 
 ### Bugs found
 
-1. **Open: debts that do not come from an expense cannot be traced on screen.** Simplifications, deposit takeovers and returns, and their undos write ledger entries with no expense. Balances include them correctly, but "Settle with" lists only expenses (it told Umar he owed Vera nothing, with no Pay button, while his balance said Rs 1,000), and a person's ledger lists only expenses and payments. A simplified expense still reads "You owe Tara Local Rs 1,000.00" after the debt moved. This breaks "every balance can be explained from the records behind it" for these records.
+1. **Fixed:** debts that do not come from an expense could not be traced on screen. Simplifications, deposit actions and their undos, and standalone adjustments write ledger entries with no expense. Balances included them, but "Settle with" listed only expenses (it told Umar he owed Vera nothing, with no Pay button, while his balance said Rs 1,000), and a person's ledger listed only expenses and payments. `get_my_pair_obligations` now returns every debt with its source, "Settle with" lists them, and the ledger shows them under Other debts (database and component tests).
 2. **Fixed:** Record a payment no longer turns into the "nothing owed" warning while the proof uploads (`pay-member.tsx`, with a test).
 3. **Fixed:** button icons are hidden from screen readers, which read labels such as ", Copy" and ", Add a receipt".
 
 ### Observations
 
-- Dashboard rows show each person's share of an expense, so they still show it after a payment, netting or simplification has covered it.
+- Dashboard and ledger expense rows show each person's share of an expense, so they still show it after a payment, netting or simplification has covered it (a simplified expense still reads "You owe Tara Local Rs 1,000.00"). "Settle with" shows what is settled.
 - "Step down as admin" applies at once, without a confirmation, though only another admin can undo it.
 - Amounts filled in for you (takeover, refund, return) show as "3000.00", while the same amounts elsewhere show as "3,000.00".
 

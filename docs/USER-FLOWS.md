@@ -127,7 +127,8 @@ stateDiagram-v2
 ### 4.1 See who owes whom
 
 - Dashboard: **You'll receive** and **You'll send** (tap to filter the feed), and your share of the month.
-- Members: each person with the net between you. Tap → the ledger with that person: what each owes, expenses, payments, disputes, and their shared accounts.
+- Members: each person with the net between you. Tap → the ledger with that person: what each owes, expenses, other debts (from simplified debts, deposits and adjustments), payments, disputes, and their shared accounts.
+- **Settle with** a person lists every debt between you, oldest first, with how much is settled; each opens the expense, deposit or simplification it comes from.
 
 ### 4.2 Record a payment (Zubair pays Anas)
 
