@@ -213,7 +213,7 @@ it('works out a split by room for the month and fills it in', async () => {
   await user.press(screen.getByRole('button', { name: 'Use this split' }));
   expect(screen.getByText('method:fixed')).toBeOnTheScreen();
   expect(
-    screen.getByText(`amounts:${JSON.stringify({ [ANAS]: '1800.00', [ZUBAIR]: '1200.00' })}`),
+    screen.getByText(`amounts:${JSON.stringify({ [ANAS]: '1,800.00', [ZUBAIR]: '1,200.00' })}`),
   ).toBeOnTheScreen();
 });
 

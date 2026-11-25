@@ -16,6 +16,7 @@ import { formatDate } from '@/lib/time';
 
 import type { PairExpense } from '../api';
 import { describePairNet, pairPosition } from '../balances';
+import { describePairExpense } from '../position';
 import { usePairBalances, usePairExpenses, useRefreshMoney } from '../hooks';
 import { ExpenseStatusChips } from './expense-status';
 import { formatMoney } from '@/features/apartments/currencies';
@@ -214,14 +215,7 @@ function PairExpenseRow({
   money: (amountMinor: number) => string;
   onPress: () => void;
 }) {
-  const effect =
-    expense.owedMinor > 0 && expense.oweMinor === 0
-      ? `${name} owes you ${money(expense.owedMinor)}`
-      : expense.oweMinor > 0 && expense.owedMinor === 0
-        ? `You owe ${name} ${money(expense.oweMinor)}`
-        : expense.oweMinor === 0 && expense.owedMinor === 0
-          ? 'Nothing between you now'
-          : `You owe ${money(expense.oweMinor)}, ${name} owes you ${money(expense.owedMinor)}`;
+  const effect = describePairExpense(expense, name, money);
 
   return (
     <PressableFeedback

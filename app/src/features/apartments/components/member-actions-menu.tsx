@@ -62,6 +62,24 @@ export function MemberActionsMenu({
       onConfirm: () => actions.remove.mutate(member.userId, { onError }),
     });
 
+  const changeRole = () =>
+    actions.setRole.mutate(
+      { userId: member.userId, role: member.role === 'admin' ? 'member' : 'admin' },
+      { onError },
+    );
+
+  // Stepping down cannot be undone by the person who did it: only another
+  // admin can make them an admin again.
+  const confirmStepDown = () =>
+    confirm({
+      title: 'Step down as admin?',
+      description:
+        'You will no longer manage members, settings or repeatable expenses. Only another admin can make you an admin again.',
+      confirmLabel: 'Step down',
+      isDestructive: true,
+      onConfirm: changeRole,
+    });
+
   const confirmHide = () =>
     confirm({
       title: `Remove ${name} from the list?`,
@@ -120,15 +138,7 @@ export function MemberActionsMenu({
             ) : (
               <>
                 <Menu.Item
-                  onPress={() =>
-                    actions.setRole.mutate(
-                      {
-                        userId: member.userId,
-                        role: member.role === 'admin' ? 'member' : 'admin',
-                      },
-                      { onError },
-                    )
-                  }
+                  onPress={isViewer && member.role === 'admin' ? confirmStepDown : changeRole}
                 >
                   <Menu.ItemTitle>
                     {member.role === 'admin'

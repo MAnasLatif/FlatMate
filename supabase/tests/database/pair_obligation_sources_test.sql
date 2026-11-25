@@ -41,13 +41,15 @@ grant all on table vals to authenticated, service_role;
 create function pg_temp.v(key text) returns text language sql as $$ select val from vals where name = key $$;
 create function pg_temp.flat() returns uuid language sql as $$ select pg_temp.v('flat')::uuid $$;
 -- Paid by one person, owed entirely by another: makes "debtor owes payer amount".
+-- Dated yesterday, so the expense is older than anything recorded today: in
+-- one test transaction every record has the same created_at.
 create function pg_temp.debt(debtor uuid, payer uuid, amount bigint, title text) returns uuid language plpgsql as $$
 declare
   claims text := current_setting('request.jwt.claims', true);
   created uuid;
 begin
   perform pg_temp.act_as(payer);
-  created := public.post_expense(pg_temp.flat(), title, amount, current_date, 'fixed',
+  created := public.post_expense(pg_temp.flat(), title, amount, current_date - 1, 'fixed',
     jsonb_build_array(jsonb_build_object('user_id', debtor, 'amount_minor', amount)),
     jsonb_build_array(jsonb_build_object('user_id', payer, 'amount_minor', amount)));
   perform set_config('request.jwt.claims', claims, true);
@@ -146,8 +148,13 @@ select is(pg_temp.items(pg_temp.a()),
 -- A standalone adjustment --------------------------------------------------------------------
 
 select public.record_adjustment(pg_temp.flat(), pg_temp.z(), pg_temp.y(), 5000, 'Broken mug');
-select is(pg_temp.items(pg_temp.y()),
-  'owe:adjustment:Broken mug:5000:0, owe:simplification:Debts simplified through Anas:100000:40000',
+-- Made in the same transaction as the simplification, so which of the two
+-- the payment covers first is a tie; the total covered is not.
+select is(
+  (select string_agg(direction || ':' || source || ':' || title || ':' || amount_minor, ', ' order by source)
+     || ' covered ' || sum(covered_minor)
+   from public.get_my_pair_obligations(pg_temp.flat(), pg_temp.y())),
+  'owe:adjustment:Broken mug:5000, owe:simplification:Debts simplified through Anas:100000 covered 40000',
   'an adjustment is listed with its reason');
 select is(
   (select source_id from public.get_my_pair_obligations(pg_temp.flat(), pg_temp.y()) where source = 'adjustment'),

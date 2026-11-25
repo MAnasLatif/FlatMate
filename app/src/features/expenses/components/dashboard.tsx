@@ -210,9 +210,9 @@ function MonthlyShare({
   );
 }
 
-/** The expenses the user receives for (paid more than their share), or sends for. */
+/** The expenses the user still receives for, or still sends for: what makes up the totals. */
 function matchesFilter(item: ExpenseListItem, filter: ExpenseFilter): boolean {
-  const position = item.my_position_minor ?? 0;
+  const position = item.my_open_minor ?? 0;
   return filter === 'receive' ? position > 0 : position < 0;
 }
 

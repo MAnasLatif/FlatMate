@@ -29,6 +29,12 @@ export type ExpenseListItem = Pick<
    * bill nobody has paid yet). Gross, before any payments.
    */
   my_position_minor: number | null;
+  /**
+   * What is still open of that position after payments, offsets and
+   * simplifications, with the same sign; 0 once settled, null without a
+   * position.
+   */
+  my_open_minor: number | null;
 };
 
 export type Balance = {
@@ -59,6 +65,10 @@ export type PairExpense = {
   oweMinor: number;
   /** What it makes them owe the user, after any reversals. */
   owedMinor: number;
+  /** What of oweMinor is still open after payments, offsets and simplifications. */
+  oweOpenMinor: number;
+  /** What of owedMinor is still open. */
+  owedOpenMinor: number;
 };
 
 export const PAIR_EXPENSES_PAGE_SIZE = 20;
@@ -186,9 +196,12 @@ export async function fetchExpensesPage(
     .order('created_at', { ascending: false })
     .range(from, from + EXPENSES_PAGE_SIZE - 1);
   if (error) throw error;
-  return data.map(({ revision, revisions, ...expense }) => ({
-    ...expense,
-    my_position_minor: myExpensePosition({
+  const open = await fetchOpenExpenseAmounts(
+    apartmentId,
+    data.map((expense) => expense.id),
+  );
+  return data.map(({ revision, revisions, ...expense }) => {
+    const position = myExpensePosition({
       status: expense.status,
       paidStatus: expense.paid_status,
       revision,
@@ -196,7 +209,46 @@ export async function fetchExpensesPage(
       // results, so the user's own share and payment are picked out here.
       splits: revisions.flatMap((item) => item.splits).filter((row) => row.user_id === userId),
       payers: revisions.flatMap((item) => item.payers).filter((row) => row.user_id === userId),
-    }),
+    });
+    const amounts = open.filter((row) => row.expenseId === expense.id);
+    return {
+      ...expense,
+      my_position_minor: position,
+      my_open_minor:
+        position === null
+          ? null
+          : amounts.reduce((sum, row) => sum + row.owedOpenMinor - row.oweOpenMinor, 0),
+    };
+  });
+}
+
+type OpenExpenseAmount = {
+  expenseId: string;
+  counterpartyId: string;
+  oweOpenMinor: number;
+  owedOpenMinor: number;
+};
+
+/**
+ * What the user still owes and is still owed on each of these expenses, per
+ * person. The server works it out, since payments cover each person's oldest
+ * debts first. An expense with nothing between the user and anyone has no row.
+ */
+async function fetchOpenExpenseAmounts(
+  apartmentId: string,
+  expenseIds: string[],
+): Promise<OpenExpenseAmount[]> {
+  if (expenseIds.length === 0) return [];
+  const { data, error } = await supabase.rpc('get_my_open_expense_amounts', {
+    p_apartment_id: apartmentId,
+    p_expense_ids: expenseIds,
+  });
+  if (error) throw error;
+  return data.map((row) => ({
+    expenseId: row.expense_id,
+    counterpartyId: row.counterparty_id,
+    oweOpenMinor: row.owe_open_minor,
+    owedOpenMinor: row.owed_open_minor,
   }));
 }
 
@@ -378,16 +430,27 @@ export async function fetchPairExpensesPage(
     p_offset: page * PAIR_EXPENSES_PAGE_SIZE,
   });
   if (error) throw error;
-  return data.map((row) => ({
-    expenseId: row.expense_id,
-    title: row.title,
-    expenseDate: row.expense_date,
-    currency: row.currency,
-    status: row.status as ExpenseStatus,
-    paidStatus: row.paid_status as PairExpense['paidStatus'],
-    oweMinor: row.owe_minor,
-    owedMinor: row.owed_minor,
-  }));
+  const open = (
+    await fetchOpenExpenseAmounts(
+      apartmentId,
+      data.map((row) => row.expense_id),
+    )
+  ).filter((row) => row.counterpartyId === counterpartyId);
+  return data.map((row) => {
+    const amounts = open.find((item) => item.expenseId === row.expense_id);
+    return {
+      expenseId: row.expense_id,
+      title: row.title,
+      expenseDate: row.expense_date,
+      currency: row.currency,
+      status: row.status as ExpenseStatus,
+      paidStatus: row.paid_status as PairExpense['paidStatus'],
+      oweMinor: row.owe_minor,
+      owedMinor: row.owed_minor,
+      oweOpenMinor: amounts?.oweOpenMinor ?? 0,
+      owedOpenMinor: amounts?.owedOpenMinor ?? 0,
+    };
+  });
 }
 
 export async function fetchMyMonthlyShare(

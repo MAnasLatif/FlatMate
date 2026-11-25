@@ -40,7 +40,11 @@ export function parseAmountToMinorUnits(input: string, minorUnitDigits = 2): num
   return Number.isSafeInteger(value) ? value : null;
 }
 
-/** Minor units as an editable amount, such as 123450 -> "1234.50". No thousands separators. */
+/**
+ * Minor units as an editable amount, such as 123450 -> "1,234.50": grouped the
+ * same way as amounts shown elsewhere. parseAmountToMinorUnits ignores the
+ * separators, so a filled-in amount reads back unchanged.
+ */
 export function minorUnitsToInput(amountMinor: number, minorUnitDigits = 2): string {
-  return formatMinorUnits(amountMinor, minorUnitDigits).replace(/,/g, '');
+  return formatMinorUnits(amountMinor, minorUnitDigits);
 }
