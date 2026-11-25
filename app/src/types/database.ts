@@ -2943,6 +2943,15 @@ export type Database = {
         }[];
       };
       get_my_monthly_share: { Args: { p_apartment_id: string; p_month: string }; Returns: number };
+      get_my_open_expense_amounts: {
+        Args: { p_apartment_id: string; p_expense_ids: string[] };
+        Returns: {
+          counterparty_id: string;
+          expense_id: string;
+          owe_open_minor: number;
+          owed_open_minor: number;
+        }[];
+      };
       get_my_pair_balances: {
         Args: { p_apartment_id: string };
         Returns: {

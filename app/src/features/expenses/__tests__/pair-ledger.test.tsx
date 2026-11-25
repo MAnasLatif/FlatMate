@@ -54,8 +54,11 @@ const amounts = (finalMinor = 0, provisionalMinor = 0, disputedMinor = 0) => ({
   disputedMinor,
 });
 
+// Nothing covered yet unless a test says so: what is open is all of it.
 function sharedExpense(overrides: Partial<PairExpense>): PairExpense {
   return {
+    oweOpenMinor: overrides.oweMinor ?? 0,
+    owedOpenMinor: overrides.owedMinor ?? 0,
     expenseId: 'e1',
     title: 'Groceries',
     expenseDate: '2026-11-13',
@@ -82,6 +85,24 @@ beforeEach(() => {
 });
 
 describe('PairLedger', () => {
+  it('says when an expense between the two is settled, or what is left', async () => {
+    pairExpenses.mockResolvedValue([
+      sharedExpense({ expenseId: 'g', title: 'Groceries', oweMinor: 100_000, oweOpenMinor: 0 }),
+      sharedExpense({
+        expenseId: 'c',
+        title: 'Cleaning',
+        owedMinor: 30_000,
+        owedOpenMinor: 10_000,
+      }),
+    ]);
+    await renderWithProviders(
+      <PairLedger apartmentId={APARTMENT} counterpartyId={ZUBAIR} name="Zubair" currency="PKR" />,
+    );
+
+    expect(await screen.findByText('You owed Zubair Rs 1,000.00, settled')).toBeOnTheScreen();
+    expect(screen.getByText('Zubair owes you Rs 100.00 of Rs 300.00')).toBeOnTheScreen();
+  });
+
   it('shows both directions, the net and the expenses behind them', async () => {
     pairExpenses.mockResolvedValue([
       sharedExpense({ expenseId: 'g', title: 'Groceries', oweMinor: 15_000 }),

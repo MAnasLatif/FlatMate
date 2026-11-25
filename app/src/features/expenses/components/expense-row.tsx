@@ -5,6 +5,7 @@ import { UnreadDot } from '@/features/notifications/components/unread-dot';
 import { formatDate } from '@/lib/time';
 
 import type { ExpenseListItem } from '../api';
+import { describeMyPosition } from '../position';
 import { ExpenseStatusChips } from './expense-status';
 import { formatMoney } from '@/features/apartments/currencies';
 
@@ -31,7 +32,9 @@ export function ExpenseRow({
       : undefined,
   ].filter(Boolean);
   const isVoid = expense.status === 'void';
-  const position = expense.my_position_minor;
+  const position = describeMyPosition(expense.my_position_minor, expense.my_open_minor, (amount) =>
+    formatMoney(amount, expense.currency),
+  );
 
   return (
     <PressableFeedback
@@ -59,11 +62,17 @@ export function ExpenseRow({
             {position ? (
               <Typography.Paragraph
                 type="body-xs"
-                weight="semibold"
-                className={position > 0 ? 'text-success' : 'text-danger'}
+                weight={position.tone === 'settled' ? 'normal' : 'semibold'}
+                color={position.tone === 'settled' ? 'muted' : 'default'}
+                className={
+                  position.tone === 'receive'
+                    ? 'text-success'
+                    : position.tone === 'send'
+                      ? 'text-danger'
+                      : undefined
+                }
               >
-                {position > 0 ? "You'll receive" : "You'll send"}{' '}
-                {formatMoney(Math.abs(position), expense.currency)}
+                {position.text}
               </Typography.Paragraph>
             ) : null}
           </View>

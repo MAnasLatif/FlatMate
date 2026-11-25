@@ -68,8 +68,11 @@ const apartment: Apartment = {
 };
 const thisMonth = monthStart(todayInTimeZone(apartment.timezone));
 
+// Nothing covered yet unless a test says so: what is open is the whole position.
 function expense(overrides: Partial<ExpenseListItem>): ExpenseListItem {
+  const position = overrides.my_position_minor ?? null;
   return {
+    my_open_minor: position,
     id: 'e1',
     title: 'Cleaning',
     amount_minor: 20_000,
@@ -174,6 +177,22 @@ it('shows only the expenses on the tapped side, and all of them on a second tap'
   await user.press(screen.getByRole('button', { name: "You'll receive, Rs 0.00" }));
   expect(screen.getByRole('button', { name: /Water/ })).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: /Internet/ })).toBeOnTheScreen();
+});
+
+it('says what is left of an expense, and when it is settled, and the filter shows only what is open', async () => {
+  expensesPage.mockResolvedValue([
+    expense({ id: 'e1', title: 'Rent', my_position_minor: -100_000, my_open_minor: 0 }),
+    expense({ id: 'e2', title: 'Groceries', my_position_minor: -100_000, my_open_minor: -60_000 }),
+  ]);
+  await renderWithProviders(<Dashboard apartment={apartment} />);
+  const user = userEvent.setup();
+
+  expect(await screen.findByText('Settled: you owed Rs 1,000.00')).toBeOnTheScreen();
+  expect(screen.getByText("You'll send Rs 600.00 of Rs 1,000.00")).toBeOnTheScreen();
+
+  await user.press(screen.getByRole('button', { name: "You'll send, Rs 0.00" }));
+  expect(screen.getByRole('button', { name: /Groceries/ })).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: /Rent/ })).not.toBeOnTheScreen();
 });
 
 it('shows the line under the header only once the list is scrolled', async () => {
