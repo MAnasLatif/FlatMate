@@ -22,10 +22,10 @@ const config: ExpoConfig = {
   icon: './assets/images/icon.png',
   // Store identifiers. They cannot be changed once the app is published.
   ios: {
-    bundleIdentifier: 'com.manaslatif.flatmate',
+    bundleIdentifier: 'dev.manaslatif.flatmate',
   },
   android: {
-    package: 'com.manaslatif.flatmate',
+    package: 'dev.manaslatif.flatmate',
     ...(googleServicesFile ? { googleServicesFile } : {}),
     adaptiveIcon: {
       foregroundImage: './assets/images/android-icon-foreground.png',
