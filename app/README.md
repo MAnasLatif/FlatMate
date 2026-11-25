@@ -158,6 +158,6 @@ Development tools: TypeScript, ESLint with `eslint-config-expo`, Prettier, Jest 
 
 ## Identifiers
 
-The Android package name and the iOS bundle identifier are both `com.manaslatif.flatmate`. They cannot be changed once the app is published.
+The Android package name and the iOS bundle identifier are both `dev.manaslatif.flatmate`. They cannot be changed once the app is published.
 
 The general engineering rules are in [AGENTS.md](../AGENTS.md).

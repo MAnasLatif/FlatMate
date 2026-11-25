@@ -222,7 +222,7 @@ Do the setup once per environment: development, then staging and production when
 #### 2. Add the Android app
 
 1. In the project, choose **Add app** and then the Android icon.
-2. **Android package name:** `com.manaslatif.flatmate`. It must match `android.package` in `app/app.config.ts` exactly, or Firebase will not deliver to the app. A fork with its own package name uses that instead.
+2. **Android package name:** `dev.manaslatif.flatmate`. It must match `android.package` in `app/app.config.ts` exactly, or Firebase will not deliver to the app. A fork with its own package name uses that instead.
 3. The nickname is optional. Leave the SHA-1 field empty; push does not need it.
 4. Choose **Register app**, then **Download google-services.json**.
 5. Skip the remaining steps of the wizard (the Gradle instructions): Expo applies them during the build.
