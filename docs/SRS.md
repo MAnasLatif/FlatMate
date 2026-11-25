@@ -2,7 +2,7 @@
 
 **Version:** 2.0
 **Date:** 2026-11-24
-**Status:** Describes the product as built through Phase 3. Section 14 records every product decision; the two still open are marked.
+**Status:** Describes the product as built through Phase 3. Section 14 records every product decision.
 **Product:** Open-source app for people who share a flat
 **Platforms:** Android first, iOS from the same codebase
 **Stack:** Expo SDK 58, React Native, TypeScript (strict), Expo Router (typed routes), HeroUI Native 1.x, TanStack Query; Supabase (Auth, PostgreSQL with row-level security, Storage, Realtime, Edge Functions, pg_cron); Expo push service
@@ -391,7 +391,7 @@ These shape the code and are summarized here; [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## 14. Product decisions
 
-All decided between 2026-11-13 and 2026-11-24 unless marked open.
+All decided between 2026-11-13 and 2026-11-25.
 
 1. **No explicit approval mode.** Every expense is accepted automatically, and affected members object within the window. An approval mode may be reconsidered after release.
 2. **A dispute holds the whole expense** until resolved, so settlement never sees inconsistent totals. Other expenses stay payable.
@@ -402,8 +402,8 @@ All decided between 2026-11-13 and 2026-11-24 unless marked open.
 7. **One currency per apartment**, PKR by default, no conversion.
 8. **Visibility.** Every current member sees all of the apartment's expenses; a payment is visible to its two people and admins; a former member sees only the records they were part of.
 9. **Settlement periods** run from the settlement day to the day before the next; 29 to 31 fall on the last day of short months; changes apply from the next period.
-10. **Open-source licence — open.** MIT today; MIT or Apache-2.0 to be decided before the open-source launch.
-11. **Product name — open in part.** Store identifiers are `com.manaslatif.flatmate`; trademark, store-name and domain checks remain.
+10. **Open-source licence:** MIT (decided 2026-11-25).
+11. **Product name:** FlatMate, with the store identifiers (Android package and iOS bundle identifier) `dev.manaslatif.flatmate` (decided 2026-11-25).
 12. **HeroUI Native 1.x** runs on Expo SDK 58.
 13. **Joining needs an admin's approval**; the first admin to act decides.
 14. **Repeatable expenses live in the apartment's settings**; Add (+) is for one-time expenses.
