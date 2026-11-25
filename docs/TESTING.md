@@ -6,9 +6,9 @@ How FlatMate is tested, and the record of the last full test pass. Requirements 
 
 | Suite | Where | Command | Last result (2026-11-24) |
 |---|---|---|---|
-| App unit and component tests (Jest, React Native Testing Library) | `app/src/**/*.test.ts(x)` | `cd app && npm test` | 783 passed (2026-11-25) |
+| App unit and component tests (Jest, React Native Testing Library) | `app/src/**/*.test.ts(x)` | `cd app && npm test` | 793 passed (2026-11-25) |
 | App lint and types | `app/` | `npm run lint`, `npx tsc --noEmit` | Clean |
-| Database tests (pgTAP): RLS, money arithmetic, every function and job | `supabase/tests/database/` | `npx supabase@3.1.0 db reset` then `npx supabase@3.1.0 test db` | 953 passed in 48 files (2026-11-25) |
+| Database tests (pgTAP): RLS, money arithmetic, every function and job | `supabase/tests/database/` | `npx supabase@3.1.0 db reset` then `npx supabase@3.1.0 test db` | 960 passed in 49 files (2026-11-25) |
 | Database lint | local stack | `npx supabase@3.1.0 db lint --level warning` | Two known warnings (unused loop variables in `generate_invite_code` and `charge_due_recurring`) |
 
 CI runs the app, Supabase and web checks on every pull request. Run `db reset` before the database tests if end-to-end scripts have left data in the local stack.
@@ -128,9 +128,11 @@ Also checked along the way: the profile name saves itself; a former member's vie
 
 ### Observations
 
-- Dashboard and ledger expense rows show each person's share of an expense, so they still show it after a payment, netting or simplification has covered it (a simplified expense still reads "You owe Tara Local Rs 1,000.00"). "Settle with" shows what is settled.
-- "Step down as admin" applies at once, without a confirmation, though only another admin can undo it.
-- Amounts filled in for you (takeover, refund, return) show as "3000.00", while the same amounts elsewhere show as "3,000.00".
+All three were fixed afterwards, with tests; the first was also checked on phone A:
+
+- **Fixed:** dashboard and ledger expense rows showed each person's share of an expense even after a payment, netting or simplification had covered it (a simplified expense still read "You owe Tara Local Rs 1,000.00"). They now read "Settled: you owed Rs 1,000.00" or "You'll send Rs 600.00 of Rs 1,000.00", and the send and receive filters list only what is still open.
+- **Fixed:** "Step down as admin" applied at once; it now asks first, since only another admin can undo it.
+- **Fixed:** amounts filled in for you (takeover, refund, return, room splits) showed as "3000.00" while the same amounts elsewhere showed as "3,000.00"; they are grouped now.
 
 ## 4. Not covered yet
 

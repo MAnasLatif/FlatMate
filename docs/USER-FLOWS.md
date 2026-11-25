@@ -126,7 +126,7 @@ stateDiagram-v2
 
 ### 4.1 See who owes whom
 
-- Dashboard: **You'll receive** and **You'll send** (tap to filter the feed), and your share of the month.
+- Dashboard: **You'll receive** and **You'll send** (tap to filter the feed to what is still open), and your share of the month. Each expense says what is left to receive or send for it, or that it is settled.
 - Members: each person with the net between you. Tap → the ledger with that person: what each owes, expenses, other debts (from simplified debts, deposits and adjustments), payments, disputes, and their shared accounts.
 - **Settle with** a person lists every debt between you, oldest first, with how much is settled; each opens the expense, deposit or simplification it comes from.
 
@@ -189,7 +189,7 @@ flowchart LR
 
 - Tap a member → their page: **Make admin / Make member**, expense permission, **Remove**.
 - Former members: **Invite back**, **Withdraw invitation**, **Remove from list** (hides only).
-- An admin steps down from their own row; the last admin must appoint another first.
+- An admin steps down from their own row, after confirming; the last admin must appoint another first.
 
 ## 6. Shared living
 
