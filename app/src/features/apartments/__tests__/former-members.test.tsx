@@ -10,6 +10,7 @@ import {
   hideFormerMember,
   inviteBack,
   type Member,
+  setMemberRole,
 } from '../api';
 import { MemberActionsMenu } from '../components/member-actions-menu';
 import { MyRejoinInvites } from '../components/my-rejoin-invites';
@@ -42,6 +43,7 @@ jest.mock('../api', () => ({
   fetchRejoinInvites: jest.fn(),
   inviteBack: jest.fn(async () => 'invite-1'),
   hideFormerMember: jest.fn(async () => undefined),
+  setMemberRole: jest.fn(async () => undefined),
 }));
 
 const FLAT = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -137,5 +139,37 @@ describe('MemberActionsMenu', () => {
     expect(screen.getByText('Stop adding expenses')).toBeOnTheScreen();
     expect(screen.getByText('Remove from apartment')).toBeOnTheScreen();
     expect(screen.queryByText('Invite back')).not.toBeOnTheScreen();
+  });
+
+  it('asks before an admin steps down, and changes nothing if they cancel', async () => {
+    const me: Member = { ...arsal, role: 'admin', leftAt: null, leftReason: null };
+    await renderWithProviders(<MemberActionsMenu apartmentId={FLAT} member={me} isViewer />);
+    const user = userEvent.setup();
+
+    await user.press(screen.getByRole('button', { name: 'Your actions' }));
+    await user.press(await screen.findByText('Step down as admin'));
+    expect(await screen.findByText('Step down as admin?')).toBeOnTheScreen();
+    expect(setMemberRole).not.toHaveBeenCalled();
+
+    await user.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(setMemberRole).not.toHaveBeenCalled();
+
+    await user.press(screen.getByRole('button', { name: 'Your actions' }));
+    await user.press(await screen.findByText('Step down as admin'));
+    await user.press(await screen.findByRole('button', { name: 'Step down' }));
+    await waitFor(() => expect(setMemberRole).toHaveBeenCalledWith(FLAT, me.userId, 'member'));
+  });
+
+  it('makes another member an admin without asking', async () => {
+    await renderWithProviders(
+      <MemberActionsMenu
+        apartmentId={FLAT}
+        member={{ ...arsal, leftAt: null, leftReason: null }}
+      />,
+    );
+    const user = userEvent.setup();
+    await user.press(screen.getByRole('button', { name: 'Actions for Arsal' }));
+    await user.press(await screen.findByText('Make admin'));
+    await waitFor(() => expect(setMemberRole).toHaveBeenCalledWith(FLAT, arsal.userId, 'admin'));
   });
 });
