@@ -70,7 +70,7 @@ describe('applyRoomSplit', () => {
     );
     expect(draft.splitMethod).toBe('fixed');
     expect(draft.excluded).toEqual([YASIR]);
-    expect(draft.fixedAmounts).toEqual({ [ANAS]: '1800.00', [ZUBAIR]: '900.50' });
+    expect(draft.fixedAmounts).toEqual({ [ANAS]: '1,800.00', [ZUBAIR]: '900.50' });
     expect(draft.description).toMatch(/^Split by room for .+ – .+\.$/);
   });
 

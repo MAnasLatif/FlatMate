@@ -70,7 +70,9 @@ describe('parseAmountToMinorUnits', () => {
   });
 
   it('round-trips with minorUnitsToInput', () => {
-    expect(minorUnitsToInput(123_450)).toBe('1234.50');
+    expect(minorUnitsToInput(123_450)).toBe('1,234.50');
+    expect(minorUnitsToInput(300_000)).toBe('3,000.00');
+    expect(minorUnitsToInput(99_950)).toBe('999.50');
     expect(parseAmountToMinorUnits(minorUnitsToInput(123_450))).toBe(123_450);
   });
 });
