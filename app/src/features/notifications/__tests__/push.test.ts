@@ -13,7 +13,7 @@ jest.mock('@/lib/supabase', () => ({ supabase: {} }));
 jest.mock('expo-constants', () => ({
   __esModule: true,
   default: {
-    expoConfig: { extra: { eas: { projectId: '1bbde0d8-94b5-4446-8591-a0179d09d30d' } } },
+    expoConfig: { extra: { eas: { projectId: '69bd4e2b-1a34-4c28-a94f-ae66942d4aca' } } },
   },
 }));
 jest.mock('../api', () => ({
@@ -62,7 +62,7 @@ describe('getPushToken', () => {
       .mockResolvedValueOnce({ status: 'granted' } as never);
     expect(await getPushToken()).toBe('ExponentPushToken[test-token-000001]');
     expect(Notifications.getExpoPushTokenAsync).toHaveBeenCalledWith({
-      projectId: '1bbde0d8-94b5-4446-8591-a0179d09d30d',
+      projectId: '69bd4e2b-1a34-4c28-a94f-ae66942d4aca',
     });
   });
 });
@@ -85,7 +85,7 @@ describe('registerThisDevice', () => {
     allowNotifications();
     await registerThisDevice(deviceToken);
     expect(Notifications.getExpoPushTokenAsync).toHaveBeenCalledWith({
-      projectId: '1bbde0d8-94b5-4446-8591-a0179d09d30d',
+      projectId: '69bd4e2b-1a34-4c28-a94f-ae66942d4aca',
       devicePushToken: deviceToken,
     });
   });

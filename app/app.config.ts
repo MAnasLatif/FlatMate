@@ -10,7 +10,7 @@ const config: ExpoConfig = {
   name: 'FlatMate',
   slug: 'flatmate',
   // The Expo account that owns the EAS project.
-  owner: 'm.anaslatif',
+  owner: 'anaslatif.dev',
   version: '0.1.0',
   // Mobile only. Without this, Expo also targets web because react-dom is
   // installed, and the dev server offers a web build the app does not support.
@@ -63,7 +63,7 @@ const config: ExpoConfig = {
   },
   extra: {
     eas: {
-      projectId: '1bbde0d8-94b5-4446-8591-a0179d09d30d',
+      projectId: '69bd4e2b-1a34-4c28-a94f-ae66942d4aca',
     },
   },
 };
