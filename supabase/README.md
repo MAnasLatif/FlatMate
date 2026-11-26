@@ -204,7 +204,7 @@ Expo's push service delivers to Android through Firebase Cloud Messaging (FCM), 
 
 ### What you need
 
-- The Expo account that owns the EAS project (`@m.anaslatif/flatmate`), or your own if you forked the project.
+- The Expo account that owns the EAS project (`@anaslatif.dev/flatmate`), or your own if you forked the project.
 - A Google account for the Firebase console.
 - Access to the hosted Supabase project you are setting up, and the Supabase CLI linked to it (see [Hosted development project](#hosted-development-project)).
 - An Android phone, or an emulator with Google Play services. Push does not work in Expo Go on Android.
