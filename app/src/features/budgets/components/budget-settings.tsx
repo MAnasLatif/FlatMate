@@ -8,7 +8,6 @@ import {
   PressableFeedback,
   TextField,
   Typography,
-  useBottomSheetAwareHandlers,
 } from 'heroui-native';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -16,6 +15,7 @@ import { View } from 'react-native';
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
 import { LoadError, loadingError, LoadingRows } from '@/components/query-states';
+import { Sheet } from '@/components/sheet';
 import { currencySymbol, formatMoney } from '@/features/apartments/currencies';
 import { useCategories } from '@/features/apartments/hooks';
 import { MAX_AMOUNT_MINOR } from '@/features/expenses/split';
@@ -148,32 +148,21 @@ function BudgetSheet({
   onOpenChange: (isOpen: boolean) => void;
   target: BudgetTarget | null;
 }) {
-  // Each opening starts a fresh form.
-  const [openCount, setOpenCount] = useState(0);
-  const [wasOpen, setWasOpen] = useState(isOpen);
-  if (isOpen !== wasOpen) {
-    setWasOpen(isOpen);
-    if (isOpen) setOpenCount((count) => count + 1);
-  }
-
+  // The form mounts with each opening, so it always starts fresh.
   return (
-    // Always mounted: a sheet mounted already open does not appear.
-    <BottomSheet isOpen={isOpen} onOpenChange={onOpenChange}>
-      <BottomSheet.Portal>
-        <BottomSheet.Overlay />
-        <BottomSheet.Content keyboardBehavior="interactive" keyboardBlurBehavior="restore">
-          {target ? (
-            <BudgetForm
-              key={`${openCount}-${target.categoryId ?? 'all'}`}
-              apartmentId={apartmentId}
-              currency={currency}
-              target={target}
-              onDone={() => onOpenChange(false)}
-            />
-          ) : null}
-        </BottomSheet.Content>
-      </BottomSheet.Portal>
-    </BottomSheet>
+    <Sheet isOpen={isOpen} onOpenChange={onOpenChange}>
+      <BottomSheet.Content>
+        {target ? (
+          <BudgetForm
+            key={target.categoryId ?? 'all'}
+            apartmentId={apartmentId}
+            currency={currency}
+            target={target}
+            onDone={() => onOpenChange(false)}
+          />
+        ) : null}
+      </BottomSheet.Content>
+    </Sheet>
   );
 }
 
@@ -189,7 +178,6 @@ function BudgetForm({
   onDone: () => void;
 }) {
   const { set, remove } = useBudgetActions(apartmentId);
-  const { onFocus, onBlur } = useBottomSheetAwareHandlers();
   const [amount, setAmount] = useState(
     target.budget ? minorUnitsToInput(target.budget.limitMinor) : '',
   );
@@ -225,8 +213,6 @@ function BudgetForm({
             setAmountError(undefined);
             set.reset();
           }}
-          onFocus={onFocus}
-          onBlur={onBlur}
           autoFocus
           keyboardType="decimal-pad"
           placeholder="0.00"

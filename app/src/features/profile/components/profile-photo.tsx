@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
+import { Sheet } from '@/components/sheet';
 import { userErrorMessage } from '@/lib/errors';
 import { useIsOnline } from '@/lib/network';
 
@@ -87,38 +88,35 @@ export function ProfilePhoto({
       </PressableFeedback>
       <FormAlert message={error} />
 
-      <BottomSheet isOpen={isSheetOpen} onOpenChange={setSheetOpen}>
-        <BottomSheet.Portal>
-          <BottomSheet.Overlay />
-          <BottomSheet.Content>
-            <View className="gap-6">
-              <BottomSheet.Title>Profile photo</BottomSheet.Title>
-              <View className="gap-3">
-                <Button variant="secondary" onPress={() => void pickPhoto()}>
-                  <Ionicons
-                    accessibilityElementsHidden
-                    importantForAccessibility="no"
-                    name="image-outline"
-                    size={18}
-                    color={accent}
-                  />
-                  <Button.Label>Choose a new photo</Button.Label>
-                </Button>
-                <Button variant="danger-soft" onPress={removePhoto}>
-                  <Ionicons
-                    accessibilityElementsHidden
-                    importantForAccessibility="no"
-                    name="trash-outline"
-                    size={18}
-                    color={danger}
-                  />
-                  <Button.Label>Remove photo</Button.Label>
-                </Button>
-              </View>
+      <Sheet isOpen={isSheetOpen} onOpenChange={setSheetOpen}>
+        <BottomSheet.Content>
+          <View className="gap-6">
+            <BottomSheet.Title>Profile photo</BottomSheet.Title>
+            <View className="gap-3">
+              <Button variant="secondary" onPress={() => void pickPhoto()}>
+                <Ionicons
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                  name="image-outline"
+                  size={18}
+                  color={accent}
+                />
+                <Button.Label>Choose a new photo</Button.Label>
+              </Button>
+              <Button variant="danger-soft" onPress={removePhoto}>
+                <Ionicons
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                  name="trash-outline"
+                  size={18}
+                  color={danger}
+                />
+                <Button.Label>Remove photo</Button.Label>
+              </Button>
             </View>
-          </BottomSheet.Content>
-        </BottomSheet.Portal>
-      </BottomSheet>
+          </View>
+        </BottomSheet.Content>
+      </Sheet>
     </View>
   );
 }

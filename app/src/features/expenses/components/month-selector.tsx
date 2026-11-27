@@ -10,6 +10,7 @@ import {
   type WheelItem,
 } from '@/components/form/wheel-picker';
 
+import { Sheet } from '@/components/sheet';
 import { addMonths, formatMonth } from '@/lib/time';
 
 /** How many years the selector reaches: the latest month's year and the one before. */
@@ -30,8 +31,6 @@ export function MonthSelector({
   onChange: (month: string) => void;
 }) {
   const [isOpen, setOpen] = useState(false);
-  // Each opening starts the wheels again on the month being shown.
-  const [openCount, setOpenCount] = useState(0);
   const latestYear = Number(latestMonth.slice(0, 4));
   const earliestMonth = `${latestYear - YEARS_SHOWN + 1}-01-01`;
 
@@ -46,10 +45,7 @@ export function MonthSelector({
           onPress={() => onChange(addMonths(month, -1))}
         />
         <PressableFeedback
-          onPress={() => {
-            setOpenCount((count) => count + 1);
-            setOpen(true);
-          }}
+          onPress={() => setOpen(true)}
           accessibilityRole="button"
           accessibilityLabel={`Showing ${formatMonth(month)}`}
           accessibilityHint="Opens a month and year picker"
@@ -64,24 +60,20 @@ export function MonthSelector({
         />
       </View>
 
-      {/* Always mounted: a sheet mounted already open does not appear. */}
-      <BottomSheet isOpen={isOpen} onOpenChange={setOpen}>
-        <BottomSheet.Portal>
-          <BottomSheet.Overlay />
-          {/* Drags inside the sheet turn the wheels instead of moving the sheet. */}
-          <BottomSheet.Content enableContentPanningGesture={false}>
-            <MonthWheels
-              key={openCount}
-              month={month}
-              latestMonth={latestMonth}
-              onDone={(picked) => {
-                onChange(picked);
-                setOpen(false);
-              }}
-            />
-          </BottomSheet.Content>
-        </BottomSheet.Portal>
-      </BottomSheet>
+      {/* Drags inside the sheet turn the wheels instead of moving the sheet. The
+          wheels mount with each opening, so they start on the month being shown. */}
+      <Sheet isOpen={isOpen} onOpenChange={setOpen} draggable={false}>
+        <BottomSheet.Content>
+          <MonthWheels
+            month={month}
+            latestMonth={latestMonth}
+            onDone={(picked) => {
+              onChange(picked);
+              setOpen(false);
+            }}
+          />
+        </BottomSheet.Content>
+      </Sheet>
     </View>
   );
 }

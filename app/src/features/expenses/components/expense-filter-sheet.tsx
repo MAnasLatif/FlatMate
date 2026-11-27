@@ -1,4 +1,3 @@
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import {
   BottomSheet,
   Button,
@@ -7,13 +6,13 @@ import {
   Label,
   TextField,
   Typography,
-  useBottomSheetAwareHandlers,
 } from 'heroui-native';
-import { type ReactNode, useState } from 'react';
-import { View } from 'react-native';
+import { type ReactNode, type RefObject, useRef, useState } from 'react';
+import { ScrollView, type ScrollViewInstance, View } from 'react-native';
 
 import { ChoiceChips } from '@/components/choice-chips';
 import { LoadError, LoadingRows } from '@/components/query-states';
+import { Sheet } from '@/components/sheet';
 import { currencySymbol } from '@/features/apartments/currencies';
 import { useCategories, useMembers } from '@/features/apartments/hooks';
 import { useCurrentUserId } from '@/features/auth/session-provider';
@@ -51,46 +50,32 @@ export function ExpenseFilterSheet({
   search,
   onApply,
 }: ExpenseFilterSheetProps) {
-  // Read here: the sheet's content renders in a portal, outside the session provider.
   const userId = useCurrentUserId();
-  // Each opening starts from the filters in use.
-  const [openCount, setOpenCount] = useState(0);
-  const [wasOpen, setWasOpen] = useState(isOpen);
-  if (isOpen !== wasOpen) {
-    setWasOpen(isOpen);
-    if (isOpen) setOpenCount((count) => count + 1);
-  }
+  const scrollRef = useRef<ScrollViewInstance>(null);
 
+  // The form mounts with each opening, so it starts from the filters in use.
   return (
-    // Always mounted: a sheet mounted already open does not appear.
-    <BottomSheet isOpen={isOpen} onOpenChange={onOpenChange}>
-      <BottomSheet.Portal>
-        <BottomSheet.Overlay />
-        <BottomSheet.Content
-          snapPoints={['85%']}
-          enableDynamicSizing={false}
-          enableOverDrag={false}
-          keyboardBehavior="interactive"
-          keyboardBlurBehavior="restore"
-          contentContainerClassName="h-full"
-        >
-          {/* Loaded once first opened, then kept so the sheet closes with its content. */}
-          {openCount > 0 ? (
-            <FilterForm
-              key={openCount}
-              apartmentId={apartmentId}
-              userId={userId}
-              currency={currency}
-              search={search}
-              onApply={(next) => {
-                onApply(next);
-                onOpenChange(false);
-              }}
-            />
-          ) : null}
-        </BottomSheet.Content>
-      </BottomSheet.Portal>
-    </BottomSheet>
+    <Sheet
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      detents={[0.85]}
+      scrollableRef={scrollRef}
+      style={{ flex: 1 }}
+    >
+      <BottomSheet.Content className="flex-1">
+        <FilterForm
+          apartmentId={apartmentId}
+          userId={userId}
+          currency={currency}
+          search={search}
+          scrollRef={scrollRef}
+          onApply={(next) => {
+            onApply(next);
+            onOpenChange(false);
+          }}
+        />
+      </BottomSheet.Content>
+    </Sheet>
   );
 }
 
@@ -99,17 +84,19 @@ function FilterForm({
   userId,
   currency,
   search,
+  scrollRef,
   onApply,
 }: {
   apartmentId: string;
   userId: string;
   currency: string;
   search: ExpenseSearch;
+  /** The sheet coordinates its drag and the keyboard with this scroll view. */
+  scrollRef: RefObject<ScrollViewInstance | null>;
   onApply: (search: ExpenseSearch) => void;
 }) {
   const members = useMembers(apartmentId);
   const categories = useCategories(apartmentId);
-  const { onFocus, onBlur } = useBottomSheetAwareHandlers();
 
   const [query, setQuery] = useState(search.query);
   const [memberId, setMemberId] = useState(search.memberId);
@@ -150,7 +137,8 @@ function FilterForm({
   return (
     <View className="flex-1 gap-4">
       <BottomSheet.Title>Filter expenses</BottomSheet.Title>
-      <BottomSheetScrollView
+      <ScrollView
+        ref={scrollRef}
         contentContainerClassName="gap-5 pb-4"
         keyboardShouldPersistTaps="handled"
       >
@@ -160,8 +148,6 @@ function FilterForm({
             variant="secondary"
             value={query}
             onChangeText={setQuery}
-            onFocus={onFocus}
-            onBlur={onBlur}
             maxLength={MAX_QUERY_LENGTH}
             placeholder="Title or notes"
             returnKeyType="search"
@@ -236,8 +222,6 @@ function FilterForm({
                   setMinText(value);
                   setAmountError(undefined);
                 }}
-                onFocus={onFocus}
-                onBlur={onBlur}
                 keyboardType="decimal-pad"
                 placeholder="Any"
                 accessibilityLabel="Lowest amount"
@@ -252,8 +236,6 @@ function FilterForm({
                   setMaxText(value);
                   setAmountError(undefined);
                 }}
-                onFocus={onFocus}
-                onBlur={onBlur}
                 keyboardType="decimal-pad"
                 placeholder="Any"
                 accessibilityLabel="Highest amount"
@@ -264,7 +246,7 @@ function FilterForm({
             <FieldError>{amountError}</FieldError>
           </TextField>
         </FilterGroup>
-      </BottomSheetScrollView>
+      </ScrollView>
 
       <View className="flex-row gap-3 pb-2">
         <Button variant="secondary" className="flex-1" onPress={() => onApply(NO_SEARCH)}>

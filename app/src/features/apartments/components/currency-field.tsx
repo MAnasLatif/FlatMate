@@ -1,5 +1,4 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import {
   BottomSheet,
   Description,
@@ -11,9 +10,11 @@ import {
   Typography,
   useThemeColor,
 } from 'heroui-native';
-import { useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { FlatList, View } from 'react-native';
 import { type Control, useController } from 'react-hook-form';
+
+import { Sheet } from '@/components/sheet';
 
 import { CURRENCIES, type Currency, matchesCurrency } from '../currencies';
 import type { ApartmentFormInput, ApartmentFormOutput } from './apartment-form-fields';
@@ -33,6 +34,7 @@ export function CurrencyField({
   const { field, fieldState } = useController({ control, name: 'currency' });
   const [isOpen, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const listRef = useRef<FlatList<Currency>>(null);
   const [mutedColor, accentColor] = useThemeColor(['muted', 'accent']);
   const selected = CURRENCIES.find((currency) => currency.code === field.value);
   const results = useMemo(
@@ -88,69 +90,63 @@ export function CurrencyField({
       )}
       <FieldError>{fieldState.error?.message}</FieldError>
 
-      <BottomSheet
+      <Sheet
         isOpen={isOpen}
         onOpenChange={(open) => {
           if (!open) close();
         }}
+        detents={[0.85]}
+        scrollableRef={listRef}
+        style={{ flex: 1 }}
       >
-        <BottomSheet.Portal>
-          <BottomSheet.Overlay />
-          <BottomSheet.Content
-            snapPoints={['85%']}
-            enableDynamicSizing={false}
-            enableOverDrag={false}
-            contentContainerClassName="h-full gap-4"
-          >
-            <BottomSheet.Title>Currency</BottomSheet.Title>
-            <SearchField value={query} onChange={setQuery}>
-              <SearchField.Group>
-                <SearchField.SearchIcon />
-                <SearchField.Input
-                  variant="secondary"
-                  placeholder="Search by name, code or symbol"
-                  accessibilityLabel="Search currencies"
-                  autoCorrect={false}
-                />
-                <SearchField.ClearButton />
-              </SearchField.Group>
-            </SearchField>
-            <BottomSheetFlatList
-              data={results}
-              keyExtractor={(currency: Currency) => currency.code}
-              keyboardShouldPersistTaps="handled"
-              ListEmptyComponent={
-                <Typography.Paragraph color="muted" className="py-6 text-center">
-                  No currency matches “{query.trim()}”.
-                </Typography.Paragraph>
-              }
-              renderItem={({ item }: { item: Currency }) => {
-                const isSelected = item.code === field.value;
-                return (
-                  <PressableFeedback
-                    onPress={() => choose(item)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${item.code} ${item.name}`}
-                    accessibilityState={{ selected: isSelected }}
-                    className="flex-row items-center gap-3 py-3"
-                  >
-                    <CurrencySymbol symbol={item.symbol} />
-                    <View className="flex-1">
-                      <Typography.Paragraph>{item.name}</Typography.Paragraph>
-                      <Typography.Paragraph type="body-xs" color="muted">
-                        {item.code}
-                      </Typography.Paragraph>
-                    </View>
-                    {isSelected ? (
-                      <Ionicons name="checkmark" size={20} color={accentColor} />
-                    ) : null}
-                  </PressableFeedback>
-                );
-              }}
-            />
-          </BottomSheet.Content>
-        </BottomSheet.Portal>
-      </BottomSheet>
+        <BottomSheet.Content className="flex-1 gap-4">
+          <BottomSheet.Title>Currency</BottomSheet.Title>
+          <SearchField value={query} onChange={setQuery}>
+            <SearchField.Group>
+              <SearchField.SearchIcon />
+              <SearchField.Input
+                variant="secondary"
+                placeholder="Search by name, code or symbol"
+                accessibilityLabel="Search currencies"
+                autoCorrect={false}
+              />
+              <SearchField.ClearButton />
+            </SearchField.Group>
+          </SearchField>
+          <FlatList
+            ref={listRef}
+            data={results}
+            keyExtractor={(currency) => currency.code}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={
+              <Typography.Paragraph color="muted" className="py-6 text-center">
+                No currency matches “{query.trim()}”.
+              </Typography.Paragraph>
+            }
+            renderItem={({ item }) => {
+              const isSelected = item.code === field.value;
+              return (
+                <PressableFeedback
+                  onPress={() => choose(item)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${item.code} ${item.name}`}
+                  accessibilityState={{ selected: isSelected }}
+                  className="flex-row items-center gap-3 py-3"
+                >
+                  <CurrencySymbol symbol={item.symbol} />
+                  <View className="flex-1">
+                    <Typography.Paragraph>{item.name}</Typography.Paragraph>
+                    <Typography.Paragraph type="body-xs" color="muted">
+                      {item.code}
+                    </Typography.Paragraph>
+                  </View>
+                  {isSelected ? <Ionicons name="checkmark" size={20} color={accentColor} /> : null}
+                </PressableFeedback>
+              );
+            }}
+          />
+        </BottomSheet.Content>
+      </Sheet>
     </TextField>
   );
 }

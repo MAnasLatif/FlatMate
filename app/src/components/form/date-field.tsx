@@ -14,6 +14,8 @@ import { View } from 'react-native';
 
 import { addMonths, formatDate, formatMonth, monthGrid, monthStart } from '@/lib/time';
 
+import { Sheet } from '../sheet';
+
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 type DateFieldProps = {
@@ -50,14 +52,11 @@ export function DateField({
   error,
 }: DateFieldProps) {
   const [isOpen, setOpen] = useState(false);
-  // The calendar is built the first time it opens, not with every form.
-  const [hasOpened, setHasOpened] = useState(false);
   const [month, setMonth] = useState(() => monthStart(value || today));
   const [mutedColor, foregroundColor] = useThemeColor(['muted', 'foreground']);
 
   const open = () => {
     setMonth(monthStart(value || today));
-    setHasOpened(true);
     setOpen(true);
   };
   const pick = (date: string) => {
@@ -87,77 +86,71 @@ export function DateField({
       </PressableFeedback>
       <FieldError>{error}</FieldError>
 
-      {/* Always mounted: a sheet mounted already open does not appear, so the
-          first taps on the field did nothing. Only the calendar inside waits. */}
-      <BottomSheet isOpen={isOpen} onOpenChange={setOpen}>
-        <BottomSheet.Portal>
-          <BottomSheet.Overlay />
-          <BottomSheet.Content>
-            {hasOpened ? (
-              <View className="gap-4">
-                <View className="flex-row items-center justify-between">
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="ghost"
-                    isDisabled={!canGoBack}
-                    onPress={() => setMonth(addMonths(month, -1))}
-                    accessibilityLabel="Previous month"
-                  >
-                    <Ionicons name="chevron-back" size={20} color={foregroundColor} />
-                  </Button>
-                  <BottomSheet.Title>{formatMonth(month)}</BottomSheet.Title>
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="ghost"
-                    isDisabled={!canGoForward}
-                    onPress={() => setMonth(addMonths(month, 1))}
-                    accessibilityLabel="Next month"
-                  >
-                    <Ionicons name="chevron-forward" size={20} color={foregroundColor} />
-                  </Button>
-                </View>
+      {/* The calendar is built only while the sheet is open, not with every form. */}
+      <Sheet isOpen={isOpen} onOpenChange={setOpen}>
+        <BottomSheet.Content>
+          <View className="gap-4">
+            <View className="flex-row items-center justify-between">
+              <Button
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                isDisabled={!canGoBack}
+                onPress={() => setMonth(addMonths(month, -1))}
+                accessibilityLabel="Previous month"
+              >
+                <Ionicons name="chevron-back" size={20} color={foregroundColor} />
+              </Button>
+              <BottomSheet.Title>{formatMonth(month)}</BottomSheet.Title>
+              <Button
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                isDisabled={!canGoForward}
+                onPress={() => setMonth(addMonths(month, 1))}
+                accessibilityLabel="Next month"
+              >
+                <Ionicons name="chevron-forward" size={20} color={foregroundColor} />
+              </Button>
+            </View>
 
-                <View className="flex-row">
-                  {WEEKDAYS.map((weekday) => (
-                    <Typography.Paragraph
-                      key={weekday}
-                      type="body-xs"
-                      color="muted"
-                      className="flex-1 text-center"
-                    >
-                      {weekday}
-                    </Typography.Paragraph>
-                  ))}
-                </View>
-                <View className="flex-row flex-wrap">
-                  {monthGrid(month).map((date, index) =>
-                    date ? (
-                      <DayCell
-                        key={date}
-                        date={date}
-                        isSelected={date === value}
-                        isToday={date === today}
-                        isAllowed={isAllowed(date)}
-                        onPick={pick}
-                      />
-                    ) : (
-                      <View key={`blank-${index}`} className="aspect-square w-[14.28%]" />
-                    ),
-                  )}
-                </View>
+            <View className="flex-row">
+              {WEEKDAYS.map((weekday) => (
+                <Typography.Paragraph
+                  key={weekday}
+                  type="body-xs"
+                  color="muted"
+                  className="flex-1 text-center"
+                >
+                  {weekday}
+                </Typography.Paragraph>
+              ))}
+            </View>
+            <View className="flex-row flex-wrap">
+              {monthGrid(month).map((date, index) =>
+                date ? (
+                  <DayCell
+                    key={date}
+                    date={date}
+                    isSelected={date === value}
+                    isToday={date === today}
+                    isAllowed={isAllowed(date)}
+                    onPick={pick}
+                  />
+                ) : (
+                  <View key={`blank-${index}`} className="aspect-square w-[14.28%]" />
+                ),
+              )}
+            </View>
 
-                {isClearable && value ? (
-                  <Button variant="ghost" onPress={() => pick('')}>
-                    Clear date
-                  </Button>
-                ) : null}
-              </View>
+            {isClearable && value ? (
+              <Button variant="ghost" onPress={() => pick('')}>
+                Clear date
+              </Button>
             ) : null}
-          </BottomSheet.Content>
-        </BottomSheet.Portal>
-      </BottomSheet>
+          </View>
+        </BottomSheet.Content>
+      </Sheet>
     </TextField>
   );
 }

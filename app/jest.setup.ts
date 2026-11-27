@@ -42,11 +42,38 @@ jest.mock('@react-native-community/netinfo', () =>
 // Reanimated and its worklets runtime need native modules that do not exist
 // under Jest. Both libraries ship mocks for this.
 jest.mock('react-native-worklets', () => jest.requireActual('react-native-worklets/src/mock'));
-jest.mock('react-native-reanimated', () => jest.requireActual('react-native-reanimated/mock'));
+// HeroUI's toasts change shared values with modify(), which the mock's shared
+// values lack; it is added on top of the mock's own set().
+jest.mock('react-native-reanimated', () => {
+  const mock = jest.requireActual('react-native-reanimated/mock');
+  const useSharedValue = <Value>(init: Value) => {
+    const shared = mock.useSharedValue(init);
+    return new Proxy(shared, {
+      get(target, prop, receiver) {
+        if (prop === 'modify') {
+          return (modifier: (value: Value) => Value) =>
+            target.set((value: Value) => modifier(value));
+        }
+        return Reflect.get(target, prop, receiver);
+      },
+    });
+  };
+  return { ...mock, useSharedValue, default: { ...mock.default, useSharedValue } };
+});
 
-// HeroUI's BottomSheet is built on @gorhom/bottom-sheet, whose gesture and
-// layout code needs a device. The package ships a mock that renders plain views.
-jest.mock('@gorhom/bottom-sheet', () => jest.requireActual('@gorhom/bottom-sheet/mock'));
+// HeroUI's BottomSheet is a native sheet from TrueSheet. TrueSheet's mock
+// renders the content as plain views and its dismiss() does nothing; on a
+// device, dismissing ends with onDidDismiss, which closes the app's Sheet. The
+// mock is extended to do the same, so a closed sheet's content leaves the screen.
+jest.mock('@lodev09/react-native-true-sheet/reanimated', () => {
+  const mock = jest.requireActual('@lodev09/react-native-true-sheet/reanimated/mock');
+  class ReanimatedTrueSheet extends mock.ReanimatedTrueSheet {
+    dismiss = jest.fn(async () => {
+      this.props.onDidDismiss?.({ nativeEvent: {} });
+    });
+  }
+  return { ...mock, ReanimatedTrueSheet };
+});
 
 // AsyncStorage is a native module; the package ships an in-memory mock.
 jest.mock('@react-native-async-storage/async-storage', () =>

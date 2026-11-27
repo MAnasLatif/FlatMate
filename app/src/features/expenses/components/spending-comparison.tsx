@@ -1,9 +1,9 @@
 import { BottomSheet, PressableFeedback, Typography } from 'heroui-native';
-import { useState } from 'react';
 import { View } from 'react-native';
 
 import { ProgressBar } from '@/components/progress-bar';
 import { LoadError, LoadingRows } from '@/components/query-states';
+import { Sheet } from '@/components/sheet';
 import { formatMoney } from '@/features/apartments/currencies';
 import { userErrorMessage } from '@/lib/errors';
 import { formatMonth } from '@/lib/time';
@@ -33,29 +33,20 @@ export function SpendingComparisonSheet({
   onOpenChange,
   onSelectMonth,
 }: SpendingComparisonSheetProps) {
-  // Loaded once first opened, then kept so the sheet closes with its content.
-  const [hasOpened, setHasOpened] = useState(isOpen);
-  if (isOpen && !hasOpened) setHasOpened(true);
-
+  // The comparison loads only while the sheet is open.
   return (
-    // Always mounted: a sheet mounted already open does not appear.
-    <BottomSheet isOpen={isOpen} onOpenChange={onOpenChange}>
-      <BottomSheet.Portal>
-        <BottomSheet.Overlay />
-        <BottomSheet.Content>
-          {hasOpened ? (
-            <Comparison
-              apartmentId={apartmentId}
-              currency={currency}
-              onSelectMonth={(month) => {
-                onSelectMonth(month);
-                onOpenChange(false);
-              }}
-            />
-          ) : null}
-        </BottomSheet.Content>
-      </BottomSheet.Portal>
-    </BottomSheet>
+    <Sheet isOpen={isOpen} onOpenChange={onOpenChange}>
+      <BottomSheet.Content>
+        <Comparison
+          apartmentId={apartmentId}
+          currency={currency}
+          onSelectMonth={(month) => {
+            onSelectMonth(month);
+            onOpenChange(false);
+          }}
+        />
+      </BottomSheet.Content>
+    </Sheet>
   );
 }
 
