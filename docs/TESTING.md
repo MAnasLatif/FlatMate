@@ -6,7 +6,7 @@ How FlatMate is tested, and the record of the last full test pass. Requirements 
 
 | Suite | Where | Command | Last result (2026-11-24) |
 |---|---|---|---|
-| App unit and component tests (Jest, React Native Testing Library) | `app/src/**/*.test.ts(x)` | `cd app && npm test` | 793 passed (2026-11-25) |
+| App unit and component tests (Jest, React Native Testing Library) | `app/src/**/*.test.ts(x)` | `cd app && npm test` | 795 passed (2026-11-27) |
 | App lint and types | `app/` | `npm run lint`, `npx tsc --noEmit` | Clean |
 | Database tests (pgTAP): RLS, money arithmetic, every function and job | `supabase/tests/database/` | `npx supabase@3.1.0 db reset` then `npx supabase@3.1.0 test db` | 960 passed in 49 files (2026-11-25) |
 | Database lint | local stack | `npx supabase@3.1.0 db lint --level warning` | Two known warnings (unused loop variables in `generate_invite_code` and `charge_due_recurring`) |
@@ -134,13 +134,20 @@ All three were fixed afterwards, with tests; the first was also checked on phone
 - **Fixed:** "Step down as admin" applied at once; it now asks first, since only another admin can undo it.
 - **Fixed:** amounts filled in for you (takeover, refund, return, room splits) showed as "3000.00" while the same amounts elsewhere showed as "3,000.00"; they are grouped now.
 
-## 4. Not covered yet
+## 4. Bottom sheets after HeroUI Native 1.1, 2026-11-27
+
+HeroUI Native 1.1 made `BottomSheet` a native sheet (TrueSheet). Every sheet was opened on the `expo_pixel_api36` emulator with a new development build, against the hosted project: the expense filter, Compare months, the month picker, sign out, the profile photo, the date picker, Add a receipt, rename category, the monthly budget, the currency picker and deleting an account. Each opened with its content, did its job and closed by its own button, a drag, a tap outside or Back, and opened again afterwards. Typing in a sheet raised it with the keyboard, the currency and filter lists scrolled inside the sheet, and the month wheels turned without moving it.
+
+- **Fixed:** a list inside a sheet warned that it was nested in the screen's scroll view, because the native sheet keeps its content in the screen's React tree. `Sheet` now gives its content no parent scroll context.
+- **Observation:** in the filter sheet, the amount fields at the bottom stay only partly above the keyboard; the currency list's last row sits partly under the navigation bar.
+
+## 5. Not covered yet
 
 - **Need setup not yet done:** Google sign-in (OAuth client) and invite emails (Resend secrets).
 - **iOS:** there is no iOS simulator or build yet.
 - **Push delivery of reminders** on a phone. Event pushes were checked on 2026-11-27, with the build from the new EAS project `@anaslatif.dev/flatmate` (package `dev.manaslatif.flatmate`, Firebase project `flatmate-111`) on an emulator against the hosted project: a join request, a member joining and an expense that includes the user each arrived within a minute.
 
-## 5. Running the device pass again
+## 6. Running the device pass again
 
 1. Build or reuse an EAS development build (`npx eas-cli build -p android --profile development`) and install it on two emulators or phones.
 2. Point Metro at the backend you want: `app/.env.local` (local stack) wins over `app/.env` (hosted). Use the local stack to fast-forward deadlines by moving `finalize_after` or period dates and calling the job functions.
