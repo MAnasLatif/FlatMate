@@ -138,7 +138,7 @@ All three were fixed afterwards, with tests; the first was also checked on phone
 
 - **Need setup not yet done:** Google sign-in (OAuth client) and invite emails (Resend secrets).
 - **iOS:** there is no iOS simulator or build yet.
-- **Push delivery of reminders and of the new events** on a phone, which needs the hosted project.
+- **Push delivery of reminders** on a phone. Event pushes were checked on 2026-11-27, with the build from the new EAS project `@anaslatif.dev/flatmate` (package `dev.manaslatif.flatmate`, Firebase project `flatmate-111`) on an emulator against the hosted project: a join request, a member joining and an expense that includes the user each arrived within a minute.
 
 ## 5. Running the device pass again
 
