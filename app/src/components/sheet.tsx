@@ -1,5 +1,6 @@
 import { BottomSheet, type BottomSheetProps, type BottomSheetRef } from 'heroui-native';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { ScrollView } from 'react-native';
 
 type SheetProps = Omit<BottomSheetProps, 'children' | 'onDidDismiss'> & {
   isOpen: boolean;
@@ -50,7 +51,12 @@ export function Sheet({ isOpen, onOpenChange, children, ...props }: SheetProps) 
         if (isOpenRef.current) onOpenChangeRef.current(false);
       }}
     >
-      {isShown ? children : null}
+      {/* The native sheet is a surface of its own, but its content stays in the
+          React tree of the screen behind it. Lists in it would otherwise count
+          as nested in that screen's scroll view, and React Native warns. */}
+      <ScrollView.Context.Provider value={null}>
+        {isShown ? children : null}
+      </ScrollView.Context.Provider>
     </BottomSheet>
   );
 }
