@@ -60,6 +60,9 @@ export function ExpenseFilterSheet({
       onOpenChange={onOpenChange}
       detents={[0.85]}
       scrollableRef={scrollRef}
+      // The sheet scrolls a focused field to the keyboard's edge; the room
+      // above it keeps the whole field, not just its text, in view.
+      scrollableOptions={{ keyboardScrollOffset: 24 }}
       style={{ flex: 1 }}
     >
       <BottomSheet.Content className="flex-1">
