@@ -3,6 +3,7 @@ import { View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
 import { OnlineButton } from '@/components/online-button';
+import { Sheet } from '@/components/sheet';
 import { userErrorMessage } from '@/lib/errors';
 
 import type { MyAccount } from '../api';
@@ -24,50 +25,47 @@ export function DeleteAccountSheet({
   const { remove } = useAccountMutations();
 
   return (
-    <BottomSheet
+    <Sheet
       isOpen={account !== null}
       onOpenChange={(isOpen) => {
         if (!isOpen) onClose();
       }}
     >
-      <BottomSheet.Portal>
-        <BottomSheet.Overlay />
-        <BottomSheet.Content>
-          <View className="gap-6">
-            <View className="gap-2">
-              <BottomSheet.Title>Delete {account?.provider}?</BottomSheet.Title>
-              <BottomSheet.Description>
-                {account && account.sharedWith.length > 0
-                  ? 'Flatmates you shared it with will no longer see it.'
-                  : 'It is private, so nobody else sees it.'}
-              </BottomSheet.Description>
-            </View>
-            <FormAlert
-              message={remove.error ? userErrorMessage(remove.error, 'Could not delete it.') : null}
-            />
-            <View className="gap-3">
-              <OnlineButton
-                variant="danger"
-                isDisabled={remove.isPending}
-                onPress={() => {
-                  if (!account) return;
-                  remove.mutate(account.id, {
-                    onSuccess: () => {
-                      onClose();
-                      onDeleted?.();
-                    },
-                  });
-                }}
-              >
-                {remove.isPending ? 'Deleting…' : 'Delete account'}
-              </OnlineButton>
-              <Button variant="tertiary" onPress={onClose} isDisabled={remove.isPending}>
-                Cancel
-              </Button>
-            </View>
+      <BottomSheet.Content>
+        <View className="gap-6">
+          <View className="gap-2">
+            <BottomSheet.Title>Delete {account?.provider}?</BottomSheet.Title>
+            <BottomSheet.Description>
+              {account && account.sharedWith.length > 0
+                ? 'Flatmates you shared it with will no longer see it.'
+                : 'It is private, so nobody else sees it.'}
+            </BottomSheet.Description>
           </View>
-        </BottomSheet.Content>
-      </BottomSheet.Portal>
-    </BottomSheet>
+          <FormAlert
+            message={remove.error ? userErrorMessage(remove.error, 'Could not delete it.') : null}
+          />
+          <View className="gap-3">
+            <OnlineButton
+              variant="danger"
+              isDisabled={remove.isPending}
+              onPress={() => {
+                if (!account) return;
+                remove.mutate(account.id, {
+                  onSuccess: () => {
+                    onClose();
+                    onDeleted?.();
+                  },
+                });
+              }}
+            >
+              {remove.isPending ? 'Deleting…' : 'Delete account'}
+            </OnlineButton>
+            <Button variant="tertiary" onPress={onClose} isDisabled={remove.isPending}>
+              Cancel
+            </Button>
+          </View>
+        </View>
+      </BottomSheet.Content>
+    </Sheet>
   );
 }

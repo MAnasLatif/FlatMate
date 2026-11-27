@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { FormAlert } from '@/components/form/form-alert';
+import { Sheet } from '@/components/sheet';
 import { type ImageSource, type PickedImage, pickImage } from '@/lib/private-images';
 
 /**
@@ -94,38 +95,35 @@ export function ReceiptsField({
         Photos your flatmates can check. They cannot be removed once saved.
       </Typography.Paragraph>
 
-      <BottomSheet isOpen={isChoosing} onOpenChange={setChoosing}>
-        <BottomSheet.Portal>
-          <BottomSheet.Overlay />
-          <BottomSheet.Content>
-            <View className="gap-6">
-              <BottomSheet.Title>Add a receipt</BottomSheet.Title>
-              <View className="gap-3">
-                <Button variant="secondary" onPress={() => void add('camera')}>
-                  <Ionicons
-                    accessibilityElementsHidden
-                    importantForAccessibility="no"
-                    name="camera-outline"
-                    size={18}
-                    color={accent}
-                  />
-                  <Button.Label>Take a photo</Button.Label>
-                </Button>
-                <Button variant="secondary" onPress={() => void add('library')}>
-                  <Ionicons
-                    accessibilityElementsHidden
-                    importantForAccessibility="no"
-                    name="images-outline"
-                    size={18}
-                    color={accent}
-                  />
-                  <Button.Label>Choose from gallery</Button.Label>
-                </Button>
-              </View>
+      <Sheet isOpen={isChoosing} onOpenChange={setChoosing}>
+        <BottomSheet.Content>
+          <View className="gap-6">
+            <BottomSheet.Title>Add a receipt</BottomSheet.Title>
+            <View className="gap-3">
+              <Button variant="secondary" onPress={() => void add('camera')}>
+                <Ionicons
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                  name="camera-outline"
+                  size={18}
+                  color={accent}
+                />
+                <Button.Label>Take a photo</Button.Label>
+              </Button>
+              <Button variant="secondary" onPress={() => void add('library')}>
+                <Ionicons
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                  name="images-outline"
+                  size={18}
+                  color={accent}
+                />
+                <Button.Label>Choose from gallery</Button.Label>
+              </Button>
             </View>
-          </BottomSheet.Content>
-        </BottomSheet.Portal>
-      </BottomSheet>
+          </View>
+        </BottomSheet.Content>
+      </Sheet>
     </View>
   );
 }

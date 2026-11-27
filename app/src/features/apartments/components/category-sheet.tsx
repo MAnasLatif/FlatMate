@@ -1,15 +1,9 @@
-import {
-  BottomSheet,
-  FieldError,
-  Input,
-  Label,
-  TextField,
-  useBottomSheetAwareHandlers,
-} from 'heroui-native';
+import { BottomSheet, FieldError, Input, Label, TextField } from 'heroui-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
 import { OnlineButton } from '@/components/online-button';
+import { Sheet } from '@/components/sheet';
 import { userErrorMessage } from '@/lib/errors';
 
 import type { Category } from '../api';
@@ -27,29 +21,18 @@ type CategorySheetProps = {
 
 /** A drawer for adding a category, or renaming the one tapped in the list. */
 export function CategorySheet({ apartmentId, isOpen, onOpenChange, category }: CategorySheetProps) {
-  // Each opening starts a fresh form.
-  const [openCount, setOpenCount] = useState(0);
-  const [wasOpen, setWasOpen] = useState(isOpen);
-  if (isOpen !== wasOpen) {
-    setWasOpen(isOpen);
-    if (isOpen) setOpenCount((count) => count + 1);
-  }
-
+  // The form mounts with each opening, so it always starts fresh.
   return (
-    // Always mounted: a sheet mounted already open does not appear.
-    <BottomSheet isOpen={isOpen} onOpenChange={onOpenChange}>
-      <BottomSheet.Portal>
-        <BottomSheet.Overlay />
-        <BottomSheet.Content keyboardBehavior="interactive" keyboardBlurBehavior="restore">
-          <CategoryForm
-            key={`${openCount}-${category?.id ?? 'new'}`}
-            apartmentId={apartmentId}
-            category={category}
-            onDone={() => onOpenChange(false)}
-          />
-        </BottomSheet.Content>
-      </BottomSheet.Portal>
-    </BottomSheet>
+    <Sheet isOpen={isOpen} onOpenChange={onOpenChange}>
+      <BottomSheet.Content>
+        <CategoryForm
+          key={category?.id ?? 'new'}
+          apartmentId={apartmentId}
+          category={category}
+          onDone={() => onOpenChange(false)}
+        />
+      </BottomSheet.Content>
+    </Sheet>
   );
 }
 
@@ -63,7 +46,6 @@ function CategoryForm({
   onDone: () => void;
 }) {
   const { add, rename } = useCategoryActions(apartmentId);
-  const { onFocus, onBlur } = useBottomSheetAwareHandlers();
   const [name, setName] = useState(category?.name ?? '');
   const [nameError, setNameError] = useState<string>();
   const saving = category ? rename : add;
@@ -107,8 +89,6 @@ function CategoryForm({
             setNameError(undefined);
             saving.reset();
           }}
-          onFocus={onFocus}
-          onBlur={onBlur}
           autoFocus
           placeholder="Groceries, repairs…"
           returnKeyType="done"

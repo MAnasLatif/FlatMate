@@ -382,7 +382,7 @@ Before release, the hosted project also needs Google sign-in (an OAuth client) a
 These shape the code and are summarized here; [ARCHITECTURE.md](ARCHITECTURE.md) explains how they fit together.
 
 1. **One repository**, with `app/`, `supabase/`, `web/` and `docs/`. `app/` and `web/` are independent npm projects with their own lockfiles; there is no workspace until they need to share code. Rules for contributors and agents are in `AGENTS.md`.
-2. **HeroUI Native 1.x on Expo SDK 58.** Its peer dependencies keep fixed majors (for example `tailwind-variants` 3), which Dependabot does not bump.
+2. **HeroUI Native 1.x on Expo SDK 58.** Its peer dependencies keep fixed majors (for example `tailwind-variants` 3), which Dependabot does not bump. From 1.1 its `BottomSheet` is a native sheet through `@lodev09/react-native-true-sheet` instead of `@gorhom/bottom-sheet`; the app opens sheets through its own `Sheet` wrapper, which keeps the open-and-close-by-state pattern.
 3. **The ledger model** of section 5: immutable records, derived balances, server-side splitting.
 4. **Event-driven sync** through private Realtime Broadcast messages that carry only a kind (section 7), chosen over polling, Postgres Changes or a local-first database, which would let writes skip the server's checks.
 5. **Unread dots instead of an inbox** (section 6.2).
