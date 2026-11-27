@@ -99,52 +99,58 @@ export function CurrencyField({
         scrollableRef={listRef}
         style={{ flex: 1 }}
       >
-        <BottomSheet.Content className="flex-1 gap-4">
-          <BottomSheet.Title>Currency</BottomSheet.Title>
-          <SearchField value={query} onChange={setQuery}>
-            <SearchField.Group>
-              <SearchField.SearchIcon />
-              <SearchField.Input
-                variant="secondary"
-                placeholder="Search by name, code or symbol"
-                accessibilityLabel="Search currencies"
-                autoCorrect={false}
-              />
-              <SearchField.ClearButton />
-            </SearchField.Group>
-          </SearchField>
-          <FlatList
-            ref={listRef}
-            data={results}
-            keyExtractor={(currency) => currency.code}
-            keyboardShouldPersistTaps="handled"
-            ListEmptyComponent={
-              <Typography.Paragraph color="muted" className="py-6 text-center">
-                No currency matches “{query.trim()}”.
-              </Typography.Paragraph>
-            }
-            renderItem={({ item }) => {
-              const isSelected = item.code === field.value;
-              return (
-                <PressableFeedback
-                  onPress={() => choose(item)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${item.code} ${item.name}`}
-                  accessibilityState={{ selected: isSelected }}
-                  className="flex-row items-center gap-3 py-3"
-                >
-                  <CurrencySymbol symbol={item.symbol} />
-                  <View className="flex-1">
-                    <Typography.Paragraph>{item.name}</Typography.Paragraph>
-                    <Typography.Paragraph type="body-xs" color="muted">
-                      {item.code}
-                    </Typography.Paragraph>
-                  </View>
-                  {isSelected ? <Ionicons name="checkmark" size={20} color={accentColor} /> : null}
-                </PressableFeedback>
-              );
-            }}
-          />
+        <BottomSheet.Content className="flex-1">
+          {/* One flex-1 view: the sheet wraps its content in a view that grows
+              but never shrinks, so loose children would run past its bottom. */}
+          <View className="flex-1 gap-4">
+            <BottomSheet.Title>Currency</BottomSheet.Title>
+            <SearchField value={query} onChange={setQuery}>
+              <SearchField.Group>
+                <SearchField.SearchIcon />
+                <SearchField.Input
+                  variant="secondary"
+                  placeholder="Search by name, code or symbol"
+                  accessibilityLabel="Search currencies"
+                  autoCorrect={false}
+                />
+                <SearchField.ClearButton />
+              </SearchField.Group>
+            </SearchField>
+            <FlatList
+              ref={listRef}
+              data={results}
+              keyExtractor={(currency) => currency.code}
+              keyboardShouldPersistTaps="handled"
+              ListEmptyComponent={
+                <Typography.Paragraph color="muted" className="py-6 text-center">
+                  No currency matches “{query.trim()}”.
+                </Typography.Paragraph>
+              }
+              renderItem={({ item }) => {
+                const isSelected = item.code === field.value;
+                return (
+                  <PressableFeedback
+                    onPress={() => choose(item)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.code} ${item.name}`}
+                    accessibilityState={{ selected: isSelected }}
+                    className="flex-row items-center gap-3 py-3"
+                  >
+                    <CurrencySymbol symbol={item.symbol} />
+                    <View className="flex-1">
+                      <Typography.Paragraph>{item.name}</Typography.Paragraph>
+                      <Typography.Paragraph type="body-xs" color="muted">
+                        {item.code}
+                      </Typography.Paragraph>
+                    </View>
+                    {isSelected ? (
+                      <Ionicons name="checkmark" size={20} color={accentColor} />
+                    ) : null}
+                  </PressableFeedback>
+                );
+              }}
+            />
+          </View>
         </BottomSheet.Content>
       </Sheet>
     </TextField>

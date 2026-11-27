@@ -139,7 +139,8 @@ All three were fixed afterwards, with tests; the first was also checked on phone
 HeroUI Native 1.1 made `BottomSheet` a native sheet (TrueSheet). Every sheet was opened on the `expo_pixel_api36` emulator with a new development build, against the hosted project: the expense filter, Compare months, the month picker, sign out, the profile photo, the date picker, Add a receipt, rename category, the monthly budget, the currency picker and deleting an account. Each opened with its content, did its job and closed by its own button, a drag, a tap outside or Back, and opened again afterwards. Typing in a sheet raised it with the keyboard, the currency and filter lists scrolled inside the sheet, and the month wheels turned without moving it.
 
 - **Fixed:** a list inside a sheet warned that it was nested in the screen's scroll view, because the native sheet keeps its content in the screen's React tree. `Sheet` now gives its content no parent scroll context.
-- **Observation:** in the filter sheet, the amount fields at the bottom stay only partly above the keyboard; the currency list's last row sits partly under the navigation bar.
+- **Fixed:** the currency list could not scroll its last rows clear of the navigation bar. HeroUI wraps a sheet's content in a view that grows but never shrinks, so the title, search and list are now held in one `flex-1` view.
+- **Fixed:** in the filter sheet, the amount fields at the bottom stayed only partly above the keyboard. The sheet now scrolls a focused field 24dp further.
 
 ## 5. Not covered yet
 
